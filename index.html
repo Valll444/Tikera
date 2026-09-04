@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{
     --paper:#F4F4F1;
@@ -76,6 +77,14 @@
     font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;
     margin:0;color:var(--ink);
   }
+  .title-row{display:flex;align-items:center;gap:9px;margin-bottom:16px;}
+  .title-icon{
+    width:24px;height:24px;border-radius:7px;background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .title-icon svg{width:14px;height:14px;}
+  #entryCard.mode-venta .title-icon{background:var(--venta);}
+  #entryCard.mode-gasto .title-icon{background:var(--gasto);}
   .type-toggle{display:flex;gap:8px;margin-bottom:16px;}
   .type-btn{
     flex:1;padding:10px 0;border-radius:8px;border:1.5px solid var(--line);
@@ -87,7 +96,7 @@
   label{display:block;font-size:12.5px;color:var(--ink-soft);margin:12px 0 5px;font-weight:500;}
   input[type=text],input[type=number],input[type=date],select,textarea{
     width:100%;padding:9px 11px;border-radius:8px;border:1.5px solid var(--line);
-    font-family:'Inter';font-size:14px;color:var(--ink);background:#fff;
+    font-family:'Inter';font-size:16px;color:var(--ink);background:#fff;
   }
   input:focus,select:focus{outline:none;border-color:var(--accent);}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -140,14 +149,14 @@
     font-family:'Inter';white-space:nowrap;
   }
   .export-btn:hover{background:var(--accent);color:#fff;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table{width:100%;min-width:560px;border-collapse:collapse;font-size:13px;}
   thead th{
     text-align:left;color:var(--ink-soft);font-weight:600;font-size:11.5px;
     text-transform:uppercase;letter-spacing:.02em;padding:8px 6px;border-bottom:1.5px solid var(--line);
   }
   tbody td{padding:9px 6px;border-bottom:1px solid var(--line);}
   tbody tr:last-child td{border-bottom:none;}
-  .hist-scroll{max-height:320px;overflow-y:auto;}
+  .hist-scroll{max-height:320px;overflow-y:auto;overflow-x:auto;}
   .amt.venta{color:var(--venta);font-family:'IBM Plex Mono';}
   .amt.gasto{color:var(--gasto);font-family:'IBM Plex Mono';}
   .hist-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;}
@@ -187,6 +196,19 @@
   .balance-bar .seg-venta{background:var(--venta);transition:width .3s ease;}
   .balance-bar .seg-gasto{background:var(--gasto);transition:width .3s ease;}
 
+  .top-product-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .top-product-row:last-child{border-bottom:none;}
+  .top-product-rank{
+    width:22px;height:22px;border-radius:50%;background:var(--paper);color:var(--ink-soft);
+    font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .top-product-row:nth-child(1) .top-product-rank{background:var(--accent);color:#fff;}
+  .top-product-name{flex:1;font-size:13.5px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .top-product-bar-wrap{flex:1;max-width:120px;height:6px;background:var(--paper);border-radius:4px;overflow:hidden;}
+  .top-product-bar{height:100%;background:var(--venta);border-radius:4px;transition:width .3s ease;}
+  .top-product-amount{font-family:'IBM Plex Mono';font-size:13px;color:var(--venta);flex-shrink:0;min-width:70px;text-align:right;}
+  .top-product-empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:16px 0;}
+
   /* pantalla de acceso */
   #gate{
     min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -212,7 +234,7 @@
   .input-wrap{position:relative;}
   .form-input{
     width:100%;padding:11px 42px 11px 13px;border-radius:9px;border:1.5px solid var(--line);
-    font-family:'Inter';font-size:15px;color:var(--ink);background:#fff;
+    font-family:'Inter';font-size:16px;color:var(--ink);background:#fff;
     transition:border-color .15s ease, box-shadow .15s ease;
   }
   .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(62,86,112,0.12);}
@@ -259,6 +281,30 @@
     .login-card{padding:26px 20px;border-radius:14px;}
   }
 
+  /* mobile: paddings, tamaños de toque y layout más cómodos */
+  @media (max-width:600px){
+    body{padding:20px 12px 48px;}
+    .card{padding:18px 16px;}
+    .app-header{align-items:flex-start;}
+    .app-logo-word{font-size:16px;}
+    .biz-name{font-size:15px;}
+    .today-label{font-size:12px;}
+    input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],select{
+      padding:11px 12px;font-size:16px;
+    }
+    .submit-btn,.export-btn{padding:12px 16px;min-height:44px;}
+    .type-btn{padding:11px 0;min-height:42px;}
+    .hist-toolbar{flex-direction:column;align-items:stretch;}
+    .hist-toolbar .field{width:100%;}
+    .hist-toolbar .field input{width:100%;}
+    .hist-toolbar h2{margin-bottom:4px;}
+    #importBtn,#exportBtn{width:100%;text-align:center;}
+    .metric{padding:12px 14px;}
+    .metric-value{font-size:16px;}
+    .ticket-item{gap:8px;}
+    .ti-del{padding:6px 8px;font-size:18px;}
+  }
+
   /* diferenciación visual venta vs gasto */
   #entryCard{
     border-left:4px solid var(--venta);
@@ -288,33 +334,71 @@
       </div>
     </div>
 
-    <h2 class="login-title">Ingresá a tu registro</h2>
-    <p class="login-desc">Usá el código de tu negocio para ver tus movimientos.</p>
+    <h2 class="login-title" id="gateTitle">Iniciá sesión</h2>
+    <p class="login-desc" id="gateDesc">Entrá con tu cuenta para ver tus movimientos.</p>
+
+    <div class="type-toggle" id="gateModeToggle" style="margin-bottom:18px;">
+      <button type="button" class="type-btn active-venta" id="btnModeLogin">Iniciar sesión</button>
+      <button type="button" class="type-btn" id="btnModeSignup">Crear cuenta</button>
+    </div>
 
     <div id="gateForm">
-      <label for="gateCode" class="form-label">Nombre de tu comercio</label>
+      <div id="signupNameField" style="display:none;">
+        <label for="gateBizName" class="form-label">Nombre de tu comercio</label>
+        <input type="text" id="gateBizName" class="form-input" placeholder="Ej: Kiosco del Colegio" autocomplete="off" style="margin-bottom:14px;">
+      </div>
+
+      <label for="gateEmail" class="form-label">Email</label>
+      <input type="email" id="gateEmail" class="form-input" placeholder="tu@email.com" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-bottom:14px;">
+
+      <label for="gateCode" class="form-label">Contraseña <span id="pwHint" style="font-weight:400;color:var(--ink-soft);">(mínimo 8 caracteres)</span></label>
       <div class="input-wrap">
-        <input type="password" id="gateCode" class="form-input" placeholder="Ej: KioscoColegio2026" autocomplete="off" aria-describedby="gateError">
-        <button type="button" id="toggleCodeBtn" class="input-icon-btn" aria-label="Mostrar código">
+        <input type="password" id="gateCode" class="form-input" placeholder="Tu contraseña" autocomplete="current-password" aria-describedby="gateError">
+        <button type="button" id="toggleCodeBtn" class="input-icon-btn" aria-label="Mostrar contraseña">
           <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
       <div class="error-msg" id="gateError" role="alert" aria-live="polite"></div>
 
-      <label class="remember-row">
-        <input type="checkbox" id="rememberCode">
-        <span>Recordar este código en este dispositivo</span>
-      </label>
+      <div id="forgotLinkRow" style="text-align:right;margin-top:8px;">
+        <a href="#" id="forgotPassLink" style="font-size:12.5px;color:var(--ink-soft);">¿Olvidaste tu contraseña?</a>
+      </div>
 
-      <button type="button" class="submit-btn" id="gateBtn">
+      <button type="button" class="submit-btn" id="gateBtn" style="margin-top:14px;">
         <span id="gateBtnText">Ingresar</span>
         <span id="gateSpinner" class="spinner" style="display:none;"></span>
       </button>
     </div>
 
-    <p class="login-note">
-      Escribí siempre el mismo nombre para tu comercio (no lo compartas fuera de tu equipo).
-      Ese nombre separa tus datos de los de cualquier otro negocio — si lo cambiás, no vas a ver tu historial anterior.
+    <!-- Pedir el link de recuperación -->
+    <div id="forgotForm" style="display:none;">
+      <label for="forgotEmail" class="form-label">Email de tu cuenta</label>
+      <input type="email" id="forgotEmail" class="form-input" placeholder="tu@email.com" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-bottom:14px;">
+      <div class="error-msg" id="forgotError" role="alert" aria-live="polite"></div>
+      <button type="button" class="submit-btn" id="forgotBtn">
+        <span id="forgotBtnText">Enviar link de recuperación</span>
+        <span id="forgotSpinner" class="spinner" style="display:none;"></span>
+      </button>
+      <p style="text-align:center;margin-top:14px;">
+        <a href="#" id="backToLoginLink" style="font-size:12.5px;color:var(--ink-soft);">Volver a iniciar sesión</a>
+      </p>
+    </div>
+
+    <!-- Poner la contraseña nueva (se muestra automáticamente al volver del email) -->
+    <div id="resetForm" style="display:none;">
+      <label for="resetPass1" class="form-label">Contraseña nueva <span style="font-weight:400;color:var(--ink-soft);">(mínimo 8 caracteres)</span></label>
+      <input type="password" id="resetPass1" class="form-input" placeholder="Contraseña nueva" autocomplete="new-password" style="margin-bottom:14px;">
+      <label for="resetPass2" class="form-label">Repetila</label>
+      <input type="password" id="resetPass2" class="form-input" placeholder="Repetí la contraseña nueva" autocomplete="new-password">
+      <div class="error-msg" id="resetError" role="alert" aria-live="polite"></div>
+      <button type="button" class="submit-btn" id="resetBtn" style="margin-top:14px;">
+        <span id="resetBtnText">Guardar contraseña nueva</span>
+        <span id="resetSpinner" class="spinner" style="display:none;"></span>
+      </button>
+    </div>
+
+    <p class="login-note" id="gateNote">
+      Cada comercio tiene su propia cuenta — tus datos quedan guardados en el servidor, no en este navegador. Podés entrar desde cualquier dispositivo con el mismo email y contraseña.
     </p>
   </div>
 </div>
@@ -330,13 +414,16 @@
     </div>
     <div style="text-align:right;">
       <div class="today-label" id="todayLabel"></div>
-      <button id="switchBizBtn" style="background:none;border:none;color:rgba(250,246,236,0.55);font-size:12px;cursor:pointer;text-decoration:underline;padding:2px 0;">Cambiar de negocio</button>
+      <button id="switchBizBtn" style="background:none;border:none;color:rgba(250,246,236,0.55);font-size:12px;cursor:pointer;text-decoration:underline;padding:2px 0;">Cerrar sesión</button>
     </div>
   </div>
 
   <div class="grid">
     <div class="card" id="entryCard">
-      <h2 id="entryCardTitle">Nueva venta</h2>
+      <div class="title-row">
+        <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+        <h2 id="entryCardTitle" style="margin:0;">Nueva venta</h2>
+      </div>
       <div class="type-toggle">
         <button type="button" class="type-btn" id="btnVenta">Venta</button>
         <button type="button" class="type-btn" id="btnGasto">Gasto</button>
@@ -398,14 +485,20 @@
 
     <div class="ticket-card">
       <div class="ticket-head">
-        <h2>Movimientos de hoy</h2>
+        <div class="title-row" style="margin-bottom:0;">
+          <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h3"/></svg></span>
+          <h2 style="margin:0;">Movimientos de hoy</h2>
+        </div>
       </div>
       <div class="ticket-list" id="ticketList"></div>
     </div>
   </div>
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
-    <h2 class="section-title">Resumen</h2>
+    <div class="title-row" style="margin-bottom:0;">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></span>
+      <h2 class="section-title">Resumen</h2>
+    </div>
     <div class="type-toggle" style="margin:0;width:auto;">
       <button type="button" class="type-btn" id="btnScopeHoy" style="padding:6px 14px;font-size:12.5px;">Hoy</button>
       <button type="button" class="type-btn" id="btnScopeMes" style="padding:6px 14px;font-size:12.5px;">Este mes</button>
@@ -414,9 +507,20 @@
   <div class="summary" id="summary"></div>
   <div class="balance-bar" id="balanceBar"><div class="seg-venta" id="segVenta" style="width:50%;"></div><div class="seg-gasto" id="segGasto" style="width:50%;"></div></div>
 
+  <div class="card" style="margin-top:16px;">
+    <div class="title-row">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg></span>
+      <h2 class="section-title" style="margin:0;">Productos que más facturan</h2>
+    </div>
+    <div id="topProductsList"></div>
+  </div>
+
   <div class="hist-card">
     <div class="hist-toolbar">
-      <h2 class="section-title" style="flex:1;min-width:180px;">Historial completo</h2>
+      <div class="title-row" style="flex:1;min-width:180px;margin-bottom:0;">
+        <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+        <h2 class="section-title">Historial completo</h2>
+      </div>
       <div class="field">
         <label>Desde</label>
         <input type="date" id="fDesde" style="width:150px;">
@@ -449,7 +553,6 @@
 <script>
 let entries = [];
 let currentTipo = 'Venta';
-let bizCode = '';
 let editingId = null;
 let frequentProducts = [];
 let frequentExpenses = [];
@@ -482,79 +585,236 @@ function showToast(msg){
   toastTimer = setTimeout(()=> t.classList.remove('show'), 1800);
 }
 
-function normalizeCode(raw){
-  return raw.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-_]/g,'');
+// ============================================
+// Conexión a Supabase
+// ============================================
+const SUPABASE_URL = 'https://pkayskmfmmvvowwfdmsp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Wlvy5Nf8srhmhXqoePTpEg_8CQgMUkA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let gateMode = 'login'; // 'login' | 'signup'
+
+function setGateMode(mode){
+  gateMode = mode;
+  document.getElementById('btnModeLogin').className = 'type-btn' + (mode==='login' ? ' active-venta' : '');
+  document.getElementById('btnModeSignup').className = 'type-btn' + (mode==='signup' ? ' active-venta' : '');
+  document.getElementById('signupNameField').style.display = mode==='signup' ? 'block' : 'none';
+  document.getElementById('gateTitle').textContent = mode==='login' ? 'Iniciá sesión' : 'Creá tu cuenta';
+  document.getElementById('gateDesc').textContent = mode==='login' ? 'Entrá con tu cuenta para ver tus movimientos.' : 'Registrá tu comercio para empezar a usar Tikera.';
+  document.getElementById('gateBtnText').textContent = mode==='login' ? 'Ingresar' : 'Crear cuenta';
+  document.getElementById('gateError').textContent = '';
+}
+document.getElementById('btnModeLogin').addEventListener('click', ()=>setGateMode('login'));
+document.getElementById('btnModeSignup').addEventListener('click', ()=>setGateMode('signup'));
+
+// ============================================
+// Recuperar contraseña (link por email)
+// ============================================
+function showForgotForm(){
+  document.getElementById('gateModeToggle').style.display = 'none';
+  document.getElementById('gateForm').style.display = 'none';
+  document.getElementById('resetForm').style.display = 'none';
+  document.getElementById('forgotForm').style.display = 'block';
+  document.getElementById('gateTitle').textContent = 'Recuperar contraseña';
+  document.getElementById('gateDesc').textContent = 'Te mandamos un link a tu email para que puedas poner una contraseña nueva.';
+  document.getElementById('gateNote').style.display = 'none';
+  document.getElementById('forgotEmail').value = document.getElementById('gateEmail').value;
+  document.getElementById('forgotError').textContent = '';
+  document.getElementById('forgotEmail').focus();
 }
 
-// mostrar / ocultar código
+function showLoginForm(){
+  document.getElementById('gateModeToggle').style.display = 'flex';
+  document.getElementById('forgotForm').style.display = 'none';
+  document.getElementById('resetForm').style.display = 'none';
+  document.getElementById('gateForm').style.display = 'block';
+  document.getElementById('gateNote').style.display = 'block';
+  setGateMode('login');
+}
+
+document.getElementById('forgotPassLink').addEventListener('click', (e)=>{ e.preventDefault(); showForgotForm(); });
+document.getElementById('backToLoginLink').addEventListener('click', (e)=>{ e.preventDefault(); showLoginForm(); });
+
+let forgotSubmitting = false;
+document.getElementById('forgotBtn').addEventListener('click', async ()=>{
+  if(forgotSubmitting) return;
+  const email = document.getElementById('forgotEmail').value.trim();
+  const errEl = document.getElementById('forgotError');
+  if(!email || !email.includes('@')){
+    errEl.textContent = 'Ingresá un email válido.';
+    return;
+  }
+  forgotSubmitting = true;
+  errEl.textContent = '';
+  document.getElementById('forgotBtnText').textContent = 'Enviando...';
+  document.getElementById('forgotSpinner').style.display = 'inline-block';
+  document.getElementById('forgotBtn').disabled = true;
+
+  try{
+    const redirectTo = window.location.href.split('#')[0].split('?')[0];
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+    if(error) throw error;
+    document.getElementById('forgotForm').innerHTML = `
+      <div style="text-align:center;padding:12px 0;">
+        <p style="font-size:14px;color:var(--ink);margin-bottom:4px;">Listo, revisá tu email 📩</p>
+        <p style="font-size:12.5px;color:var(--ink-soft);">Te mandamos un link a <strong>${escapeHtml(email)}</strong> para que pongas una contraseña nueva. Si no lo ves, revisá spam.</p>
+      </div>
+      <p style="text-align:center;margin-top:14px;">
+        <a href="#" id="backToLoginLink2" style="font-size:12.5px;color:var(--ink-soft);">Volver a iniciar sesión</a>
+      </p>
+    `;
+    document.getElementById('backToLoginLink2').addEventListener('click', (e)=>{ e.preventDefault(); showLoginForm(); location.reload(); });
+  }catch(err){
+    errEl.textContent = 'No se pudo enviar el link. Verificá el email e intentá de nuevo.';
+    forgotSubmitting = false;
+    document.getElementById('forgotBtnText').textContent = 'Enviar link de recuperación';
+    document.getElementById('forgotSpinner').style.display = 'none';
+    document.getElementById('forgotBtn').disabled = false;
+  }
+});
+
+// Cuando alguien vuelve del link del email, Supabase dispara este evento
+sb.auth.onAuthStateChange((event, session)=>{
+  if(event === 'PASSWORD_RECOVERY'){
+    document.getElementById('gate').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('gateModeToggle').style.display = 'none';
+    document.getElementById('gateForm').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'none';
+    document.getElementById('resetForm').style.display = 'block';
+    document.getElementById('gateTitle').textContent = 'Poné tu contraseña nueva';
+    document.getElementById('gateDesc').textContent = 'Ya verificamos tu email, ahora elegí una contraseña nueva.';
+    document.getElementById('gateNote').style.display = 'none';
+  }
+});
+
+let resetSubmitting = false;
+document.getElementById('resetBtn').addEventListener('click', async ()=>{
+  if(resetSubmitting) return;
+  const p1 = document.getElementById('resetPass1').value;
+  const p2 = document.getElementById('resetPass2').value;
+  const errEl = document.getElementById('resetError');
+
+  if(!p1 || p1.length < 8){
+    errEl.textContent = 'La contraseña tiene que tener al menos 8 caracteres.';
+    return;
+  }
+  if(p1 !== p2){
+    errEl.textContent = 'Las dos contraseñas no coinciden.';
+    return;
+  }
+
+  resetSubmitting = true;
+  errEl.textContent = '';
+  document.getElementById('resetBtnText').textContent = 'Guardando...';
+  document.getElementById('resetSpinner').style.display = 'inline-block';
+  document.getElementById('resetBtn').disabled = true;
+
+  try{
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if(error) throw error;
+    showToast('Contraseña actualizada');
+    await loadData();
+    document.getElementById('gateNote').style.display = 'block';
+    revealApp();
+  }catch(err){
+    errEl.textContent = traducirErrorAuth(err.message);
+    resetSubmitting = false;
+    document.getElementById('resetBtnText').textContent = 'Guardar contraseña nueva';
+    document.getElementById('resetSpinner').style.display = 'none';
+    document.getElementById('resetBtn').disabled = false;
+  }
+});
+
+// mostrar / ocultar contraseña
 document.getElementById('toggleCodeBtn').addEventListener('click', ()=>{
   const input = document.getElementById('gateCode');
   const btn = document.getElementById('toggleCodeBtn');
   const showing = input.type === 'text';
   input.type = showing ? 'password' : 'text';
-  btn.setAttribute('aria-label', showing ? 'Mostrar código' : 'Ocultar código');
+  btn.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
   btn.innerHTML = showing
     ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
     : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.3 21.3 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.3 21.3 0 0 1-3.22 4.35M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 });
 
-// recordar código en este dispositivo (no es información sensible real, es solo un separador de datos)
-try{
-  const remembered = localStorage.getItem('tikera-remembered-code');
-  if(remembered){
-    document.getElementById('gateCode').value = remembered;
-    document.getElementById('rememberCode').checked = true;
-  }
-}catch(e){}
-
 let gateSubmitting = false;
 
-document.getElementById('gateBtn').addEventListener('click', enterWithCode);
-document.getElementById('gateCode').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter'){
-    e.preventDefault();
-    enterWithCode();
-  }
+document.getElementById('gateBtn').addEventListener('click', handleAuthSubmit);
+['gateEmail','gateCode','gateBizName'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); handleAuthSubmit(); }
+  });
 });
 
-async function enterWithCode(){
+async function handleAuthSubmit(){
   if(gateSubmitting) return;
 
-  const codeInput = document.getElementById('gateCode');
-  const raw = codeInput.value;
-  const code = normalizeCode(raw);
-  const suggestedName = raw.trim();
+  const email = document.getElementById('gateEmail').value.trim();
+  const password = document.getElementById('gateCode').value;
+  const bizName = document.getElementById('gateBizName').value.trim();
   const gateError = document.getElementById('gateError');
   const gateCard = document.getElementById('gateCard');
 
-  if(!code || code.length < 4){
-    gateError.textContent = 'Escribí el nombre de tu comercio (al menos 4 caracteres).';
-    codeInput.classList.add('field-error');
+  function showError(msg){
+    gateError.textContent = msg;
     gateCard.classList.remove('shake');
-    void gateCard.offsetWidth; // reinicia la animación si ya se disparó antes
+    void gateCard.offsetWidth;
     gateCard.classList.add('shake');
-    codeInput.focus();
+  }
+
+  if(!email || !email.includes('@')){
+    showError('Ingresá un email válido.');
+    return;
+  }
+  if(!password || password.length < 8){
+    showError('La contraseña tiene que tener al menos 8 caracteres.');
+    return;
+  }
+  if(gateMode === 'signup' && !bizName){
+    showError('Ingresá el nombre de tu comercio.');
     return;
   }
 
   gateSubmitting = true;
   gateError.textContent = '';
-  codeInput.classList.remove('field-error');
-  document.getElementById('gateBtnText').textContent = 'Ingresando...';
+  document.getElementById('gateBtnText').textContent = gateMode==='login' ? 'Ingresando...' : 'Creando cuenta...';
   document.getElementById('gateSpinner').style.display = 'inline-block';
   document.getElementById('gateBtn').disabled = true;
 
   try{
-    if(document.getElementById('rememberCode').checked){
-      localStorage.setItem('tikera-remembered-code', code);
+    if(gateMode === 'signup'){
+      const { error } = await sb.auth.signUp({
+        email, password,
+        options: { data: { business_name: bizName } }
+      });
+      if(error) throw error;
     }else{
-      localStorage.removeItem('tikera-remembered-code');
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) throw error;
     }
-  }catch(e){}
+    await loadData();
+    revealApp();
+  }catch(err){
+    showError(traducirErrorAuth(err.message));
+  }finally{
+    gateSubmitting = false;
+    document.getElementById('gateBtnText').textContent = gateMode==='login' ? 'Ingresar' : 'Crear cuenta';
+    document.getElementById('gateSpinner').style.display = 'none';
+    document.getElementById('gateBtn').disabled = false;
+  }
+}
 
-  bizCode = code;
-  await loadData(suggestedName);
+function traducirErrorAuth(msg){
+  if(!msg) return 'Ocurrió un error. Probá de nuevo.';
+  if(msg.includes('Invalid login credentials')) return 'Email o contraseña incorrectos.';
+  if(msg.includes('User already registered')) return 'Ese email ya tiene una cuenta — probá iniciar sesión.';
+  if(msg.includes('Password should be at least')) return 'La contraseña es muy corta (mínimo 8 caracteres).';
+  if(msg.includes('Unable to validate email')) return 'Ese email no es válido.';
+  return msg;
+}
 
+function revealApp(){
   const gate = document.getElementById('gate');
   const app = document.getElementById('app');
   gate.classList.add('leaving');
@@ -564,66 +824,103 @@ async function enterWithCode(){
     app.style.display = 'block';
     app.classList.add('entering');
     setTimeout(()=> app.classList.remove('entering'), 350);
-
-    gateSubmitting = false;
-    document.getElementById('gateBtnText').textContent = 'Ingresar';
-    document.getElementById('gateSpinner').style.display = 'none';
-    document.getElementById('gateBtn').disabled = false;
   }, 180);
 }
 
-document.getElementById('switchBizBtn').addEventListener('click', ()=>{
+document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
   const app = document.getElementById('app');
   const gate = document.getElementById('gate');
   app.classList.add('leaving-app');
+  await sb.auth.signOut();
   setTimeout(()=>{
-    bizCode = '';
     entries = [];
+    frequentProducts = [];
+    frequentExpenses = [];
     document.getElementById('gateError').textContent = '';
-    document.getElementById('gateCode').classList.remove('field-error');
+    document.getElementById('gateCode').value = '';
+    document.getElementById('gateEmail').value = '';
     app.style.display = 'none';
     app.classList.remove('leaving-app');
     gate.style.display = 'flex';
     gate.classList.add('entering');
     setTimeout(()=> gate.classList.remove('entering'), 350);
-    try{
-      if(!localStorage.getItem('tikera-remembered-code')){
-        document.getElementById('gateCode').value = '';
-        document.getElementById('rememberCode').checked = false;
-      }
-    }catch(e){
-      document.getElementById('gateCode').value = '';
-    }
-    document.getElementById('gateCode').focus();
+    setGateMode('login');
+    document.getElementById('gateEmail').focus();
   }, 180);
 });
 
-async function loadData(suggestedName){
+// Si ya había una sesión abierta en este navegador, entrar directo sin pedir nada
+(async function checkExistingSession(){
   try{
-    const raw = localStorage.getItem(`tikera-entries:${bizCode}`);
-    entries = raw ? JSON.parse(raw) : [];
-  }catch(e){ entries = []; }
-  try{
-    const name = localStorage.getItem(`tikera-business-name:${bizCode}`);
-    if(name){
-      document.getElementById('bizName').value = name;
-    }else{
-      const defaultName = suggestedName || 'Mi kiosco';
-      document.getElementById('bizName').value = defaultName;
-      try{ localStorage.setItem(`tikera-business-name:${bizCode}`, defaultName); }catch(e){}
+    const { data } = await sb.auth.getSession();
+    if(data && data.session){
+      await loadData();
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
     }
   }catch(e){}
+})();
+
+let currentUserId = null;
+
+function mapRowToEntry(row){
+  return {
+    id: row.id,
+    fecha: row.fecha,
+    hora: row.hora || '',
+    tipo: row.tipo,
+    descripcion: row.descripcion,
+    cantidad: row.cantidad ?? '',
+    precioUnitario: row.precio_unitario ?? '',
+    costoUnitario: row.costo_unitario ?? '',
+    costoTotal: row.costo_total ?? '',
+    ganancia: row.ganancia ?? '',
+    monto: row.monto,
+    metodoPago: row.metodo_pago || '',
+    nota: row.nota || '',
+    timestamp: row.created_at ? new Date(row.created_at).getTime() : Date.now()
+  };
+}
+
+function mapFieldsToRow(fields){
+  return {
+    user_id: currentUserId,
+    fecha: fields.fecha,
+    hora: fields.hora !== undefined ? fields.hora : new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
+    tipo: fields.tipo,
+    descripcion: fields.descripcion,
+    cantidad: fields.cantidad === '' ? null : fields.cantidad,
+    precio_unitario: fields.precioUnitario === '' ? null : fields.precioUnitario,
+    costo_unitario: fields.costoUnitario === '' ? null : fields.costoUnitario,
+    costo_total: fields.costoTotal === '' ? null : fields.costoTotal,
+    ganancia: fields.ganancia === '' ? null : fields.ganancia,
+    monto: fields.monto,
+    metodo_pago: fields.metodoPago,
+    nota: fields.nota
+  };
+}
+
+async function loadData(){
   try{
-    const rawFreq = localStorage.getItem(`tikera-frequent:${bizCode}`);
-    frequentProducts = rawFreq ? JSON.parse(rawFreq) : ['Gaseosa','Alfajor','Chocolate','Papas fritas','Chicles','Fotocopia'];
+    const { data: userData } = await sb.auth.getUser();
+    const user = userData && userData.user;
+    if(!user){ entries = []; return; }
+    currentUserId = user.id;
+
+    const { data: profile } = await sb.from('profiles').select('business_name').eq('id', user.id).single();
+    document.getElementById('bizName').value = (profile && profile.business_name) || 'Mi negocio';
+
+    const { data: movRows, error: movErr } = await sb.from('movements').select('*').eq('user_id', user.id).order('created_at', {ascending:true});
+    entries = movErr ? [] : (movRows || []).map(mapRowToEntry);
+    if(movErr) console.error(movErr);
+
+    const { data: freqRows } = await sb.from('frequent_items').select('*').eq('user_id', user.id).order('created_at', {ascending:true});
+    frequentProducts = (freqRows||[]).filter(r=>r.tipo==='Venta').map(r=>({id:r.id, nombre:r.nombre}));
+    frequentExpenses = (freqRows||[]).filter(r=>r.tipo==='Gasto').map(r=>({id:r.id, nombre:r.nombre}));
   }catch(e){
-    frequentProducts = ['Gaseosa','Alfajor','Chocolate','Papas fritas','Chicles','Fotocopia'];
-  }
-  try{
-    const rawExp = localStorage.getItem(`tikera-frequent-expenses:${bizCode}`);
-    frequentExpenses = rawExp ? JSON.parse(rawExp) : ['Alquiler','Luz','Mercadería','Sueldo','Flete'];
-  }catch(e){
-    frequentExpenses = ['Alquiler','Luz','Mercadería','Sueldo','Flete'];
+    console.error(e);
+    showToast('No se pudieron cargar tus datos');
+    entries = [];
   }
   renderFreqChips();
   render();
@@ -633,31 +930,23 @@ function currentFreqList(){
   return currentTipo === 'Venta' ? frequentProducts : frequentExpenses;
 }
 
-function saveFrequent(){
-  try{
-    if(currentTipo === 'Venta'){
-      localStorage.setItem(`tikera-frequent:${bizCode}`, JSON.stringify(frequentProducts));
-    }else{
-      localStorage.setItem(`tikera-frequent-expenses:${bizCode}`, JSON.stringify(frequentExpenses));
-    }
-  }catch(e){}
-}
-
 function renderFreqChips(){
   const wrap = document.getElementById('freqChips');
   const list = currentFreqList();
   document.getElementById('freqLabel').textContent = currentTipo === 'Venta' ? 'Productos frecuentes' : 'Gastos frecuentes';
   document.getElementById('newFreqName').placeholder = currentTipo === 'Venta' ? 'Agregar producto frecuente' : 'Agregar gasto frecuente';
-  wrap.innerHTML = list.map((p,i) => `
-    <button type="button" class="type-btn" style="flex:none;padding:6px 12px;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;" onclick="useFrequent(${i})">
-      ${escapeHtml(p)}
-      <span onclick="event.stopPropagation();removeFrequent(${i})" style="color:var(--ink-soft);">&times;</span>
+  wrap.innerHTML = list.map(item => `
+    <button type="button" class="type-btn" style="flex:none;padding:6px 12px;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;" onclick="useFrequent('${item.id}')">
+      ${escapeHtml(item.nombre)}
+      <span onclick="event.stopPropagation();removeFrequent('${item.id}')" style="color:var(--ink-soft);">&times;</span>
     </button>
   `).join('') || `<span style="font-size:12px;color:var(--ink-soft);">${currentTipo === 'Venta' ? 'Agregá los productos que más vendés para cargarlos en un toque.' : 'Agregá los gastos habituales del negocio para cargarlos en un toque.'}</span>`;
 }
 
-function useFrequent(i){
-  document.getElementById('descripcion').value = currentFreqList()[i];
+function useFrequent(id){
+  const item = currentFreqList().find(x => String(x.id) === String(id));
+  if(!item) return;
+  document.getElementById('descripcion').value = item.nombre;
   if(currentTipo === 'Venta'){
     document.getElementById('cantidad').focus();
   }else{
@@ -665,9 +954,15 @@ function useFrequent(i){
   }
 }
 
-function removeFrequent(i){
-  currentFreqList().splice(i,1);
-  saveFrequent();
+async function removeFrequent(id){
+  try{
+    await sb.from('frequent_items').delete().eq('id', id);
+  }catch(e){ console.error(e); }
+  if(currentTipo === 'Venta'){
+    frequentProducts = frequentProducts.filter(x => x.id !== id);
+  }else{
+    frequentExpenses = frequentExpenses.filter(x => x.id !== id);
+  }
   renderFreqChips();
 }
 
@@ -675,24 +970,53 @@ document.getElementById('addFreqBtn').addEventListener('click', addFrequent);
 document.getElementById('newFreqName').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter'){ e.preventDefault(); addFrequent(); }
 });
-function addFrequent(){
+async function addFrequent(){
   const input = document.getElementById('newFreqName');
   const val = input.value.trim();
   if(!val) return;
-  currentFreqList().push(val);
-  saveFrequent();
-  renderFreqChips();
-  input.value = '';
-}
-
-async function saveEntries(){
   try{
-    localStorage.setItem(`tikera-entries:${bizCode}`, JSON.stringify(entries));
-  }catch(e){ console.error('No se pudo guardar', e); }
+    const { data, error } = await sb.from('frequent_items').insert({
+      user_id: currentUserId, tipo: currentTipo, nombre: val
+    }).select().single();
+    if(error) throw error;
+    currentFreqList().push({ id: data.id, nombre: data.nombre });
+    renderFreqChips();
+    input.value = '';
+  }catch(e){
+    console.error(e);
+    showToast('No se pudo agregar');
+  }
 }
 
-document.getElementById('bizName').addEventListener('change', (e)=>{
-  try{ localStorage.setItem(`tikera-business-name:${bizCode}`, e.target.value); }catch(err){}
+async function addMovement(fields){
+  const row = mapFieldsToRow(fields);
+  const { data, error } = await sb.from('movements').insert(row).select().single();
+  if(error){ console.error(error); showToast('No se pudo guardar el movimiento'); return null; }
+  const entry = mapRowToEntry(data);
+  entries.push(entry);
+  return entry;
+}
+
+async function updateMovement(id, fields){
+  const row = mapFieldsToRow(fields);
+  const { data, error } = await sb.from('movements').update(row).eq('id', id).select().single();
+  if(error){ console.error(error); showToast('No se pudo actualizar'); return null; }
+  const idx = entries.findIndex(e => e.id === id);
+  if(idx !== -1) entries[idx] = mapRowToEntry(data);
+  return data;
+}
+
+async function deleteMovement(id){
+  const { error } = await sb.from('movements').delete().eq('id', id);
+  if(error){ console.error(error); showToast('No se pudo eliminar'); return false; }
+  entries = entries.filter(e => e.id !== id);
+  return true;
+}
+
+document.getElementById('bizName').addEventListener('change', async (e)=>{
+  try{
+    await sb.from('profiles').update({ business_name: e.target.value }).eq('id', currentUserId);
+  }catch(err){ console.error(err); }
 });
 
 document.getElementById('fecha').value = todayStr();
@@ -815,25 +1139,19 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
     nota: document.getElementById('nota').value.trim()
   };
 
+  document.getElementById('submitBtn').disabled = true;
+
   if(editingId){
-    const idx = entries.findIndex(e => e.id === editingId);
-    if(idx !== -1){
-      entries[idx] = { ...entries[idx], ...fieldsFromForm };
-    }
+    const ok = await updateMovement(editingId, fieldsFromForm);
     editingId = null;
     document.getElementById('submitBtn').textContent = 'Registrar';
     document.getElementById('cancelEditBtn').style.display = 'none';
-    await saveEntries();
-    showToast('Movimiento actualizado');
+    document.getElementById('submitBtn').disabled = false;
+    if(ok) showToast('Movimiento actualizado');
   }else{
-    entries.push({
-      id: Date.now() + '_' + Math.random().toString(36).slice(2,7),
-      hora: new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'}),
-      timestamp: Date.now(),
-      ...fieldsFromForm
-    });
-    await saveEntries();
-    showToast('Movimiento registrado');
+    const ok = await addMovement(fieldsFromForm);
+    document.getElementById('submitBtn').disabled = false;
+    if(ok) showToast('Movimiento registrado');
   }
 
   document.getElementById('descripcion').value = '';
@@ -886,14 +1204,13 @@ async function deleteEntry(id){
   const e = entries.find(x => x.id === id);
   const label = e ? `"${e.descripcion}" (${fmtMoney(e.monto)})` : 'este movimiento';
   if(!confirm(`¿Seguro que querés borrar ${label}? No se puede deshacer.`)) return;
-  entries = entries.filter(e => e.id !== id);
+  const ok = await deleteMovement(id);
   if(editingId === id){
     editingId = null;
     document.getElementById('submitBtn').textContent = 'Registrar';
     document.getElementById('cancelEditBtn').style.display = 'none';
   }
-  await saveEntries();
-  showToast('Movimiento eliminado');
+  if(ok) showToast('Movimiento eliminado');
   render();
 }
 
@@ -945,6 +1262,29 @@ function render(){
   const ventaPctS = totalMovS > 0 ? (ventasS/totalMovS*100) : 50;
   document.getElementById('segVenta').style.width = ventaPctS + '%';
   document.getElementById('segGasto').style.width = (100-ventaPctS) + '%';
+
+  const productMap = {};
+  summaryEntries.filter(e => e.tipo === 'Venta').forEach(e => {
+    const key = (e.descripcion || '').trim().toLowerCase();
+    if(!key) return;
+    if(!productMap[key]) productMap[key] = { nombre: e.descripcion.trim(), monto: 0 };
+    productMap[key].monto += e.monto;
+  });
+  const topProducts = Object.values(productMap).sort((a,b)=>b.monto-a.monto).slice(0,5);
+  const maxProductMonto = topProducts.length ? topProducts[0].monto : 0;
+  const topList = document.getElementById('topProductsList');
+  if(topProducts.length === 0){
+    topList.innerHTML = `<div class="top-product-empty">Todavía no hay ventas ${scopeLabel} para armar el ranking.</div>`;
+  }else{
+    topList.innerHTML = topProducts.map((p,i) => `
+      <div class="top-product-row">
+        <div class="top-product-rank">${i+1}</div>
+        <div class="top-product-name">${escapeHtml(p.nombre)}</div>
+        <div class="top-product-bar-wrap"><div class="top-product-bar" style="width:${maxProductMonto ? (p.monto/maxProductMonto*100) : 0}%;"></div></div>
+        <div class="top-product-amount">${fmtMoney(p.monto)}</div>
+      </div>
+    `).join('');
+  }
 
   const searchTerm = (document.getElementById('histSearch').value || '').trim().toLowerCase();
   const all = [...entries]
@@ -1001,7 +1341,7 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
       }
 
       let importadas = 0, saltadas = 0;
-      const nuevos = [];
+      const nuevosFields = [];
       rows.forEach((row, i) => {
         const tipoRaw = String(row['Tipo'] || '').trim();
         const tipo = /venta/i.test(tipoRaw) ? 'Venta' : (/gasto/i.test(tipoRaw) ? 'Gasto' : null);
@@ -1024,8 +1364,7 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
         const costoTotalImp = parseFloat(row['Costo total']) || (costoUnitarioImp && parseFloat(row['Cantidad']) ? costoUnitarioImp * parseFloat(row['Cantidad']) : '');
         const gananciaImp = row['Ganancia'] !== undefined && row['Ganancia'] !== '' ? parseFloat(row['Ganancia']) : (costoTotalImp ? monto - costoTotalImp : '');
 
-        nuevos.push({
-          id: Date.now() + '_' + Math.random().toString(36).slice(2,7) + i,
+        nuevosFields.push({
           fecha: fecha,
           hora: String(row['Hora'] || ''),
           tipo: tipo,
@@ -1037,14 +1376,23 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
           ganancia: tipo === 'Venta' ? gananciaImp : '',
           monto: monto,
           metodoPago: String(row['Método de pago'] || row['Metodo de pago'] || 'Efectivo'),
-          nota: String(row['Nota'] || ''),
-          timestamp: Date.now() + i
+          nota: String(row['Nota'] || '')
         });
         importadas++;
       });
 
-      entries = entries.concat(nuevos);
-      await saveEntries();
+      if(nuevosFields.length){
+        const rowsToInsert = nuevosFields.map(f => mapFieldsToRow(f));
+        const { data: insertedRows, error: insertErr } = await sb.from('movements').insert(rowsToInsert).select();
+        if(insertErr){
+          console.error(insertErr);
+          importMsg.style.color = 'var(--gasto)';
+          importMsg.textContent = 'Se leyó el archivo, pero hubo un error al guardar los movimientos en la base de datos.';
+          document.getElementById('importFile').value = '';
+          return;
+        }
+        entries = entries.concat((insertedRows || []).map(mapRowToEntry));
+      }
       render();
 
       importMsg.style.color = importadas > 0 ? 'var(--venta)' : 'var(--gasto)';
