@@ -36,7 +36,7 @@
     color:var(--ink);
     font-family:'Inter',sans-serif;
     min-height:100vh;
-    padding:32px 16px 64px;
+    padding:32px 16px 96px;
     animation:pageIn .4s ease;
   }
   .wrap{max-width:1040px;margin:0 auto;}
@@ -135,6 +135,31 @@
   /* resumen */
   .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:24px 0;}
   @media(max-width:640px){.summary{grid-template-columns:1fr 1fr;}}
+
+  .payment-block{
+    background:var(--card);border-radius:12px;padding:14px 16px;margin:-8px 0 20px;
+    border:1px solid rgba(0,0,0,0.03);
+  }
+  .payment-block-label{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px;font-weight:600;}
+  .payment-row{display:flex;flex-wrap:wrap;gap:18px;}
+  .payment-item{min-width:100px;}
+  .payment-item-label{font-size:11.5px;color:var(--ink-soft);margin-bottom:2px;}
+  .payment-item-value{font-family:'IBM Plex Mono';font-size:16px;font-weight:500;}
+
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;z-index:40;
+    background:var(--card);border-top:1px solid var(--line);
+    display:flex;justify-content:space-around;align-items:center;
+    padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 -6px 24px rgba(0,0,0,0.18);
+  }
+  .bottom-nav-btn{
+    background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+    color:var(--ink-soft);font-size:11px;font-family:'Inter',sans-serif;font-weight:500;
+    cursor:pointer;padding:5px 20px;border-radius:10px;transition:color .15s ease,background .15s ease;
+  }
+  .bottom-nav-btn svg{width:22px;height:22px;}
+  .bottom-nav-btn.active{color:var(--accent);background:var(--paper);}
   .metric{background:var(--card);border-radius:12px;padding:14px 16px;border:1px solid rgba(0,0,0,0.03);}
   .metric-label{font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
   .metric-value{font-family:'IBM Plex Mono';font-size:19px;font-weight:500;}
@@ -283,7 +308,7 @@
 
   /* mobile: paddings, tamaños de toque y layout más cómodos */
   @media (max-width:600px){
-    body{padding:20px 12px 48px;}
+    body{padding:20px 12px 90px;}
     .card{padding:18px 16px;}
     .app-header{align-items:flex-start;}
     .app-logo-word{font-size:16px;}
@@ -418,6 +443,7 @@
     </div>
   </div>
 
+  <div id="viewCargar">
   <div class="grid">
     <div class="card" id="entryCard">
       <div class="title-row">
@@ -493,7 +519,9 @@
       <div class="ticket-list" id="ticketList"></div>
     </div>
   </div>
+  </div>
 
+  <div id="viewInicio" style="display:none;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
     <div class="title-row" style="margin-bottom:0;">
       <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></span>
@@ -505,6 +533,7 @@
     </div>
   </div>
   <div class="summary" id="summary"></div>
+  <div id="paymentBreakdown"></div>
   <div class="balance-bar" id="balanceBar"><div class="seg-venta" id="segVenta" style="width:50%;"></div><div class="seg-gasto" id="segGasto" style="width:50%;"></div></div>
 
   <div class="card" style="margin-top:16px;">
@@ -514,7 +543,9 @@
     </div>
     <div id="topProductsList"></div>
   </div>
+  </div>
 
+  <div id="viewHistorial" style="display:none;">
   <div class="hist-card">
     <div class="hist-toolbar">
       <div class="title-row" style="flex:1;min-width:180px;margin-bottom:0;">
@@ -544,9 +575,25 @@
       </table>
     </div>
   </div>
+  </div>
 
   <div class="save-note">Los datos se guardan automáticamente en esta app.</div>
 </div>
+
+<nav class="bottom-nav" id="bottomNav" style="display:none;">
+  <button type="button" class="bottom-nav-btn" id="navBtnCargar" onclick="switchView('cargar')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>Cargar</span>
+  </button>
+  <button type="button" class="bottom-nav-btn" id="navBtnInicio" onclick="switchView('inicio')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+    <span>Inicio</span>
+  </button>
+  <button type="button" class="bottom-nav-btn" id="navBtnHistorial" onclick="switchView('historial')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    <span>Historial</span>
+  </button>
+</nav>
 
 <div id="toast" class="toast"></div>
 
@@ -814,6 +861,16 @@ function traducirErrorAuth(msg){
   return msg;
 }
 
+function switchView(view){
+  document.getElementById('viewCargar').style.display = view==='cargar' ? 'block' : 'none';
+  document.getElementById('viewInicio').style.display = view==='inicio' ? 'block' : 'none';
+  document.getElementById('viewHistorial').style.display = view==='historial' ? 'block' : 'none';
+  document.getElementById('navBtnCargar').classList.toggle('active', view==='cargar');
+  document.getElementById('navBtnInicio').classList.toggle('active', view==='inicio');
+  document.getElementById('navBtnHistorial').classList.toggle('active', view==='historial');
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
 function revealApp(){
   const gate = document.getElementById('gate');
   const app = document.getElementById('app');
@@ -824,6 +881,8 @@ function revealApp(){
     app.style.display = 'block';
     app.classList.add('entering');
     setTimeout(()=> app.classList.remove('entering'), 350);
+    document.getElementById('bottomNav').style.display = 'flex';
+    switchView('cargar');
   }, 180);
 }
 
@@ -841,6 +900,7 @@ document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
     document.getElementById('gateEmail').value = '';
     app.style.display = 'none';
     app.classList.remove('leaving-app');
+    document.getElementById('bottomNav').style.display = 'none';
     gate.style.display = 'flex';
     gate.classList.add('entering');
     setTimeout(()=> gate.classList.remove('entering'), 350);
@@ -851,12 +911,19 @@ document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
 
 // Si ya había una sesión abierta en este navegador, entrar directo sin pedir nada
 (async function checkExistingSession(){
+  // Si el link trae un token de recuperación, dejar que el evento PASSWORD_RECOVERY
+  // se encargue de mostrar el formulario de contraseña nueva — no entrar directo.
+  if(window.location.href.includes('type=recovery')){
+    return;
+  }
   try{
     const { data } = await sb.auth.getSession();
     if(data && data.session){
       await loadData();
       document.getElementById('gate').style.display = 'none';
       document.getElementById('app').style.display = 'block';
+      document.getElementById('bottomNav').style.display = 'flex';
+      switchView('cargar');
     }
   }catch(e){}
 })();
@@ -1254,7 +1321,7 @@ function render(){
     <div class="metric"><div class="metric-label">Ventas ${scopeLabel}</div><div class="metric-value" style="color:var(--venta)">${fmtMoney(ventasS)}</div></div>
     <div class="metric"><div class="metric-label">Costo mercadería</div><div class="metric-value" style="color:var(--ink-soft)">${fmtMoney(costoMercS)}</div></div>
     <div class="metric"><div class="metric-label">Gastos ${scopeLabel}</div><div class="metric-value" style="color:var(--gasto)">${fmtMoney(gastosS)}</div></div>
-    <div class="metric" style="border:1.5px solid ${gananciaRealS >= 0 ? 'var(--venta)' : 'var(--gasto)'};"><div class="metric-label">Ganancia real ${scopeLabel}</div><div class="metric-value" style="color:${gananciaRealS >= 0 ? 'var(--venta)' : 'var(--gasto)'}">${fmtMoney(gananciaRealS)}</div></div>
+    <div class="metric" style="border:1.5px solid ${gananciaRealS >= 0 ? 'var(--venta)' : 'var(--gasto)'};background:${gananciaRealS >= 0 ? 'var(--venta-bg)' : 'var(--gasto-bg)'};"><div class="metric-label" style="font-weight:700;">Ganancia real ${scopeLabel}</div><div class="metric-value" style="color:${gananciaRealS >= 0 ? 'var(--venta)' : 'var(--gasto)'};font-size:22px;">${fmtMoney(gananciaRealS)}</div></div>
     <div class="metric"><div class="metric-label">Movimientos ${scopeLabel}</div><div class="metric-value">${summaryEntries.length}</div></div>
   `;
 
@@ -1262,6 +1329,32 @@ function render(){
   const ventaPctS = totalMovS > 0 ? (ventasS/totalMovS*100) : 50;
   document.getElementById('segVenta').style.width = ventaPctS + '%';
   document.getElementById('segGasto').style.width = (100-ventaPctS) + '%';
+
+  const metodosPresentes = ['Efectivo','Tarjeta','Transferencia','Otro'].filter(m =>
+    summaryEntries.some(e => e.metodoPago === m)
+  );
+  const paymentBlock = document.getElementById('paymentBreakdown');
+  if(metodosPresentes.length === 0){
+    paymentBlock.innerHTML = '';
+  }else{
+    const itemsHtml = metodosPresentes.map(m => {
+      const saldo = summaryEntries
+        .filter(e => e.metodoPago === m)
+        .reduce((s,e) => s + (e.tipo === 'Venta' ? e.monto : -e.monto), 0);
+      return `
+        <div class="payment-item">
+          <div class="payment-item-label">${m}</div>
+          <div class="payment-item-value" style="color:${saldo >= 0 ? 'var(--venta)' : 'var(--gasto)'}">${fmtMoney(saldo)}</div>
+        </div>
+      `;
+    }).join('');
+    paymentBlock.innerHTML = `
+      <div class="payment-block">
+        <div class="payment-block-label">Saldo por método de pago · ${scopeLabel}</div>
+        <div class="payment-row">${itemsHtml}</div>
+      </div>
+    `;
+  }
 
   const productMap = {};
   summaryEntries.filter(e => e.tipo === 'Venta').forEach(e => {
