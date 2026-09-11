@@ -381,7 +381,7 @@
       <div class="login-badge">T</div>
       <div>
         <div class="login-brand">Tikera</div>
-        <div class="login-sub">Registro de caja para kioscos y comercios</div>
+        <div class="login-sub" id="loginSub" style="display:none;">Registro de caja para kioscos y comercios</div>
       </div>
     </div>
 
@@ -449,7 +449,7 @@
     </div>
 
     <p class="login-note" id="gateNote">
-      Cada comercio tiene su propia cuenta — tus datos quedan guardados en el servidor, no en este navegador. Podés entrar desde cualquier dispositivo con el mismo email y contraseña.
+      Podés entrar desde cualquier dispositivo con el mismo email y contraseña.
     </p>
   </div>
 </div>
@@ -675,6 +675,7 @@ function setGateMode(mode){
   document.getElementById('gateTitle').textContent = mode==='login' ? 'Iniciá sesión' : 'Creá tu cuenta';
   document.getElementById('gateDesc').textContent = mode==='login' ? 'Entrá con tu cuenta para ver tus movimientos.' : 'Registrá tu comercio para empezar a usar Tikera.';
   document.getElementById('gateBtnText').textContent = mode==='login' ? 'Ingresar' : 'Crear cuenta';
+  document.getElementById('loginSub').style.display = mode==='login' ? 'none' : 'block';
   document.getElementById('gateError').textContent = '';
 }
 document.getElementById('btnModeLogin').addEventListener('click', ()=>setGateMode('login'));
