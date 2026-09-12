@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /icons/
+
+Sitemap: https://valll444.github.io/Tikera/sitemap.xml
