@@ -2,7 +2,7 @@
   "name": "Tikera — Registro de caja",
   "short_name": "Tikera",
   "description": "Registro de caja para kioscos y comercios",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
