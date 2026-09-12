@@ -45,10 +45,13 @@
     color:var(--ink);
     font-family:'Inter',sans-serif;
     min-height:100vh;
-    padding:32px 16px;
     animation:pageIn .4s ease;
     position:relative;
   }
+  /* La pantalla de login (#gate) maneja su propio alto y padding, así que el body
+     no necesita nada extra ahí. El padding de página solo hace falta una vez
+     logueado, para el contenido de la app (.wrap, tarjetas, etc.). */
+  body.app-active{padding:32px 16px;}
   /* El espacio de abajo para el menu de navegacion solo hace falta una vez logueado
      (antes de eso no existe el bottom-nav, y dejaba un hueco vacio en la pantalla de login). */
   body.app-active{padding-bottom:96px;}
@@ -367,7 +370,7 @@
 
   /* mobile: paddings, tamaños de toque y layout más cómodos */
   @media (max-width:600px){
-    body{padding:20px 12px;}
+    body.app-active{padding:20px 12px;}
     body.app-active{padding-bottom:90px;}
     .card{padding:18px 16px;}
     .app-header{align-items:flex-start;}
