@@ -48,7 +48,7 @@
     overflow-x:hidden;
   }
   .font-display{font-family:'Manrope',ui-sans-serif,system-ui,sans-serif;}
-  ::selection{background:var(--green-soft);color:var(--text);}
+  ::selection{background:var(--slate-soft);color:var(--text);}
 
   .container-w{max-width:1180px;margin:0 auto;padding-left:24px;padding-right:24px;}
   @media(min-width:768px){.container-w{padding-left:40px;padding-right:40px;}}
@@ -74,14 +74,16 @@
   .nav-link:hover{color:var(--text);}
 
   .btn-primary{
-    background:var(--green);
-    color:#0D1113;
+    background:var(--slate);
+    color:#fff;
     font-weight:700;
     transition:transform .18s ease, background-color .18s ease, box-shadow .18s ease;
-    box-shadow:0 0 0 rgba(76,175,128,0);
+    box-shadow:0 0 0 rgba(62,86,112,0);
   }
-  .btn-primary:hover{background:#5EC291;transform:translateY(-1px);box-shadow:0 8px 24px -8px rgba(76,175,128,0.55);}
+  .btn-primary:hover{background:#547096;transform:translateY(-1px);box-shadow:0 8px 24px -8px rgba(62,86,112,0.55);}
   .btn-primary:active{transform:translateY(0);}
+  /* El foco queda en verde a propósito: es el color de mayor contraste de la paleta,
+     y el foco es un indicador funcional de accesibilidad, no una afirmación de marca. */
   .btn-primary:focus-visible{outline:2px solid var(--green);outline-offset:3px;}
 
   .btn-ghost{
@@ -145,7 +147,7 @@
 
   /* Tabs */
   .demo-tab{color:var(--text-faint);font-size:14px;padding:9px 16px;border-radius:999px;transition:color .2s ease, background-color .2s ease;}
-  .demo-tab.active{color:#0D1113;background:var(--green);font-weight:600;}
+  .demo-tab.active{color:#fff;background:var(--slate);font-weight:600;}
   .demo-tab:not(.active):hover{color:var(--text);}
 
   .demo-pane{display:none;}
@@ -153,7 +155,7 @@
 
   /* Pricing */
   .price-card{background:var(--bg-card);border:1px solid var(--hairline);border-radius:18px;}
-  .price-card.featured{border-color:rgba(76,175,128,0.35);background:linear-gradient(180deg,rgba(76,175,128,0.06),var(--bg-card) 40%);}
+  .price-card.featured{border-color:rgba(62,86,112,0.45);background:linear-gradient(180deg,rgba(62,86,112,0.10),var(--bg-card) 40%);}
 
   .chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-dim);}
 
@@ -181,8 +183,8 @@
   <div class="container-w flex items-center justify-between h-16">
     <a href="#top" class="flex items-center gap-2.5 shrink-0">
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-        <rect x="1" y="1" width="24" height="24" rx="7" stroke="#4CAF80" stroke-width="1.4"/>
-        <path d="M8 13.5L11.3 17L18.2 9" stroke="#4CAF80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="1" y="1" width="24" height="24" rx="7" stroke="#3E5670" stroke-width="1.4"/>
+        <path d="M8 13.5L11.3 17L18.2 9" stroke="#3E5670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <span class="font-display font-extrabold text-[17px] tracking-tight">Tikera</span>
     </a>
@@ -222,7 +224,7 @@
   <div class="container-w grid lg:grid-cols-[1.05fr_1fr] gap-14 lg:gap-10 items-center">
     <div>
       <div class="reveal chip mb-6 border border-[var(--hairline-strong)] rounded-full px-3 py-1.5 w-fit">
-        <span class="w-1.5 h-1.5 rounded-full bg-[var(--green)]"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-[var(--slate)]"></span>
         Para kioscos, almacenes y pequeños comercios
       </div>
 
@@ -522,11 +524,11 @@
           <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Acceso completo</li>
           <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Actualizaciones incluidas</li>
         </ul>
-        <a href="#" class="btn-ghost rounded-lg px-5 py-3 text-[14px] block text-center">Probar Tikera gratis</a>
+        <a href="https://valll444.github.io/Tikera/" class="btn-ghost rounded-lg px-5 py-3 text-[14px] block text-center">Probar Tikera gratis</a>
       </div>
 
       <div class="reveal price-card featured p-7 relative">
-        <div class="absolute -top-3 right-6 bg-[var(--green)] text-[#0D1113] text-[11px] font-bold px-2.5 py-1 rounded-full">Más elegido</div>
+        <div class="absolute -top-3 right-6 bg-[var(--slate)] text-white text-[11px] font-bold px-2.5 py-1 rounded-full">Más elegido</div>
         <div class="text-[14px] text-[var(--text-dim)] mb-1">Anual</div>
         <div class="flex items-baseline gap-1.5 mb-6">
           <span class="font-display font-extrabold text-[38px]">$X</span>
@@ -539,7 +541,7 @@
           <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Acceso completo</li>
           <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Actualizaciones incluidas</li>
         </ul>
-        <a href="#" class="btn-primary rounded-lg px-5 py-3 text-[14px] block text-center">Probar Tikera gratis</a>
+        <a href="https://valll444.github.io/Tikera/" class="btn-primary rounded-lg px-5 py-3 text-[14px] block text-center">Probar Tikera gratis</a>
       </div>
     </div>
   </div>
@@ -568,8 +570,8 @@
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-10">
       <div class="flex items-center gap-2.5">
         <svg width="24" height="24" viewBox="0 0 26 26" fill="none">
-          <rect x="1" y="1" width="24" height="24" rx="7" stroke="#4CAF80" stroke-width="1.4"/>
-          <path d="M8 13.5L11.3 17L18.2 9" stroke="#4CAF80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="1" y="1" width="24" height="24" rx="7" stroke="#3E5670" stroke-width="1.4"/>
+          <path d="M8 13.5L11.3 17L18.2 9" stroke="#3E5670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="font-display font-extrabold text-[16px]">Tikera</span>
       </div>

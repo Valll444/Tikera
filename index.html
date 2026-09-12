@@ -28,6 +28,7 @@
     --line-strong:rgba(244,242,237,0.18);
     --accent:#3E5670;
     --accent-dark:#547096;
+    --accent-bg:rgba(62,86,112,0.16);
     --venta:#4CAF80;
     --venta-bg:rgba(76,175,128,0.14);
     --gasto:#B85B5D;
@@ -106,6 +107,7 @@
     cursor:pointer;color:var(--ink-soft);transition:all .12s;
   }
   .type-btn.active-venta{background:var(--venta-bg);border-color:var(--venta);color:var(--venta);}
+  .type-btn.active-accent{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
   .type-btn.active-gasto{background:var(--gasto-bg);border-color:var(--gasto);color:var(--gasto);}
   label{display:block;font-size:12.5px;color:var(--ink-soft);margin:12px 0 5px;font-weight:500;}
   input[type=text],input[type=number],input[type=date],select,textarea{
@@ -419,7 +421,7 @@
     <p class="login-desc" id="gateDesc">Entrá con tu cuenta para ver tus movimientos.</p>
 
     <div class="type-toggle" id="gateModeToggle" style="margin-bottom:18px;">
-      <button type="button" class="type-btn active-venta" id="btnModeLogin">Iniciar sesión</button>
+      <button type="button" class="type-btn active-accent" id="btnModeLogin">Iniciar sesión</button>
       <button type="button" class="type-btn" id="btnModeSignup">Crear cuenta</button>
     </div>
 
@@ -704,8 +706,8 @@ let gateMode = 'login'; // 'login' | 'signup'
 
 function setGateMode(mode){
   gateMode = mode;
-  document.getElementById('btnModeLogin').className = 'type-btn' + (mode==='login' ? ' active-venta' : '');
-  document.getElementById('btnModeSignup').className = 'type-btn' + (mode==='signup' ? ' active-venta' : '');
+  document.getElementById('btnModeLogin').className = 'type-btn' + (mode==='login' ? ' active-accent' : '');
+  document.getElementById('btnModeSignup').className = 'type-btn' + (mode==='signup' ? ' active-accent' : '');
   document.getElementById('signupNameField').style.display = mode==='signup' ? 'block' : 'none';
   document.getElementById('gateTitle').textContent = mode==='login' ? 'Iniciá sesión' : 'Creá tu cuenta';
   document.getElementById('gateDesc').textContent = mode==='login' ? 'Entrá con tu cuenta para ver tus movimientos.' : 'Registrá tu comercio para empezar a usar Tikera.';
@@ -1748,8 +1750,8 @@ document.getElementById('histSearch').addEventListener('input', renderHistory);
 
 function setSummaryScope(s){
   summaryScope = s;
-  document.getElementById('btnScopeHoy').className = 'type-btn' + (s==='hoy' ? ' active-venta' : '');
-  document.getElementById('btnScopeMes').className = 'type-btn' + (s==='mes' ? ' active-venta' : '');
+  document.getElementById('btnScopeHoy').className = 'type-btn' + (s==='hoy' ? ' active-accent' : '');
+  document.getElementById('btnScopeMes').className = 'type-btn' + (s==='mes' ? ' active-accent' : '');
   renderSummary();
 }
 document.getElementById('btnScopeHoy').addEventListener('click', ()=>setSummaryScope('hoy'));
