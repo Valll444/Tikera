@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tikera — Registro de caja</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233E5670'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-weight='700' font-size='32' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#3E5670">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tikera">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -173,7 +179,7 @@
   .bottom-nav-btn.active{color:var(--accent);background:var(--paper);}
 
   @media (min-width:900px){
-    body{padding-left:220px;}
+    body.app-active{padding-left:220px;}
     .bottom-nav{
       top:0;bottom:0;left:0;right:auto;width:200px;
       flex-direction:column;justify-content:flex-start;align-items:stretch;
@@ -936,6 +942,7 @@ function revealApp(){
     gate.classList.remove('leaving');
     app.style.display = 'block';
     app.classList.add('entering');
+    document.body.classList.add('app-active');
     setTimeout(()=> app.classList.remove('entering'), 350);
     document.getElementById('bottomNav').style.display = 'flex';
     switchView('cargar');
@@ -956,6 +963,7 @@ document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
     document.getElementById('gateEmail').value = '';
     app.style.display = 'none';
     app.classList.remove('leaving-app');
+    document.body.classList.remove('app-active');
     document.getElementById('bottomNav').style.display = 'none';
     gate.style.display = 'flex';
     gate.classList.add('entering');
@@ -978,6 +986,7 @@ document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
       await loadData();
       document.getElementById('gate').style.display = 'none';
       document.getElementById('app').style.display = 'block';
+      document.body.classList.add('app-active');
       document.getElementById('bottomNav').style.display = 'flex';
       switchView('cargar');
     }
@@ -1734,6 +1743,12 @@ document.getElementById('btnScopeMes').addEventListener('click', ()=>setSummaryS
 setSummaryScope('hoy');
 
 document.getElementById('gateCode').focus();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch((e)=> console.error('SW no se pudo registrar', e));
+  });
+}
 </script>
 </body>
 </html>
