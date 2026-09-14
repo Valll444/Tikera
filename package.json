@@ -1,0 +1,26 @@
+{
+  "name": "tikera",
+  "version": "1.0.0",
+  "description": "Sitio y app de Tikera (registro de caja para kioscos y comercios)",
+  "main": "sw.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./build/input.css -o ./tailwind.css --minify",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Valll444/Tikera.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Valll444/Tikera/issues"
+  },
+  "homepage": "https://github.com/Valll444/Tikera#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}
