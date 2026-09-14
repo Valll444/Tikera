@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="view-transition" content="same-origin">
 <title>Tikera — Sabé cuánto ganás realmente con tu negocio</title>
 <meta name="description" content="La gestión de caja y rentabilidad para kioscos, almacenes y pequeños comercios. Conocé cuánto vendés, cuánto gastás y cuánto te queda realmente.">
 <link rel="canonical" href="https://valll444.github.io/Tikera/">
@@ -122,6 +123,24 @@
 
   .mono-figure{font-variant-numeric:tabular-nums;}
 
+  /* Replica visual (no funcional) del login real, usada como imagen de producto en el Hero */
+  .login-replica{position:relative;border-radius:14px;overflow:hidden;background:#0D1113;padding:36px 16px;}
+  .login-replica-glow-a,.login-replica-glow-b{position:absolute;border-radius:50%;filter:blur(50px);z-index:0;pointer-events:none;}
+  .login-replica-glow-a{top:-15%;left:-15%;width:60%;height:60%;background:radial-gradient(circle, rgba(76,175,128,0.28), transparent 70%);}
+  .login-replica-glow-b{bottom:-20%;right:-15%;width:60%;height:60%;background:radial-gradient(circle, rgba(62,86,112,0.42), transparent 70%);}
+  .login-replica-card{position:relative;z-index:1;max-width:280px;margin:0 auto;background:var(--bg-card);border:1px solid rgba(244,242,237,0.06);border-radius:20px;padding:26px 22px;box-shadow:0 20px 50px rgba(0,0,0,0.35);}
+  .login-replica-logo{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:16px;}
+  .login-replica-badge{width:28px;height:28px;border-radius:7px;background:var(--slate);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Manrope';font-weight:800;font-size:13px;flex-shrink:0;}
+  .login-replica-title{font-family:'Manrope';font-weight:800;font-size:18px;text-align:center;color:var(--text);margin:0 0 4px;}
+  .login-replica-desc{text-align:center;font-size:12px;color:var(--text-dim);margin:0 0 16px;}
+  .login-replica-toggle{display:flex;gap:6px;margin-bottom:14px;}
+  .login-replica-toggle-btn{flex:1;text-align:center;padding:8px 0;border-radius:10px;border:1.5px solid var(--hairline);font-size:11.5px;font-weight:600;color:var(--text-faint);}
+  .login-replica-toggle-btn.active{background:rgba(62,86,112,0.16);border-color:var(--slate);color:var(--slate);}
+  .login-replica-label{font-size:11px;color:var(--text-dim);margin:10px 0 5px;font-weight:500;}
+  .login-replica-input{padding:10px 12px;border-radius:11px;border:1.5px solid rgba(244,242,237,0.08);background:rgba(244,242,237,0.04);color:var(--text-faint);font-size:12.5px;}
+  .login-replica-forgot{text-align:right;font-size:11px;color:var(--text-dim);text-decoration:underline;margin-top:8px;}
+  .login-replica-btn{margin-top:12px;padding:11px 0;border-radius:999px;background:var(--slate);color:#fff;text-align:center;font-family:'Manrope';font-weight:700;font-size:13px;}
+
   /* Bento */
   .bento-card{
     background:var(--bg-card);
@@ -157,7 +176,7 @@
   .price-card{background:var(--bg-card);border:1px solid var(--hairline);border-radius:18px;}
   .price-card.featured{border-color:rgba(62,86,112,0.45);background:linear-gradient(180deg,rgba(62,86,112,0.10),var(--bg-card) 40%);}
 
-  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-dim);}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);}
 
   .divider-fade{height:1px;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);}
 
@@ -192,12 +211,12 @@
     <nav class="hidden md:flex items-center gap-8">
       <a href="#funcionalidades" class="nav-link">Funcionalidades</a>
       <a href="#calculadora" class="nav-link">Calculadora</a>
-      <a href="#precios" class="nav-link">Precios</a>
+      <a href="precios.html" class="nav-link">Precios</a>
     </nav>
 
     <div class="hidden md:flex items-center gap-3">
       <a href="app.html" class="nav-link px-2">Iniciar sesión</a>
-      <a href="#precios" class="btn-primary text-[14px] px-4 py-2.5 rounded-lg">Probar Tikera gratis</a>
+      <a href="precios.html" class="btn-primary text-[14px] px-4 py-2.5 rounded-lg">Probar Tikera gratis</a>
     </div>
 
     <button id="menu-btn" class="md:hidden p-2 -mr-2" aria-label="Abrir menú" aria-expanded="false">
@@ -209,10 +228,10 @@
     <nav class="flex flex-col gap-4">
       <a href="#funcionalidades" class="nav-link text-base">Funcionalidades</a>
       <a href="#calculadora" class="nav-link text-base">Calculadora</a>
-      <a href="#precios" class="nav-link text-base">Precios</a>
+      <a href="precios.html" class="nav-link text-base">Precios</a>
       <div class="divider-fade my-1"></div>
       <a href="app.html" class="nav-link text-base">Iniciar sesión</a>
-      <a href="#precios" class="btn-primary text-center text-[14px] px-4 py-3 rounded-lg mt-1">Probar Tikera gratis</a>
+      <a href="precios.html" class="btn-primary text-center text-[14px] px-4 py-3 rounded-lg mt-1">Probar Tikera gratis</a>
     </nav>
   </div>
 </header>
@@ -223,8 +242,8 @@
 <section class="pt-16 md:pt-24 pb-16 md:pb-28 relative">
   <div class="container-w grid lg:grid-cols-[1.05fr_1fr] gap-14 lg:gap-10 items-center">
     <div>
-      <div class="reveal chip mb-6 border border-[var(--hairline-strong)] rounded-full px-3 py-1.5 w-fit">
-        <span class="w-1.5 h-1.5 rounded-full bg-[var(--slate)]"></span>
+      <div class="reveal chip mb-6 border border-[var(--slate)] rounded-full px-4 py-2 w-fit" style="background:rgba(62,86,112,0.14);">
+        <span class="w-2 h-2 rounded-full bg-[var(--slate)]"></span>
         Para kioscos, almacenes y pequeños comercios
       </div>
 
@@ -238,14 +257,15 @@
       </p>
 
       <div class="reveal mt-8 flex flex-wrap items-center gap-3">
-        <a href="#precios" class="btn-primary rounded-lg px-6 py-3.5 text-[15px]">Probar Tikera gratis</a>
+        <a href="precios.html" class="btn-primary rounded-lg px-6 py-3.5 text-[15px]">Probar Tikera gratis</a>
         <a href="#demo" class="btn-ghost rounded-lg px-6 py-3.5 text-[15px]">Ver cómo funciona</a>
       </div>
 
       <p class="reveal mt-5 text-[13px] text-[var(--text-faint)]">Configuración en 5 minutos · Sin costos ocultos</p>
     </div>
 
-    <!-- Producto real, embebido en vivo (no es un mockup con datos inventados) -->
+    <!-- Replica visual estatica del login real (no interactiva a proposito:
+         un iframe en vivo permitiria crear una cuenta real gratis desde la landing). -->
     <div class="reveal mockup-shell p-3 sm:p-4 relative">
       <div class="flex items-center gap-2 mb-3 px-1">
         <span class="w-2.5 h-2.5 rounded-full bg-[#4B5559]"></span>
@@ -253,10 +273,29 @@
         <span class="w-2.5 h-2.5 rounded-full bg-[#4B5559]"></span>
         <span class="ml-2 text-[11px] text-[var(--text-faint)] bg-[rgba(245,243,239,0.04)] rounded-full px-3 py-1 truncate">valll444.github.io/Tikera</span>
       </div>
-      <div class="rounded-xl overflow-hidden border border-[var(--hairline)]" style="aspect-ratio:9/11;">
-        <iframe src="app.html" title="Tikera en vivo" loading="lazy" style="width:100%;height:100%;border:0;background:#0D1113;"></iframe>
+      <div class="login-replica" aria-hidden="true">
+        <div class="login-replica-glow-a"></div>
+        <div class="login-replica-glow-b"></div>
+        <div class="login-replica-card">
+          <div class="login-replica-logo">
+            <div class="login-replica-badge">T</div>
+            <span class="font-display font-extrabold text-[16px]">Tikera</span>
+          </div>
+          <h3 class="login-replica-title">Iniciá sesión</h3>
+          <p class="login-replica-desc">Entrá con tu cuenta para ver tus movimientos.</p>
+          <div class="login-replica-toggle">
+            <div class="login-replica-toggle-btn active">Iniciar sesión</div>
+            <div class="login-replica-toggle-btn">Crear cuenta</div>
+          </div>
+          <div class="login-replica-label">Email</div>
+          <div class="login-replica-input">tu@email.com</div>
+          <div class="login-replica-label">Contraseña</div>
+          <div class="login-replica-input">Tu contraseña</div>
+          <div class="login-replica-forgot">¿Olvidaste tu contraseña?</div>
+          <div class="login-replica-btn">Ingresar</div>
+        </div>
       </div>
-      <p class="text-[11.5px] text-[var(--text-faint)] mt-3 px-1">Esto es la app real, funcionando ahora mismo — no una simulación.</p>
+      <p class="text-[11.5px] text-[var(--text-faint)] mt-3 px-1">Así se ve Tikera de verdad — sin datos inventados.</p>
     </div>
   </div>
 </section>
@@ -402,7 +441,7 @@
           Estimación orientativa. El resultado real depende de los márgenes, gastos y características de cada comercio.
         </p>
 
-        <a href="#precios" class="btn-primary rounded-lg px-5 py-3 text-[14px] mt-6 inline-block">Quiero controlar mi negocio</a>
+        <a href="precios.html" class="btn-primary rounded-lg px-5 py-3 text-[14px] mt-6 inline-block">Quiero controlar mi negocio</a>
       </div>
     </div>
   </div>
@@ -504,49 +543,6 @@
   </div>
 </section>
 
-<!-- PRECIOS -->
-<section id="precios" class="py-16 md:py-24 border-t border-[var(--hairline)]">
-  <div class="container-w">
-    <h2 class="reveal font-display font-extrabold text-[30px] sm:text-[36px] leading-tight mb-2">Simple. Transparente. Sin sorpresas.</h2>
-    <p class="reveal text-[15px] text-[var(--text-dim)] mb-12">Elegí el plan que se ajuste a tu negocio.</p>
-
-    <div class="grid md:grid-cols-2 gap-5 max-w-[720px]">
-      <div class="reveal price-card p-7">
-        <div class="text-[14px] text-[var(--text-dim)] mb-1">Mensual</div>
-        <div class="flex items-baseline gap-1.5 mb-6">
-          <span class="font-display font-extrabold text-[38px]">$X</span>
-          <span class="text-[14px] text-[var(--text-faint)]">/ mes</span>
-        </div>
-        <ul class="space-y-3 mb-7">
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Sin costos ocultos</li>
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Soporte prioritario por WhatsApp</li>
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Configuración rápida</li>
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Acceso completo</li>
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Actualizaciones incluidas</li>
-        </ul>
-        <a href="app.html" class="btn-ghost rounded-lg px-5 py-3 text-[14px] block text-center">Probar Tikera gratis</a>
-      </div>
-
-      <div class="reveal price-card featured p-7 relative">
-        <div class="absolute -top-3 right-6 bg-[var(--slate)] text-white text-[11px] font-bold px-2.5 py-1 rounded-full">Más elegido</div>
-        <div class="text-[14px] text-[var(--text-dim)] mb-1">Anual</div>
-        <div class="flex items-baseline gap-1.5 mb-6">
-          <span class="font-display font-extrabold text-[38px]">$X</span>
-          <span class="text-[14px] text-[var(--text-faint)]">/ año</span>
-        </div>
-        <ul class="space-y-3 mb-7">
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Sin costos ocultos</li>
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Soporte prioritario por WhatsApp</li>
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Configuración rápida</li>
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Acceso completo</li>
-          <li class="flex gap-2.5 text-[14px] text-[var(--text-dim)]"><span class="text-[var(--green)]">✓</span>Actualizaciones incluidas</li>
-        </ul>
-        <a href="app.html" class="btn-primary rounded-lg px-5 py-3 text-[14px] block text-center">Probar Tikera gratis</a>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- CTA FINAL -->
 <section class="py-20 md:py-28 border-t border-[var(--hairline)]">
   <div class="container-w text-center">
@@ -557,7 +553,7 @@
     <p class="reveal text-[15px] text-[var(--text-dim)] max-w-[440px] mx-auto mt-5">
       Tikera te ayuda a entender tu negocio en números simples, para que tomes decisiones con información real.
     </p>
-    <a href="#precios" class="reveal btn-primary rounded-lg px-8 py-4 text-[15px] inline-block mt-8">Probar Tikera gratis</a>
+    <a href="precios.html" class="reveal btn-primary rounded-lg px-8 py-4 text-[15px] inline-block mt-8">Probar Tikera gratis</a>
     <p class="reveal text-[13px] text-[var(--text-faint)] mt-4">14 días gratis · Sin costos ocultos</p>
   </div>
 </section>
@@ -581,7 +577,7 @@
           <div class="text-[var(--text-faint)] mb-3 text-[12.5px]">Producto</div>
           <div class="flex flex-col gap-2.5">
             <a href="#funcionalidades" class="nav-link">Funcionalidades</a>
-            <a href="#precios" class="nav-link">Precios</a>
+            <a href="precios.html" class="nav-link">Precios</a>
           </div>
         </div>
         <div>
@@ -615,7 +611,7 @@
 
 <!-- Sticky mobile CTA -->
 <div id="sticky-cta" class="sticky-cta md:hidden">
-  <a href="#precios" class="btn-primary rounded-xl px-5 py-3.5 text-[14.5px] w-full flex items-center justify-center shadow-lg">Probar Tikera gratis</a>
+  <a href="precios.html" class="btn-primary rounded-xl px-5 py-3.5 text-[14.5px] w-full flex items-center justify-center shadow-lg">Probar Tikera gratis</a>
 </div>
 
 <script>

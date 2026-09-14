@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="view-transition" content="same-origin">
+<title>Precios — Tikera</title>
+<meta name="description" content="Probá Tikera gratis durante 14 días. Estamos terminando de definir los planes pagos.">
+<link rel="canonical" href="https://valll444.github.io/Tikera/precios.html">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#0D1113;
+    --bg-elevated:#151A1D;
+    --bg-card:#12171A;
+    --hairline:rgba(245,243,239,0.09);
+    --hairline-strong:rgba(245,243,239,0.16);
+    --text:#F4F2ED;
+    --text-dim:#9BA3A6;
+    --text-faint:#6B7376;
+    --slate:#3E5670;
+    --slate-soft:rgba(62,86,112,0.16);
+    --green:#4CAF80;
+    --green-soft:rgba(76,175,128,0.14);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
+    overflow-x:hidden;
+    animation:pageIn .4s ease;
+  }
+  @keyframes pageIn{from{opacity:0;}to{opacity:1;}}
+  @media(prefers-reduced-motion:reduce){body{animation:none;}}
+  .font-display{font-family:'Manrope',ui-sans-serif,system-ui,sans-serif;}
+  ::selection{background:var(--slate-soft);color:var(--text);}
+
+  .container-w{max-width:1180px;margin:0 auto;padding-left:24px;padding-right:24px;}
+  @media(min-width:768px){.container-w{padding-left:40px;padding-right:40px;}}
+
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:0.035;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  #site-header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(13,17,19,0.55);
+    backdrop-filter:blur(14px) saturate(140%);
+    -webkit-backdrop-filter:blur(14px) saturate(140%);
+    border-bottom:1px solid var(--hairline);
+  }
+  .nav-link{color:var(--text-dim);font-size:14.5px;transition:color .2s ease;}
+  .nav-link:hover{color:var(--text);}
+  .nav-link.current{color:var(--text);}
+
+  .btn-primary{
+    background:var(--slate);
+    color:#fff;
+    font-weight:700;
+    transition:transform .18s ease, background-color .18s ease, box-shadow .18s ease;
+  }
+  .btn-primary:hover{background:#547096;transform:translateY(-1px);box-shadow:0 8px 24px -8px rgba(62,86,112,0.55);}
+  .btn-primary:active{transform:translateY(0);}
+  .btn-primary:focus-visible{outline:2px solid var(--green);outline-offset:3px;}
+
+  .btn-ghost{
+    color:var(--text);
+    border:1px solid var(--hairline-strong);
+    transition:border-color .2s ease, background-color .2s ease;
+  }
+  .btn-ghost:hover{border-color:var(--text-dim);background:rgba(245,243,239,0.03);}
+
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);}
+  .divider-fade{height:1px;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);}
+
+  .trial-card{
+    background:linear-gradient(180deg,rgba(76,175,128,0.08),var(--bg-card) 55%);
+    border:1px solid rgba(76,175,128,0.25);
+    border-radius:24px;
+  }
+  .feature-row{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;color:var(--text-dim);}
+  .feature-check{color:var(--green);flex-shrink:0;margin-top:1px;}
+
+  #mobile-menu{transform:translateY(-8px);opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease;}
+  #mobile-menu.open{transform:translateY(0);opacity:1;pointer-events:auto;}
+
+  a:focus-visible, button:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:6px;}
+</style>
+</head>
+<body class="antialiased">
+<div class="grain"></div>
+
+<!-- HEADER -->
+<header id="site-header">
+  <div class="container-w flex items-center justify-between h-16">
+    <a href="index.html" class="flex items-center gap-2.5 shrink-0">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <rect x="1" y="1" width="24" height="24" rx="7" stroke="#3E5670" stroke-width="1.4"/>
+        <path d="M8 13.5L11.3 17L18.2 9" stroke="#3E5670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="font-display font-extrabold text-[17px] tracking-tight">Tikera</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-8">
+      <a href="index.html#funcionalidades" class="nav-link">Funcionalidades</a>
+      <a href="index.html#calculadora" class="nav-link">Calculadora</a>
+      <a href="precios.html" class="nav-link current">Precios</a>
+    </nav>
+
+    <div class="hidden md:flex items-center gap-3">
+      <a href="app.html" class="nav-link px-2">Iniciar sesión</a>
+      <a href="app.html" class="btn-primary text-[14px] px-4 py-2.5 rounded-lg">Probar Tikera gratis</a>
+    </div>
+
+    <button id="menu-btn" class="md:hidden p-2 -mr-2" aria-label="Abrir menú" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 6H19M3 11H19M3 16H19" stroke="#F4F2ED" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div id="mobile-menu" class="md:hidden absolute left-0 right-0 top-16 bg-[#0D1113] border-b border-[var(--hairline)] px-6 py-5">
+    <nav class="flex flex-col gap-4">
+      <a href="index.html#funcionalidades" class="nav-link text-base">Funcionalidades</a>
+      <a href="index.html#calculadora" class="nav-link text-base">Calculadora</a>
+      <a href="precios.html" class="nav-link text-base current">Precios</a>
+      <div class="divider-fade my-1"></div>
+      <a href="app.html" class="nav-link text-base">Iniciar sesión</a>
+      <a href="app.html" class="btn-primary text-center text-[14px] px-4 py-3 rounded-lg mt-1">Probar Tikera gratis</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="py-16 md:py-24">
+  <div class="container-w">
+    <div class="text-center max-w-[620px] mx-auto mb-14">
+      <div class="chip mb-6 border border-[var(--slate)] rounded-full px-4 py-2 w-fit mx-auto" style="background:rgba(62,86,112,0.14);">
+        <span class="w-2 h-2 rounded-full bg-[var(--slate)]"></span>
+        Precios
+      </div>
+      <h1 class="font-display font-extrabold text-[34px] sm:text-[44px] leading-[1.1] tracking-tight mb-4">
+        Todavía estamos afinando los planes.
+      </h1>
+      <p class="text-[16px] text-[var(--text-dim)] leading-relaxed">
+        Por eso, mientras tanto, te dejamos usar Tikera completo y gratis durante 14 días. Ni bien tengamos los planes definitivos, te vamos a avisar directamente dentro de la app — sin sorpresas de último momento.
+      </p>
+    </div>
+
+    <div class="trial-card p-8 sm:p-12 max-w-[640px] mx-auto text-center">
+      <div class="text-[13px] font-semibold text-[var(--green)] mb-2 uppercase tracking-wide">Prueba gratuita</div>
+      <div class="font-display font-extrabold text-[52px] leading-none mb-2">14 días</div>
+      <p class="text-[14.5px] text-[var(--text-dim)] mb-8">Acceso completo a la app. No pedimos tarjeta para empezar.</p>
+
+      <div class="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-left mb-9 max-w-[440px] mx-auto">
+        <div class="feature-row"><span class="feature-check">✓</span>Control de caja diario</div>
+        <div class="feature-row"><span class="feature-check">✓</span>Ganancia real, no solo facturación</div>
+        <div class="feature-row"><span class="feature-check">✓</span>Reportes y exportación</div>
+        <div class="feature-row"><span class="feature-check">✓</span>Uso desde celular y computadora</div>
+      </div>
+
+      <a href="app.html" class="btn-primary rounded-lg px-8 py-3.5 text-[15px] inline-block">Empezar prueba gratis</a>
+    </div>
+
+    <p class="text-center text-[13px] text-[var(--text-faint)] mt-8 max-w-[480px] mx-auto">
+      ¿Tenés dudas sobre cómo va a funcionar el precio más adelante? Escribinos — todavía lo estamos definiendo y nos sirve saber qué esperás vos.
+    </p>
+  </div>
+</section>
+</main>
+
+<!-- FOOTER -->
+<footer class="border-t border-[var(--hairline)] py-14">
+  <div class="container-w">
+    <div class="flex flex-col md:flex-row md:items-start justify-between gap-10">
+      <div class="flex items-center gap-2.5">
+        <svg width="24" height="24" viewBox="0 0 26 26" fill="none">
+          <rect x="1" y="1" width="24" height="24" rx="7" stroke="#3E5670" stroke-width="1.4"/>
+          <path d="M8 13.5L11.3 17L18.2 9" stroke="#3E5670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="font-display font-extrabold text-[16px]">Tikera</span>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-12 gap-y-8 text-[14px]">
+        <div>
+          <div class="text-[var(--text-faint)] mb-3 text-[12.5px]">Producto</div>
+          <div class="flex flex-col gap-2.5">
+            <a href="index.html#funcionalidades" class="nav-link">Funcionalidades</a>
+            <a href="precios.html" class="nav-link">Precios</a>
+          </div>
+        </div>
+        <div>
+          <div class="text-[var(--text-faint)] mb-3 text-[12.5px]">Ayuda</div>
+          <div class="flex flex-col gap-2.5">
+            <a href="#" class="nav-link">Contacto</a>
+            <a href="#" class="nav-link">Soporte</a>
+          </div>
+        </div>
+        <div>
+          <div class="text-[var(--text-faint)] mb-3 text-[12.5px]">Legal</div>
+          <div class="flex flex-col gap-2.5">
+            <a href="#" class="nav-link">Términos y condiciones</a>
+            <a href="privacidad.html" class="nav-link">Política de privacidad</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider-fade my-8"></div>
+
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p class="text-[13px] text-[var(--text-faint)]">© 2026 Tikera. Todos los derechos reservados.</p>
+      <div class="flex items-center gap-4">
+        <a href="#" class="nav-link" aria-label="Instagram">Instagram</a>
+        <a href="#" class="nav-link" aria-label="WhatsApp">WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const menuBtn = document.getElementById('menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  menuBtn.addEventListener('click', () => {
+    const open = mobileMenu.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', open);
+  });
+  mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    mobileMenu.classList.remove('open');
+    menuBtn.setAttribute('aria-expanded', 'false');
+  }));
+</script>
+
+</body>
+</html>
