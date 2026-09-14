@@ -99,9 +99,11 @@
   .btn-ghost:hover{border-color:var(--text-dim);background:rgba(245,243,239,0.03);}
   .btn-ghost:focus-visible{outline:2px solid var(--text-dim);outline-offset:3px;}
 
-  /* Reveal */
-  .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);}
-  .reveal.is-in{opacity:1;transform:translateY(0);}
+  /* Reveal: visible por defecto. Solo se oculta si JS confirma que el elemento
+     esta fuera de pantalla al cargar (evita que quede invisible si el CDN de
+     Tailwind o el observer tardan en correr). */
+  .reveal.will-animate{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);}
+  .reveal.will-animate.is-in{opacity:1;transform:translateY(0);}
   @media(prefers-reduced-motion:reduce){
     .reveal{opacity:1!important;transform:none!important;transition:none!important;}
     html{scroll-behavior:auto;}
@@ -707,7 +709,9 @@
     menuBtn.setAttribute('aria-expanded', 'false');
   }));
 
-  // Reveal on scroll
+  // Reveal on scroll: el contenido ya es visible por CSS por defecto.
+  // Solo se anima si el elemento arranca fuera de la pantalla; los que ya
+  // estan a la vista al cargar nunca se ocultan (evita pantallas en blanco).
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const revealEls = document.querySelectorAll('.reveal');
   if (!reduceMotion && 'IntersectionObserver' in window) {
@@ -719,9 +723,14 @@
         }
       });
     }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-    revealEls.forEach(el => io.observe(el));
-  } else {
-    revealEls.forEach(el => el.classList.add('is-in'));
+    revealEls.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const alreadyVisible = rect.top < window.innerHeight && rect.bottom > 0;
+      if (!alreadyVisible) {
+        el.classList.add('will-animate');
+        io.observe(el);
+      }
+    });
   }
 
   function formatARS(n){ return '$' + Math.round(n).toLocaleString('es-AR'); }
