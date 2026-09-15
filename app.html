@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="neural/neural.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -649,6 +650,64 @@
   <div class="save-note">Los datos se guardan automáticamente en esta app.</div>
 </div>
 
+<div id="viewNeural" style="display:none;">
+  <div class="neural-panel">
+    <div class="neural-header">
+      <div class="title-row" style="margin-bottom:0;">
+        <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><path d="M9.5 10.5 6 7.3M14.5 10.5 18 7.3M9.5 13.5 6 16.7M14.5 13.5 18 16.7"/></svg></span>
+        <h2 class="section-title">Tikera Neural Activity</h2>
+      </div>
+      <div class="neural-status" id="neuralStatus">
+        <span class="neural-status-dot" id="neuralStatusDot"></span>
+        <span id="neuralStatusLabel">ONLINE</span>
+      </div>
+    </div>
+
+    <div class="neural-controls">
+      <div class="neural-modes" role="group" aria-label="Modo de actividad">
+        <button type="button" class="neural-mode-btn active" data-mode="live" id="neuralModeLive">LIVE</button>
+        <button type="button" class="neural-mode-btn" data-mode="pause" id="neuralModePause">PAUSE</button>
+        <button type="button" class="neural-mode-btn" data-mode="demo" id="neuralModeDemo">DEMO</button>
+      </div>
+      <div class="neural-filters" id="neuralFilters" role="group" aria-label="Filtrar actividad">
+        <button type="button" class="neural-filter-chip active" data-filter="all">Todo</button>
+        <button type="button" class="neural-filter-chip" data-filter="sales">Ventas</button>
+        <button type="button" class="neural-filter-chip" data-filter="expenses">Gastos</button>
+        <button type="button" class="neural-filter-chip" data-filter="catalog">Catálogo</button>
+        <button type="button" class="neural-filter-chip" data-filter="analytics">Analytics</button>
+        <button type="button" class="neural-filter-chip" data-filter="ai">AI</button>
+        <button type="button" class="neural-filter-chip" data-filter="system">System</button>
+      </div>
+      <button type="button" class="neural-reset-btn" id="neuralResetView" aria-label="Reiniciar zoom y posición">⤾</button>
+    </div>
+
+    <div class="neural-body">
+      <div class="neural-graph-wrap" id="neuralGraphWrap">
+        <canvas id="neuralCanvas" role="img" aria-label="Red de actividad neuronal de Tikera"></canvas>
+        <div class="neural-tooltip" id="neuralTooltip" hidden></div>
+        <div class="neural-demo-badge" id="neuralDemoBadge" hidden>MODO DEMO — datos simulados</div>
+      </div>
+      <div class="neural-side" id="neuralSide">
+        <button type="button" class="neural-side-toggle" id="neuralSideToggle">Ver detalles</button>
+        <div class="neural-side-content" id="neuralSideContent">
+          <div class="neural-inspector">
+            <div class="neural-panel-label">Event Inspector</div>
+            <div id="neuralInspector" class="neural-inspector-body">
+              <div class="neural-empty">Tocá un nodo o un evento para ver el detalle.</div>
+            </div>
+          </div>
+          <div class="neural-feed">
+            <div class="neural-panel-label">Live Activity</div>
+            <div id="neuralFeed" class="neural-feed-body">
+              <div class="neural-empty">Todavía no hay actividad registrada.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <nav class="bottom-nav" id="bottomNav" style="display:none;">
   <button type="button" class="bottom-nav-btn" id="navBtnCargar" onclick="switchView('cargar')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -661,6 +720,10 @@
   <button type="button" class="bottom-nav-btn" id="navBtnHistorial" onclick="switchView('historial')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     <span>Historial</span>
+  </button>
+  <button type="button" class="bottom-nav-btn" id="navBtnNeural" onclick="switchView('neural')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><path d="M9.5 10.5 6 7.3M14.5 10.5 18 7.3M9.5 13.5 6 16.7M14.5 13.5 18 16.7"/></svg>
+    <span>Actividad</span>
   </button>
 </nav>
 
@@ -950,9 +1013,17 @@ function switchView(view){
   document.getElementById('viewCargar').style.display = view==='cargar' ? 'block' : 'none';
   document.getElementById('viewInicio').style.display = view==='inicio' ? 'block' : 'none';
   document.getElementById('viewHistorial').style.display = view==='historial' ? 'block' : 'none';
+  document.getElementById('viewNeural').style.display = view==='neural' ? 'block' : 'none';
   document.getElementById('navBtnCargar').classList.toggle('active', view==='cargar');
   document.getElementById('navBtnInicio').classList.toggle('active', view==='inicio');
   document.getElementById('navBtnHistorial').classList.toggle('active', view==='historial');
+  document.getElementById('navBtnNeural').classList.toggle('active', view==='neural');
+  // El grafico Canvas solo corre su loop de animacion mientras esta a la vista,
+  // para no gastar CPU/batería con la vista oculta.
+  if(window.tikeraNeural){
+    if(view==='neural') window.tikeraNeural.mount();
+    else window.tikeraNeural.unmount();
+  }
   window.scrollTo({top:0, behavior:'instant'});
 }
 
@@ -1079,6 +1150,7 @@ async function loadData(){
   }
   renderFreqChips();
   render();
+  window.TikeraBus?.emit('data:synced', { count: entries.length });
 }
 
 function currentFreqList(){
@@ -1110,12 +1182,14 @@ function useFrequent(id){
 }
 
 async function removeFrequent(id){
+  const existing = currentFreqList().find(x => String(x.id) === String(id));
   try{
     const { error } = await sb.from('frequent_items').delete().eq('id', id).eq('user_id', currentUserId);
     if(error) throw error;
   }catch(e){
     console.error(e);
     showToast('No se pudo eliminar');
+    window.TikeraBus?.emit('frequent:error', { action:'eliminar' });
     return;
   }
   if(currentTipo === 'Venta'){
@@ -1124,6 +1198,7 @@ async function removeFrequent(id){
     frequentExpenses = frequentExpenses.filter(x => x.id !== id);
   }
   renderFreqChips();
+  window.TikeraBus?.emit('frequent:removed', { nombre: existing?.nombre });
 }
 
 document.getElementById('addFreqBtn').addEventListener('click', addFrequent);
@@ -1142,34 +1217,52 @@ async function addFrequent(){
     currentFreqList().push({ id: data.id, nombre: data.nombre });
     renderFreqChips();
     input.value = '';
+    window.TikeraBus?.emit('frequent:added', { nombre: data.nombre });
   }catch(e){
     console.error(e);
     showToast('No se pudo agregar');
+    window.TikeraBus?.emit('frequent:error', { action:'agregar' });
   }
 }
 
 async function addMovement(fields){
   const row = mapFieldsToRow(fields);
   const { data, error } = await sb.from('movements').insert(row).select().single();
-  if(error){ console.error(error); showToast('No se pudo guardar el movimiento'); return null; }
+  if(error){
+    console.error(error); showToast('No se pudo guardar el movimiento');
+    window.TikeraBus?.emit('movement:error', { action:'crear', tipo: fields.tipo });
+    return null;
+  }
   const entry = mapRowToEntry(data);
   entries.push(entry);
+  window.TikeraBus?.emit('movement:created', { tipo: entry.tipo, descripcion: entry.descripcion, monto: entry.monto, id: entry.id });
   return entry;
 }
 
 async function updateMovement(id, fields){
   const row = mapFieldsToRow(fields);
   const { data, error } = await sb.from('movements').update(row).eq('id', id).eq('user_id', currentUserId).select().single();
-  if(error){ console.error(error); showToast('No se pudo actualizar'); return null; }
+  if(error){
+    console.error(error); showToast('No se pudo actualizar');
+    window.TikeraBus?.emit('movement:error', { action:'actualizar', tipo: fields.tipo });
+    return null;
+  }
   const idx = entries.findIndex(e => e.id === id);
   if(idx !== -1) entries[idx] = mapRowToEntry(data);
+  window.TikeraBus?.emit('movement:updated', { tipo: fields.tipo, descripcion: fields.descripcion, id: id });
   return data;
 }
 
 async function deleteMovement(id){
+  const existing = entries.find(e => e.id === id);
   const { error } = await sb.from('movements').delete().eq('id', id).eq('user_id', currentUserId);
-  if(error){ console.error(error); showToast('No se pudo eliminar'); return false; }
+  if(error){
+    console.error(error); showToast('No se pudo eliminar');
+    window.TikeraBus?.emit('movement:error', { action:'eliminar', tipo: existing?.tipo });
+    return false;
+  }
   entries = entries.filter(e => e.id !== id);
+  window.TikeraBus?.emit('movement:deleted', { tipo: existing?.tipo, descripcion: existing?.descripcion, id: id });
   return true;
 }
 
@@ -1490,6 +1583,8 @@ function renderSummary(){
       </div>
     `).join('');
   }
+
+  window.TikeraBus?.emit('analytics:calculated', { ventas: ventasS, gastos: gastosS, ganancia: gananciaRealS, scope: summaryScope });
 }
 
 function renderHistory(){
@@ -1773,5 +1868,10 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+
+<script src="neural/neural-bus.js"></script>
+<script src="neural/neural-engine.js"></script>
+<script src="neural/neural-graph.js"></script>
+<script src="neural/neural-ui.js"></script>
 </body>
 </html>
