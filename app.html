@@ -150,6 +150,16 @@
   .ti-left{min-width:0;}
   .ti-desc{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .ti-meta{font-size:11.5px;color:var(--ink-soft);font-family:'IBM Plex Mono';margin-top:2px;}
+  .pending-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.02em;
+    padding:1px 6px;border-radius:4px;margin-left:6px;
+    border:1px dashed var(--accent-dark);color:var(--accent-dark);
+    white-space:nowrap;
+  }
+  .pending-badge::before{content:'●';font-size:7px;animation:pending-pulse 1.4s ease-in-out infinite;}
+  @keyframes pending-pulse{0%,100%{opacity:.35;}50%{opacity:1;}}
+  @media (prefers-reduced-motion: reduce){ .pending-badge::before{animation:none;opacity:.8;} }
   .ti-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .ti-amount{font-family:'IBM Plex Mono';font-size:14px;font-weight:500;}
   .ti-amount.venta{color:var(--venta);}
@@ -1055,6 +1065,102 @@ function mapFieldsToRow(fields){
   };
 }
 
+// ============================================
+// Cola offline: si se corta internet a mitad de una venta, no se pierde.
+// Se guarda en localStorage y se sube sola apenas vuelve la conexión.
+// ============================================
+const PENDING_KEY = 'tikera_pending_movements';
+
+function loadPendingQueue(){
+  try{ return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function savePendingQueue(queue){
+  try{ localStorage.setItem(PENDING_KEY, JSON.stringify(queue)); }
+  catch(e){ console.error(e); }
+}
+function isPendingId(id){
+  return typeof id === 'string' && id.startsWith('local_');
+}
+function pendingFieldsToEntry(fields, localId){
+  return {
+    id: localId,
+    fecha: fields.fecha,
+    hora: fields.hora !== undefined ? fields.hora : new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
+    tipo: fields.tipo,
+    descripcion: fields.descripcion,
+    cantidad: fields.cantidad,
+    precioUnitario: fields.precioUnitario,
+    costoUnitario: fields.costoUnitario,
+    costoTotal: fields.costoTotal,
+    ganancia: fields.ganancia,
+    monto: fields.monto,
+    metodoPago: fields.metodoPago,
+    nota: fields.nota,
+    timestamp: Date.now(),
+    pending: true
+  };
+}
+// Un error de red (offline, DNS caído, request que nunca llega) se trata distinto
+// de un error real del servidor (validación, RLS): solo el primero se encola.
+function looksLikeNetworkError(error){
+  if(!navigator.onLine) return true;
+  const msg = (error && error.message ? error.message : String(error || '')).toLowerCase();
+  return msg.includes('failed to fetch') || msg.includes('network') ||
+    msg.includes('load failed') || msg.includes('err_internet') || msg.includes('err_connection');
+}
+function queueMovementOffline(fields, row){
+  const localId = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+  const queue = loadPendingQueue();
+  queue.push({ localId, fields, row });
+  savePendingQueue(queue);
+  const entry = pendingFieldsToEntry(fields, localId);
+  entries.push(entry);
+  return entry;
+}
+
+let syncingPending = false;
+async function syncPendingMovements(){
+  if(syncingPending) return;
+  const queue = loadPendingQueue();
+  if(queue.length === 0 || !navigator.onLine) return;
+  syncingPending = true;
+  let syncedCount = 0;
+  const remaining = [];
+  for(const item of queue){
+    try{
+      const { data, error } = await sb.from('movements').insert(item.row).select().single();
+      if(error){
+        remaining.push(item);
+        if(!looksLikeNetworkError(error)) console.error(error);
+        continue;
+      }
+      const idx = entries.findIndex(e => e.id === item.localId);
+      const synced = mapRowToEntry(data);
+      if(idx !== -1) entries[idx] = synced; else entries.push(synced);
+      syncedCount++;
+    }catch(err){
+      remaining.push(item);
+      if(!looksLikeNetworkError(err)) console.error(err);
+    }
+  }
+  savePendingQueue(remaining);
+  syncingPending = false;
+  if(syncedCount > 0){
+    showToast(syncedCount === 1 ? 'Se sincronizó 1 movimiento pendiente' : `Se sincronizaron ${syncedCount} movimientos pendientes`);
+    render();
+  }
+}
+function hydratePendingIntoEntries(){
+  const queue = loadPendingQueue();
+  queue.forEach(item => {
+    if(!entries.some(e => e.id === item.localId)){
+      entries.push(pendingFieldsToEntry(item.fields, item.localId));
+    }
+  });
+}
+window.addEventListener('online', syncPendingMovements);
+
 async function loadData(){
   try{
     const { data: userData } = await sb.auth.getUser();
@@ -1072,6 +1178,8 @@ async function loadData(){
     const { data: freqRows } = await sb.from('frequent_items').select('*').eq('user_id', user.id).order('created_at', {ascending:true});
     frequentProducts = (freqRows||[]).filter(r=>r.tipo==='Venta').map(r=>({id:r.id, nombre:r.nombre}));
     frequentExpenses = (freqRows||[]).filter(r=>r.tipo==='Gasto').map(r=>({id:r.id, nombre:r.nombre}));
+
+    hydratePendingIntoEntries();
   }catch(e){
     console.error(e);
     showToast('No se pudieron cargar tus datos');
@@ -1079,6 +1187,7 @@ async function loadData(){
   }
   renderFreqChips();
   render();
+  syncPendingMovements();
 }
 
 function currentFreqList(){
@@ -1150,27 +1259,71 @@ async function addFrequent(){
 
 async function addMovement(fields){
   const row = mapFieldsToRow(fields);
-  const { data, error } = await sb.from('movements').insert(row).select().single();
-  if(error){ console.error(error); showToast('No se pudo guardar el movimiento'); return null; }
-  const entry = mapRowToEntry(data);
-  entries.push(entry);
-  return entry;
+  if(!navigator.onLine) return queueMovementOffline(fields, row);
+  try{
+    const { data, error } = await sb.from('movements').insert(row).select().single();
+    if(error){
+      if(looksLikeNetworkError(error)) return queueMovementOffline(fields, row);
+      console.error(error); showToast('No se pudo guardar el movimiento'); return null;
+    }
+    const entry = mapRowToEntry(data);
+    entries.push(entry);
+    return entry;
+  }catch(err){
+    if(looksLikeNetworkError(err)) return queueMovementOffline(fields, row);
+    console.error(err); showToast('No se pudo guardar el movimiento'); return null;
+  }
 }
 
+// Editar/eliminar un movimiento que todavía no se sincronizó se resuelve
+// local (contra la cola), sin tocar Supabase — todavía no existe ahí.
 async function updateMovement(id, fields){
+  if(isPendingId(id)){
+    const queue = loadPendingQueue();
+    const item = queue.find(q => q.localId === id);
+    if(!item) return null;
+    item.fields = fields;
+    item.row = mapFieldsToRow(fields);
+    savePendingQueue(queue);
+    const idx = entries.findIndex(e => e.id === id);
+    const updated = pendingFieldsToEntry(fields, id);
+    if(idx !== -1) entries[idx] = updated;
+    return updated;
+  }
   const row = mapFieldsToRow(fields);
-  const { data, error } = await sb.from('movements').update(row).eq('id', id).eq('user_id', currentUserId).select().single();
-  if(error){ console.error(error); showToast('No se pudo actualizar'); return null; }
-  const idx = entries.findIndex(e => e.id === id);
-  if(idx !== -1) entries[idx] = mapRowToEntry(data);
-  return data;
+  try{
+    const { data, error } = await sb.from('movements').update(row).eq('id', id).eq('user_id', currentUserId).select().single();
+    if(error){
+      if(looksLikeNetworkError(error)){ showToast('Sin conexión: no se pudo actualizar. Probá de nuevo cuando vuelva internet.'); return null; }
+      console.error(error); showToast('No se pudo actualizar'); return null;
+    }
+    const idx = entries.findIndex(e => e.id === id);
+    if(idx !== -1) entries[idx] = mapRowToEntry(data);
+    return data;
+  }catch(err){
+    if(looksLikeNetworkError(err)){ showToast('Sin conexión: no se pudo actualizar. Probá de nuevo cuando vuelva internet.'); return null; }
+    console.error(err); showToast('No se pudo actualizar'); return null;
+  }
 }
 
 async function deleteMovement(id){
-  const { error } = await sb.from('movements').delete().eq('id', id).eq('user_id', currentUserId);
-  if(error){ console.error(error); showToast('No se pudo eliminar'); return false; }
-  entries = entries.filter(e => e.id !== id);
-  return true;
+  if(isPendingId(id)){
+    savePendingQueue(loadPendingQueue().filter(q => q.localId !== id));
+    entries = entries.filter(e => e.id !== id);
+    return true;
+  }
+  try{
+    const { error } = await sb.from('movements').delete().eq('id', id).eq('user_id', currentUserId);
+    if(error){
+      if(looksLikeNetworkError(error)){ showToast('Sin conexión: no se pudo eliminar. Probá de nuevo cuando vuelva internet.'); return false; }
+      console.error(error); showToast('No se pudo eliminar'); return false;
+    }
+    entries = entries.filter(e => e.id !== id);
+    return true;
+  }catch(err){
+    if(looksLikeNetworkError(err)){ showToast('Sin conexión: no se pudo eliminar. Probá de nuevo cuando vuelva internet.'); return false; }
+    console.error(err); showToast('No se pudo eliminar'); return false;
+  }
 }
 
 document.getElementById('bizName').addEventListener('change', async (e)=>{
@@ -1305,28 +1458,35 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
 
   document.getElementById('submitBtn').disabled = true;
 
+  let ok;
   if(editingId){
-    const ok = await updateMovement(editingId, fieldsFromForm);
-    editingId = null;
-    editingHora = null;
-    document.getElementById('submitBtn').textContent = 'Registrar';
-    document.getElementById('cancelEditBtn').style.display = 'none';
+    ok = await updateMovement(editingId, fieldsFromForm);
     document.getElementById('submitBtn').disabled = false;
-    if(ok) showToast('Movimiento actualizado');
+    if(ok){
+      editingId = null;
+      editingHora = null;
+      document.getElementById('submitBtn').textContent = 'Registrar';
+      document.getElementById('cancelEditBtn').style.display = 'none';
+      showToast(ok.pending ? 'Sin conexión: los cambios quedaron guardados en el dispositivo' : 'Movimiento actualizado');
+    }
   }else{
-    const ok = await addMovement(fieldsFromForm);
+    ok = await addMovement(fieldsFromForm);
     document.getElementById('submitBtn').disabled = false;
-    if(ok) showToast('Movimiento registrado');
+    if(ok) showToast(ok.pending ? 'Sin conexión: se guardó en el dispositivo, se sube sola cuando vuelva internet' : 'Movimiento registrado');
   }
 
-  document.getElementById('descripcion').value = '';
-  document.getElementById('cantidad').value = 1;
-  document.getElementById('precioUnit').value = '';
-  document.getElementById('costoUnit').value = '';
-  document.getElementById('gananciaPreview').textContent = '';
-  document.getElementById('monto').value = '';
-  document.getElementById('nota').value = '';
-  document.getElementById('descripcion').focus();
+  // Si falló el guardado, dejamos lo que el usuario tipeó tal cual estaba
+  // para que no tenga que volver a cargarlo a mano.
+  if(ok){
+    document.getElementById('descripcion').value = '';
+    document.getElementById('cantidad').value = 1;
+    document.getElementById('precioUnit').value = '';
+    document.getElementById('costoUnit').value = '';
+    document.getElementById('gananciaPreview').textContent = '';
+    document.getElementById('monto').value = '';
+    document.getElementById('nota').value = '';
+    document.getElementById('descripcion').focus();
+  }
 
   render();
 });
@@ -1404,7 +1564,7 @@ function renderTicket(){
       <div class="ticket-item">
         <div class="ti-left">
           <div class="ti-desc">${escapeHtml(e.descripcion)}</div>
-          <div class="ti-meta">${escapeHtml(e.hora)} · ${escapeHtml(e.metodoPago)}</div>
+          <div class="ti-meta">${escapeHtml(e.hora)} · ${escapeHtml(e.metodoPago)}${e.pending ? '<span class="pending-badge">Sin sincronizar</span>' : ''}</div>
         </div>
         <div class="ti-right">
           <span class="ti-amount ${e.tipo==='Venta'?'venta':'gasto'}">${e.tipo==='Venta'?'+':'-'}${fmtMoney(e.monto)}</span>
@@ -1506,7 +1666,7 @@ function renderHistory(){
       <tr>
         <td>${fmtFecha(e.fecha)}</td>
         <td>${e.tipo}</td>
-        <td>${escapeHtml(e.descripcion)}</td>
+        <td>${escapeHtml(e.descripcion)}${e.pending ? '<span class="pending-badge">Sin sincronizar</span>' : ''}</td>
         <td class="amt ${e.tipo==='Venta'?'venta':'gasto'}">${e.tipo==='Venta'?'+':'-'}${fmtMoney(e.monto)}</td>
         <td class="amt ${e.ganancia !== '' && e.ganancia < 0 ? 'gasto' : 'venta'}">${e.ganancia !== '' && e.ganancia !== undefined ? fmtMoney(e.ganancia) : '—'}</td>
         <td>${escapeHtml(e.metodoPago)}</td>
