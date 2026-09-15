@@ -160,6 +160,7 @@
   .pending-badge::before{content:'●';font-size:7px;animation:pending-pulse 1.4s ease-in-out infinite;}
   @keyframes pending-pulse{0%,100%{opacity:.35;}50%{opacity:1;}}
   @media (prefers-reduced-motion: reduce){ .pending-badge::before{animation:none;opacity:.8;} }
+  .stock-low{color:var(--gasto);font-weight:600;}
   .ti-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .ti-amount{font-family:'IBM Plex Mono';font-size:14px;font-weight:500;}
   .ti-amount.venta{color:var(--venta);}
@@ -537,6 +538,11 @@
         <button type="button" id="addFreqBtn" style="border:1.5px solid var(--line);background:var(--paper);border-radius:8px;padding:0 12px;font-size:13px;color:var(--ink-soft);cursor:pointer;">+</button>
       </div>
 
+      <div id="productoSelectWrap">
+        <label for="productoSelect" style="margin-top:0;">Producto del catálogo</label>
+        <select id="productoSelect"><option value="">— Elegir del catálogo (opcional) —</option></select>
+      </div>
+
       <label for="descripcion" style="margin-top:0;">Descripción</label>
       <input type="text" id="descripcion" placeholder="Ej: 2 gaseosas, cigarrillos...">
 
@@ -656,6 +662,54 @@
   </div>
   </div>
 
+  <div id="viewCatalogo" style="display:none;">
+  <div class="card">
+    <div class="title-row" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
+        <h2 style="margin:0;">Catálogo</h2>
+      </div>
+      <button type="button" id="newProductBtn" class="export-btn">+ Nuevo producto</button>
+    </div>
+
+    <div id="productForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
+      <label for="prodNombre" style="margin-top:0;">Nombre del producto</label>
+      <input type="text" id="prodNombre" placeholder="Ej: Gaseosa 500ml">
+
+      <div class="row2">
+        <div>
+          <label for="prodPrecio">Precio de venta</label>
+          <input type="text" id="prodPrecio" placeholder="0.00" inputmode="decimal" autocomplete="off">
+        </div>
+        <div>
+          <label for="prodCosto">Costo unitario <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+          <input type="text" id="prodCosto" placeholder="0.00" inputmode="decimal" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label for="prodStock">Stock actual</label>
+          <input type="text" id="prodStock" placeholder="0" inputmode="numeric" autocomplete="off">
+        </div>
+        <div>
+          <label for="prodStockMin">Aviso de stock bajo <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+          <input type="text" id="prodStockMin" placeholder="0" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="error-msg" id="prodErrorMsg" role="alert" aria-live="polite"></div>
+      <button class="submit-btn" id="prodSubmitBtn" type="button">Guardar producto</button>
+      <button type="button" id="prodCancelBtn" style="display:block;width:100%;margin-top:8px;padding:9px 0;border:1.5px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
+    </div>
+
+    <div id="catalogEmpty" style="display:none;padding:34px 0;text-align:center;color:var(--ink-soft);font-size:13.5px;">
+      Todavía no cargaste productos. Agregalos para venderlos en un toque y llevar el stock al día.
+    </div>
+    <div class="ticket-list" id="catalogList" style="margin-top:10px;"></div>
+  </div>
+  </div>
+
   <div class="save-note">Los datos se guardan automáticamente en esta app.</div>
 </div>
 
@@ -672,6 +726,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     <span>Historial</span>
   </button>
+  <button type="button" class="bottom-nav-btn" id="navBtnCatalogo" onclick="switchView('catalogo')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+    <span>Catálogo</span>
+  </button>
 </nav>
 
 <div id="toast" class="toast"></div>
@@ -684,6 +742,9 @@ let editingHora = null;
 let frequentProducts = [];
 let frequentExpenses = [];
 let summaryScope = 'hoy';
+let products = [];
+let editingProductId = null;
+let selectedProductId = null;
 
 const todayStr = () => {
   const d = new Date();
@@ -960,9 +1021,12 @@ function switchView(view){
   document.getElementById('viewCargar').style.display = view==='cargar' ? 'block' : 'none';
   document.getElementById('viewInicio').style.display = view==='inicio' ? 'block' : 'none';
   document.getElementById('viewHistorial').style.display = view==='historial' ? 'block' : 'none';
+  document.getElementById('viewCatalogo').style.display = view==='catalogo' ? 'block' : 'none';
   document.getElementById('navBtnCargar').classList.toggle('active', view==='cargar');
   document.getElementById('navBtnInicio').classList.toggle('active', view==='inicio');
   document.getElementById('navBtnHistorial').classList.toggle('active', view==='historial');
+  document.getElementById('navBtnCatalogo').classList.toggle('active', view==='catalogo');
+  if(view==='catalogo') renderCatalog();
   window.scrollTo({top:0, behavior:'instant'});
 }
 
@@ -1116,7 +1180,16 @@ function queueMovementOffline(fields, row){
   savePendingQueue(queue);
   const entry = pendingFieldsToEntry(fields, localId);
   entries.push(entry);
+  // Ajuste optimista solo para que el catálogo se vea al día mientras está offline;
+  // lo que persiste de verdad en la base pasa por applyStockDelta al sincronizar.
+  if(fields.productoId) adjustLocalProductStock(fields.productoId, -(Number(fields.cantidadVenta) || 0));
   return entry;
+}
+function adjustLocalProductStock(productId, delta){
+  const p = products.find(x => String(x.id) === String(productId));
+  if(!p) return;
+  p.stock_actual = (Number(p.stock_actual) || 0) + delta;
+  if(document.getElementById('viewCatalogo').style.display !== 'none') renderCatalog();
 }
 
 let syncingPending = false;
@@ -1138,6 +1211,7 @@ async function syncPendingMovements(){
       const idx = entries.findIndex(e => e.id === item.localId);
       const synced = mapRowToEntry(data);
       if(idx !== -1) entries[idx] = synced; else entries.push(synced);
+      if(item.fields.productoId) await applyStockDelta(item.fields.productoId, item.fields.cantidadVenta);
       syncedCount++;
     }catch(err){
       remaining.push(item);
@@ -1179,6 +1253,12 @@ async function loadData(){
     frequentProducts = (freqRows||[]).filter(r=>r.tipo==='Venta').map(r=>({id:r.id, nombre:r.nombre}));
     frequentExpenses = (freqRows||[]).filter(r=>r.tipo==='Gasto').map(r=>({id:r.id, nombre:r.nombre}));
 
+    // Si la tabla "products" todavía no existe (falta correr supabase/products.sql),
+    // el catálogo queda vacío en vez de romper el resto de la app.
+    const { data: productRows, error: prodErr } = await sb.from('products').select('*').eq('user_id', user.id).order('nombre', {ascending:true});
+    products = prodErr ? [] : (productRows || []);
+    if(prodErr) console.error(prodErr);
+
     hydratePendingIntoEntries();
   }catch(e){
     console.error(e);
@@ -1186,6 +1266,7 @@ async function loadData(){
     entries = [];
   }
   renderFreqChips();
+  fillProductSelectOptions();
   render();
   syncPendingMovements();
 }
@@ -1257,6 +1338,160 @@ async function addFrequent(){
   }
 }
 
+// ============================================
+// Catálogo de productos con stock
+// ============================================
+function renderCatalog(){
+  const list = document.getElementById('catalogList');
+  const empty = document.getElementById('catalogEmpty');
+  const sorted = [...products].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  if(sorted.length === 0){
+    empty.style.display = 'block';
+    list.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = sorted.map(p => {
+    const stock = Number(p.stock_actual) || 0;
+    const low = p.stock_minimo !== null && p.stock_minimo !== undefined && p.stock_minimo !== '' && stock <= Number(p.stock_minimo);
+    return `
+      <div class="ticket-item">
+        <div class="ti-left">
+          <div class="ti-desc">${escapeHtml(p.nombre)}</div>
+          <div class="ti-meta">${p.precio_venta ? fmtMoney(p.precio_venta) : 'sin precio'} · Stock: <span class="${low ? 'stock-low' : ''}">${stock}${low ? ' — repone ya' : ''}</span></div>
+        </div>
+        <div class="ti-right">
+          <button class="ti-del" aria-label="Editar" onclick="editProduct('${p.id}')">&#9998;</button>
+          <button class="ti-del" aria-label="Eliminar" onclick="deleteProduct('${p.id}')">&times;</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function fillProductSelectOptions(){
+  const sel = document.getElementById('productoSelect');
+  if(!sel) return;
+  const current = sel.value;
+  const sorted = [...products].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  sel.innerHTML = '<option value="">— Elegir del catálogo (opcional) —</option>' +
+    sorted.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)} · stock ${Number(p.stock_actual)||0}</option>`).join('');
+  sel.value = sorted.some(p => String(p.id) === current) ? current : '';
+  document.getElementById('productoSelectWrap').style.display = (currentTipo === 'Venta' && products.length) ? 'block' : 'none';
+}
+
+function resetProductForm(){
+  editingProductId = null;
+  document.getElementById('prodNombre').value = '';
+  document.getElementById('prodPrecio').value = '';
+  document.getElementById('prodCosto').value = '';
+  document.getElementById('prodStock').value = '';
+  document.getElementById('prodStockMin').value = '';
+  document.getElementById('prodErrorMsg').textContent = '';
+  document.getElementById('prodSubmitBtn').textContent = 'Guardar producto';
+}
+
+document.getElementById('newProductBtn').addEventListener('click', ()=>{
+  const form = document.getElementById('productForm');
+  const opening = form.style.display === 'none';
+  if(opening) resetProductForm();
+  form.style.display = opening ? 'block' : 'none';
+});
+document.getElementById('prodCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('productForm').style.display = 'none';
+  resetProductForm();
+});
+
+document.getElementById('prodSubmitBtn').addEventListener('click', async ()=>{
+  const nombre = document.getElementById('prodNombre').value.trim();
+  const errEl = document.getElementById('prodErrorMsg');
+  if(!nombre){ errEl.textContent = 'Ingresá un nombre.'; return; }
+  errEl.textContent = '';
+
+  const fields = {
+    nombre,
+    precio_venta: parseFloat(document.getElementById('prodPrecio').value) || null,
+    costo_unitario: parseFloat(document.getElementById('prodCosto').value) || null,
+    stock_actual: parseFloat(document.getElementById('prodStock').value) || 0,
+    stock_minimo: document.getElementById('prodStockMin').value === '' ? null : parseFloat(document.getElementById('prodStockMin').value)
+  };
+
+  document.getElementById('prodSubmitBtn').disabled = true;
+  const ok = editingProductId ? await updateProduct(editingProductId, fields) : await addProduct(fields);
+  document.getElementById('prodSubmitBtn').disabled = false;
+  if(ok){
+    showToast(editingProductId ? 'Producto actualizado' : 'Producto agregado');
+    document.getElementById('productForm').style.display = 'none';
+    resetProductForm();
+    renderCatalog();
+    fillProductSelectOptions();
+  }
+});
+
+async function addProduct(fields){
+  try{
+    const { data, error } = await sb.from('products').insert({ user_id: currentUserId, ...fields }).select().single();
+    if(error){ console.error(error); showToast('No se pudo guardar el producto'); return null; }
+    products.push(data);
+    return data;
+  }catch(err){ console.error(err); showToast('No se pudo guardar el producto'); return null; }
+}
+
+async function updateProduct(id, fields){
+  try{
+    const { data, error } = await sb.from('products').update(fields).eq('id', id).eq('user_id', currentUserId).select().single();
+    if(error){ console.error(error); showToast('No se pudo actualizar el producto'); return null; }
+    const idx = products.findIndex(p => String(p.id) === String(id));
+    if(idx !== -1) products[idx] = data;
+    return data;
+  }catch(err){ console.error(err); showToast('No se pudo actualizar el producto'); return null; }
+}
+
+function editProduct(id){
+  const p = products.find(x => String(x.id) === String(id));
+  if(!p) return;
+  editingProductId = id;
+  document.getElementById('prodNombre').value = p.nombre;
+  document.getElementById('prodPrecio').value = p.precio_venta ?? '';
+  document.getElementById('prodCosto').value = p.costo_unitario ?? '';
+  document.getElementById('prodStock').value = p.stock_actual ?? '';
+  document.getElementById('prodStockMin').value = p.stock_minimo ?? '';
+  document.getElementById('prodSubmitBtn').textContent = 'Guardar cambios';
+  document.getElementById('productForm').style.display = 'block';
+  document.getElementById('prodNombre').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+async function deleteProduct(id){
+  const p = products.find(x => String(x.id) === String(id));
+  const label = p ? `"${p.nombre}"` : 'este producto';
+  if(!confirm(`¿Seguro que querés borrar ${label} del catálogo? El stock no se puede recuperar después.`)) return;
+  try{
+    const { error } = await sb.from('products').delete().eq('id', id).eq('user_id', currentUserId);
+    if(error){ console.error(error); showToast('No se pudo eliminar'); return; }
+    products = products.filter(p => String(p.id) !== String(id));
+    renderCatalog();
+    fillProductSelectOptions();
+    showToast('Producto eliminado');
+  }catch(err){ console.error(err); showToast('No se pudo eliminar'); }
+}
+
+// Descuenta stock cuando se confirma una venta ligada a un producto del catálogo.
+// Relee el stock desde la base antes de restar para no perder cambios hechos desde
+// otro dispositivo; por eso solo se llama una vez que la venta ya está sincronizada.
+async function applyStockDelta(productId, cantidadVendida){
+  if(!productId || !cantidadVendida) return;
+  try{
+    const { data, error } = await sb.from('products').select('stock_actual').eq('id', productId).eq('user_id', currentUserId).single();
+    if(error || !data) return;
+    const nuevoStock = (Number(data.stock_actual) || 0) - Number(cantidadVendida);
+    const { error: updErr } = await sb.from('products').update({ stock_actual: nuevoStock }).eq('id', productId).eq('user_id', currentUserId);
+    if(updErr){ console.error(updErr); return; }
+    const p = products.find(x => String(x.id) === String(productId));
+    if(p) p.stock_actual = nuevoStock;
+    if(document.getElementById('viewCatalogo').style.display !== 'none') renderCatalog();
+  }catch(err){ console.error(err); }
+}
+
 async function addMovement(fields){
   const row = mapFieldsToRow(fields);
   if(!navigator.onLine) return queueMovementOffline(fields, row);
@@ -1268,6 +1503,7 @@ async function addMovement(fields){
     }
     const entry = mapRowToEntry(data);
     entries.push(entry);
+    if(fields.productoId) applyStockDelta(fields.productoId, fields.cantidadVenta);
     return entry;
   }catch(err){
     if(looksLikeNetworkError(err)) return queueMovementOffline(fields, row);
@@ -1348,16 +1584,21 @@ function setTipo(t){
 
   const rowCantPrecio = document.getElementById('rowCantPrecio');
   const rowCosto = document.getElementById('rowCosto');
+  const productoWrap = document.getElementById('productoSelectWrap');
   if(t === 'Gasto'){
     rowCantPrecio.style.display = 'none';
     rowCosto.style.display = 'none';
+    productoWrap.style.display = 'none';
     document.getElementById('cantidad').value = 1;
     document.getElementById('precioUnit').value = '';
     document.getElementById('costoUnit').value = '';
     document.getElementById('gananciaPreview').textContent = '';
+    document.getElementById('productoSelect').value = '';
+    selectedProductId = null;
   }else{
     rowCantPrecio.style.display = 'grid';
     rowCosto.style.display = 'block';
+    productoWrap.style.display = products.length ? 'block' : 'none';
   }
 
   if(typeof renderFreqChips === 'function' && document.getElementById('freqChips')){
@@ -1425,6 +1666,22 @@ document.getElementById('precioUnit').addEventListener('input', recalcMonto);
 document.getElementById('costoUnit').addEventListener('input', recalcGananciaPreview);
 document.getElementById('monto').addEventListener('input', recalcGananciaPreview);
 
+// Elegir un producto del catálogo precarga descripción/precio/costo y liga la venta
+// a ese producto (para descontar stock al guardar). Si el usuario edita la
+// descripción a mano después, se desliga: esa venta ya no es "de catálogo".
+document.getElementById('productoSelect').addEventListener('change', (e)=>{
+  const id = e.target.value;
+  selectedProductId = id || null;
+  if(!id) return;
+  const p = products.find(x => String(x.id) === String(id));
+  if(!p) return;
+  document.getElementById('descripcion').value = p.nombre;
+  if(p.precio_venta){ document.getElementById('precioUnit').value = p.precio_venta; }
+  if(p.costo_unitario){ document.getElementById('costoUnit').value = p.costo_unitario; }
+  recalcMonto();
+});
+document.getElementById('descripcion').addEventListener('input', ()=>{ selectedProductId = null; });
+
 document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const desc = document.getElementById('descripcion').value.trim();
   const monto = parseFloat(document.getElementById('monto').value);
@@ -1454,6 +1711,12 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   // Al editar, conservar la hora original del movimiento en vez de pisarla con la hora actual.
   if(editingId && editingHora){
     fieldsFromForm.hora = editingHora;
+  }
+  // Solo las ventas nuevas (no ediciones) ligadas a un producto del catálogo
+  // descuentan stock — editar una venta ya cargada no lo toca, a propósito.
+  if(currentTipo === 'Venta' && selectedProductId && !editingId){
+    fieldsFromForm.productoId = selectedProductId;
+    fieldsFromForm.cantidadVenta = cantidadNum || 1;
   }
 
   document.getElementById('submitBtn').disabled = true;
@@ -1485,6 +1748,8 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
     document.getElementById('gananciaPreview').textContent = '';
     document.getElementById('monto').value = '';
     document.getElementById('nota').value = '';
+    document.getElementById('productoSelect').value = '';
+    selectedProductId = null;
     document.getElementById('descripcion').focus();
   }
 
