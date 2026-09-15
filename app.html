@@ -33,6 +33,13 @@
     --venta-bg:rgba(76,175,128,0.14);
     --gasto:#B85B5D;
     --gasto-bg:rgba(184,91,93,0.14);
+    --gold:#D9A251;
+    --gold-dark:#C08A3E;
+    --gold-bg:rgba(217,162,81,0.14);
+    --teal:#4FA3A0;
+    --teal-dark:#3D8683;
+    --teal-bg:rgba(79,163,160,0.14);
+    --brand-gradient:linear-gradient(135deg, #6089B4 0%, #3E5670 60%, #2C4256 100%);
     --counter:#0D1113;
     --bg-elevated:#151A1D;
     --text-light:#F4F2ED;
@@ -106,6 +113,8 @@
   .title-icon svg{width:14px;height:14px;}
   #entryCard.mode-venta .title-icon{background:var(--venta);}
   #entryCard.mode-gasto .title-icon{background:var(--gasto);}
+  #viewHistorial .title-icon{background:var(--gold);}
+  #viewCatalogo .title-icon{background:var(--teal);}
   .type-toggle{display:flex;gap:8px;margin-bottom:16px;}
   .type-btn{
     flex:1;padding:10px 0;border-radius:8px;border:1.5px solid var(--line);
@@ -129,10 +138,10 @@
   .error-msg{color:var(--gasto);font-size:12.5px;margin-top:6px;min-height:16px;}
   .submit-btn{
     width:100%;margin-top:18px;padding:13px 0;border:none;border-radius:8px;
-    background:var(--accent);color:#fff;font-family:'Space Grotesk';font-weight:700;
-    font-size:15px;cursor:pointer;
+    background:var(--brand-gradient);color:#fff;font-family:'Space Grotesk';font-weight:700;
+    font-size:15px;cursor:pointer;box-shadow:0 6px 20px -8px rgba(62,86,112,0.6);
   }
-  .submit-btn:hover{background:var(--accent-dark);transform:translateY(-1px);box-shadow:0 8px 24px -8px rgba(62,86,112,0.55);}
+  .submit-btn:hover{transform:translateY(-1px);box-shadow:0 10px 26px -8px rgba(62,86,112,0.65);}
   .submit-btn:active{transform:scale(0.99);}
   #entryCard.mode-venta .submit-btn:hover{box-shadow:0 8px 24px -8px rgba(76,175,128,0.55);}
   #entryCard.mode-gasto .submit-btn:hover{box-shadow:0 8px 24px -8px rgba(184,91,93,0.55);}
@@ -196,6 +205,9 @@
   }
   .bottom-nav-btn svg{width:22px;height:22px;}
   .bottom-nav-btn.active{color:var(--accent);background:var(--paper);}
+  #navBtnCargar.active{color:var(--venta);}
+  #navBtnHistorial.active{color:var(--gold);}
+  #navBtnCatalogo.active{color:var(--teal);}
 
   @media (min-width:900px){
     body.app-active{padding-left:220px;}
@@ -756,6 +768,18 @@ const todayStr = () => {
 
 function fmtMoney(n){
   return '$' + Number(n).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Un color fijo por método de pago para que se distingan de un vistazo
+// en el ticket, el historial y el desglose — no tiene significado más allá de eso.
+function metodoColor(m){
+  if(m === 'Efectivo') return 'var(--venta)';
+  if(m === 'Tarjeta') return 'var(--accent-dark)';
+  if(m === 'Transferencia') return 'var(--teal)';
+  return 'var(--gold)';
+}
+function metodoDot(m){
+  return `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${metodoColor(m)};margin-right:5px;flex-shrink:0;"></span>`;
 }
 
 function fmtFecha(iso){
@@ -1829,7 +1853,7 @@ function renderTicket(){
       <div class="ticket-item">
         <div class="ti-left">
           <div class="ti-desc">${escapeHtml(e.descripcion)}</div>
-          <div class="ti-meta">${escapeHtml(e.hora)} · ${escapeHtml(e.metodoPago)}${e.pending ? '<span class="pending-badge">Sin sincronizar</span>' : ''}</div>
+          <div class="ti-meta">${escapeHtml(e.hora)} · ${metodoDot(e.metodoPago)}${escapeHtml(e.metodoPago)}${e.pending ? '<span class="pending-badge">Sin sincronizar</span>' : ''}</div>
         </div>
         <div class="ti-right">
           <span class="ti-amount ${e.tipo==='Venta'?'venta':'gasto'}">${e.tipo==='Venta'?'+':'-'}${fmtMoney(e.monto)}</span>
@@ -1856,9 +1880,9 @@ function renderSummary(){
   const gananciaRealS = ventasS - costoMercS - gastosS;
   document.getElementById('summary').innerHTML = `
     <div class="metric"><div class="metric-label">Ventas ${scopeLabel}</div><div class="metric-value" style="color:var(--venta)">${fmtMoney(ventasS)}</div></div>
-    <div class="metric"><div class="metric-label">Costo mercadería</div><div class="metric-value" style="color:var(--ink-soft)">${fmtMoney(costoMercS)}</div></div>
+    <div class="metric"><div class="metric-label">Costo mercadería</div><div class="metric-value" style="color:var(--accent-dark)">${fmtMoney(costoMercS)}</div></div>
     <div class="metric"><div class="metric-label">Gastos ${scopeLabel}</div><div class="metric-value" style="color:var(--gasto)">${fmtMoney(gastosS)}</div></div>
-    <div class="metric" style="border:1.5px solid ${gananciaRealS >= 0 ? 'var(--venta)' : 'var(--gasto)'};background:linear-gradient(${gananciaRealS >= 0 ? 'var(--venta-bg),var(--venta-bg)' : 'var(--gasto-bg),var(--gasto-bg)'}),var(--card);"><div class="metric-label" style="font-weight:700;">Ganancia real ${scopeLabel}</div><div class="metric-value" style="color:${gananciaRealS >= 0 ? 'var(--venta)' : 'var(--gasto)'};font-size:22px;">${fmtMoney(gananciaRealS)}</div></div>
+    <div class="metric" style="border:1.5px solid ${gananciaRealS >= 0 ? 'var(--gold)' : 'var(--gasto)'};background:linear-gradient(${gananciaRealS >= 0 ? 'var(--gold-bg),var(--gold-bg)' : 'var(--gasto-bg),var(--gasto-bg)'}),var(--card);"><div class="metric-label" style="font-weight:700;">Ganancia real ${scopeLabel}</div><div class="metric-value" style="color:${gananciaRealS >= 0 ? 'var(--gold)' : 'var(--gasto)'};font-size:22px;">${fmtMoney(gananciaRealS)}</div></div>
     <div class="metric"><div class="metric-label">Movimientos ${scopeLabel}</div><div class="metric-value">${summaryEntries.length}</div></div>
   `;
 
@@ -1880,7 +1904,7 @@ function renderSummary(){
         .reduce((s,e) => s + (e.tipo === 'Venta' ? e.monto : -e.monto), 0);
       return `
         <div class="payment-item">
-          <div class="payment-item-label">${m}</div>
+          <div class="payment-item-label">${metodoDot(m)}${m}</div>
           <div class="payment-item-value" style="color:${saldo >= 0 ? 'var(--venta)' : 'var(--gasto)'}">${fmtMoney(saldo)}</div>
         </div>
       `;
@@ -1934,7 +1958,7 @@ function renderHistory(){
         <td>${escapeHtml(e.descripcion)}${e.pending ? '<span class="pending-badge">Sin sincronizar</span>' : ''}</td>
         <td class="amt ${e.tipo==='Venta'?'venta':'gasto'}">${e.tipo==='Venta'?'+':'-'}${fmtMoney(e.monto)}</td>
         <td class="amt ${e.ganancia !== '' && e.ganancia < 0 ? 'gasto' : 'venta'}">${e.ganancia !== '' && e.ganancia !== undefined ? fmtMoney(e.ganancia) : '—'}</td>
-        <td>${escapeHtml(e.metodoPago)}</td>
+        <td>${metodoDot(e.metodoPago)}${escapeHtml(e.metodoPago)}</td>
         <td style="white-space:nowrap;">
           <button class="hist-del" aria-label="Editar" onclick="editEntry('${e.id}')" style="margin-right:6px;">&#9998;</button>
           <button class="hist-del" aria-label="Eliminar" onclick="deleteEntry('${e.id}')">&times;</button>
