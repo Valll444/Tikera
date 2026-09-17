@@ -41,6 +41,8 @@
     --green-soft:rgba(76,175,128,0.14);
     --red:#B85B5D;
     --red-soft:rgba(184,91,93,0.14);
+    --gold:#D9A251;
+    --gold-soft:rgba(217,162,81,0.13);
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -173,6 +175,18 @@
   .demo-pane{display:none;}
   .demo-pane.active{display:block;}
 
+  /* Comparativa vs competencia */
+  .compare-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;}
+  .compare-table th,.compare-table td{padding:15px 18px;border-bottom:1px solid var(--hairline);white-space:nowrap;}
+  .compare-table tbody tr:last-child th,.compare-table tbody tr:last-child td{border-bottom:none;}
+  .compare-table th{font-family:'Manrope';font-weight:700;font-size:13.5px;color:var(--text-dim);text-align:center;background:var(--bg-elevated);}
+  .compare-table td:first-child,.compare-table th:first-child{text-align:left;color:var(--text-dim);white-space:normal;max-width:220px;font-size:13.5px;}
+  .compare-table td{text-align:center;color:var(--text-faint);}
+  .compare-col-tikera{background:var(--gold-soft);}
+  th.compare-col-tikera{color:var(--gold);}
+  td.compare-check.compare-col-tikera{color:var(--gold);font-weight:700;}
+  .compare-check{color:var(--green);font-weight:700;}
+
   .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);}
 
   .divider-fade{height:1px;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);}
@@ -225,6 +239,7 @@
       <a href="#top" class="nav-link">Inicio</a>
       <a href="#calculadora" class="nav-link">Calculadora</a>
       <a href="#funcionalidades" class="nav-link">Funcionalidades</a>
+      <a href="#comparativa" class="nav-link">Comparativa</a>
       <a href="#faqs" class="nav-link">FAQs</a>
       <a href="precios.html" class="nav-link">Precios</a>
     </nav>
@@ -244,6 +259,7 @@
       <a href="#top" class="nav-link text-base">Inicio</a>
       <a href="#calculadora" class="nav-link text-base">Calculadora</a>
       <a href="#funcionalidades" class="nav-link text-base">Funcionalidades</a>
+      <a href="#comparativa" class="nav-link text-base">Comparativa</a>
       <a href="#faqs" class="nav-link text-base">FAQs</a>
       <a href="precios.html" class="nav-link text-base">Precios</a>
       <div class="divider-fade my-1"></div>
@@ -466,26 +482,96 @@
         </div>
       </div>
 
-      <div class="reveal bento-card p-6 flex flex-col justify-between">
-        <div class="w-9 h-9 rounded-lg bg-[var(--slate-soft)] flex items-center justify-center mb-4">
-          <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="4" y="1.5" width="9" height="14" rx="2" stroke="#7C93A8" stroke-width="1.3"/><path d="M7.5 12.5H9.5" stroke="#7C93A8" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <div class="reveal bento-card p-6 flex flex-col justify-between" style="background:linear-gradient(155deg,rgba(79,163,160,0.10) 0%, var(--bg-card) 55%);border-color:rgba(79,163,160,0.22);">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center mb-4" style="background:rgba(79,163,160,0.16);">
+          <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 2L15 5.5V11.5L8.5 15L2 11.5V5.5L8.5 2Z" stroke="#4FA3A0" stroke-width="1.3"/><path d="M8.5 8.5V15M8.5 8.5L15 5.5M8.5 8.5L2 5.5" stroke="#4FA3A0" stroke-width="1.3"/></svg>
         </div>
         <div>
-          <h3 class="font-display font-bold text-[16px] mb-2">Rápido y multidispositivo</h3>
-          <p class="text-[14px] text-[var(--text-dim)] leading-relaxed">Usalo desde el mostrador, el celular o la computadora. Sin complicaciones.</p>
+          <h3 class="font-display font-bold text-[16px] mb-2">Catálogo con stock</h3>
+          <p class="text-[14px] text-[var(--text-dim)] leading-relaxed">Cargá tus productos una vez. Cada venta descuenta el stock sola y te avisa cuando hay que reponer.</p>
         </div>
       </div>
 
-      <div class="reveal bento-card p-6 flex flex-col justify-between md:col-span-2">
+      <div class="reveal bento-card p-6 flex flex-col justify-between md:col-span-2" style="background:linear-gradient(155deg,rgba(62,86,112,0.14) 0%, var(--bg-card) 55%);">
         <div class="w-9 h-9 rounded-lg bg-[var(--slate-soft)] flex items-center justify-center mb-4">
-          <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="6.5" stroke="#7C93A8" stroke-width="1.3"/><path d="M8.5 5.5V8.5L10.5 10" stroke="#7C93A8" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 1.5V4.5M8.5 12.5V15.5M15.5 8.5H12.5M4.5 8.5H1.5M13.5 3.5L11.5 5.5M5.5 11.5L3.5 13.5M13.5 13.5L11.5 11.5M5.5 5.5L3.5 3.5" stroke="#7C93A8" stroke-width="1.3" stroke-linecap="round"/><circle cx="8.5" cy="8.5" r="2.5" stroke="#7C93A8" stroke-width="1.3"/></svg>
         </div>
         <div>
-          <h3 class="font-display font-bold text-[16px] mb-2">Pensado para comerciantes</h3>
-          <p class="text-[14px] text-[var(--text-dim)] leading-relaxed max-w-[420px]">No necesitás saber contabilidad, ni pagar de más por funciones que un kiosco nunca va a usar.</p>
+          <h3 class="font-display font-bold text-[16px] mb-2">Funciona aunque se corte internet</h3>
+          <p class="text-[14px] text-[var(--text-dim)] leading-relaxed max-w-[420px]">Un kiosco no puede parar de cobrar porque se cortó el wifi. Tikera guarda la venta en el dispositivo y la sube sola apenas vuelve la señal.</p>
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- COMPARATIVA -->
+<section id="comparativa" class="py-16 md:py-24 border-t border-[var(--hairline)]">
+  <div class="container-w">
+    <div class="reveal chip mb-6 border border-[var(--gold)] rounded-full px-4 py-2 w-fit" style="background:rgba(217,162,81,0.13);">
+      <span class="w-2 h-2 rounded-full bg-[var(--gold)]"></span>
+      Comparado con el resto del mercado
+    </div>
+    <h2 class="reveal font-display font-extrabold text-[30px] sm:text-[36px] leading-tight max-w-[640px] mb-4">
+      Lo mismo que las apps de kiosco más grandes de Argentina, sin pagar de más.
+    </h2>
+    <p class="reveal text-[15px] text-[var(--text-dim)] max-w-[620px] mb-10 leading-relaxed">
+      Relevamos las apps de caja y punto de venta que más se usan en kioscos y almacenes argentinos. Esto es lo que vas a pagar y lo que vas a tener en cada una, con datos públicos de cada empresa.
+    </p>
+
+    <div class="reveal overflow-x-auto rounded-2xl border border-[var(--hairline)]">
+      <table class="compare-table" style="min-width:660px;">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="compare-col-tikera">Tikera</th>
+            <th>DonKiosco</th>
+            <th>TICKX</th>
+            <th>ADM Global</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Precio de entrada</td>
+            <td class="compare-col-tikera" style="color:var(--gold);font-weight:700;">$9.900<span style="color:var(--text-faint);font-weight:400;">/mes</span></td>
+            <td>$9.900<span style="color:var(--text-faint);">/mes</span></td>
+            <td>$50.000<span style="color:var(--text-faint);">/mes</span></td>
+            <td>$140.000<span style="color:var(--text-faint);"> pago único</span></td>
+          </tr>
+          <tr>
+            <td>Ganancia real (venta menos costo, no solo lo facturado)</td>
+            <td class="compare-check compare-col-tikera">✓</td>
+            <td>parcial</td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Catálogo de productos con stock</td>
+            <td class="compare-check compare-col-tikera">✓</td>
+            <td class="compare-check">✓</td>
+            <td class="compare-check">✓</td>
+            <td class="compare-check">✓</td>
+          </tr>
+          <tr>
+            <td>Funciona sin internet</td>
+            <td class="compare-check compare-col-tikera">✓</td>
+            <td class="compare-check">✓</td>
+            <td>—</td>
+            <td class="compare-check">✓</td>
+          </tr>
+          <tr>
+            <td>Factura electrónica ARCA</td>
+            <td class="compare-col-tikera">—</td>
+            <td>—</td>
+            <td class="compare-check">✓</td>
+            <td class="compare-check">✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="reveal text-[12px] text-[var(--text-faint)] mt-4 max-w-[620px]">
+      Precios y funciones publicados por cada empresa a septiembre de 2026 — pueden haber cambiado desde entonces. Fuentes: donkiosco.com.ar, tickx.app, admglobal.com.ar.
+    </p>
   </div>
 </section>
 
