@@ -657,7 +657,10 @@
       </div>
 
       <div id="productoSelectWrap">
-        <label for="productoSelect" style="margin-top:0;">Producto del catálogo</label>
+        <label for="scanBarcode" style="margin-top:0;">Escanear código de barras</label>
+        <input type="text" id="scanBarcode" placeholder="Escaneá o escribí el código y Enter" inputmode="numeric" autocomplete="off">
+        <div class="settings-hint" id="scanBarcodeMsg" style="margin-bottom:4px;"></div>
+        <label for="productoSelect">Producto del catálogo</label>
         <select id="productoSelect"><option value="">— Elegir del catálogo (opcional) —</option></select>
       </div>
 
@@ -815,6 +818,13 @@
           <input type="text" id="prodStockMin" placeholder="0" inputmode="numeric" autocomplete="off">
         </div>
       </div>
+
+      <label for="prodBarcode">Código de barras <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <input type="text" id="prodBarcode" placeholder="Escaneá o escribí el código" inputmode="numeric" autocomplete="off" style="flex:1;">
+        <button type="button" id="prodGenBarcodeBtn" style="flex-shrink:0;border:1.5px solid var(--line);background:var(--paper);color:var(--ink-soft);border-radius:8px;padding:0 14px;font-size:12.5px;cursor:pointer;white-space:nowrap;">Generar código</button>
+      </div>
+      <div class="settings-hint" id="prodBarcodeHint" style="margin-bottom:4px;">Si el producto no trae código de fábrica, generamos uno interno (empieza con 20, no choca con códigos reales).</div>
 
       <div class="error-msg" id="prodErrorMsg" role="alert" aria-live="polite"></div>
       <button class="submit-btn" id="prodSubmitBtn" type="button">Guardar producto</button>
@@ -1865,7 +1875,7 @@ function renderCatalog(){
       <div class="ticket-item">
         <div class="ti-left">
           <div class="ti-desc">${escapeHtml(p.nombre)}</div>
-          <div class="ti-meta">${p.precio_venta ? fmtMoney(p.precio_venta) : 'sin precio'} · Stock: <span class="${low ? 'stock-low' : ''}">${stock}${low ? ' — repone ya' : ''}</span></div>
+          <div class="ti-meta">${p.precio_venta ? fmtMoney(p.precio_venta) : 'sin precio'} · Stock: <span class="${low ? 'stock-low' : ''}">${stock}${low ? ' — repone ya' : ''}</span>${p.codigo_barras ? ` · <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;">${escapeHtml(p.codigo_barras)}</span>` : ''}</div>
         </div>
         <div class="ti-right">
           <button class="ti-del" aria-label="Editar" onclick="editProduct('${p.id}')">&#9998;</button>
@@ -1894,9 +1904,31 @@ function resetProductForm(){
   document.getElementById('prodCosto').value = '';
   document.getElementById('prodStock').value = '';
   document.getElementById('prodStockMin').value = '';
+  document.getElementById('prodBarcode').value = '';
   document.getElementById('prodErrorMsg').textContent = '';
   document.getElementById('prodSubmitBtn').textContent = 'Guardar producto';
 }
+
+// EAN-13 real: 12 digitos + digito verificador calculado (no un numero al azar).
+function ean13CheckDigit(digits12){
+  let sum = 0;
+  for(let i = 0; i < 12; i++){
+    const d = parseInt(digits12[i], 10);
+    sum += (i % 2 === 0) ? d : d * 3;
+  }
+  return (10 - (sum % 10)) % 10;
+}
+// Prefijo 20: la industria (GS1) reserva el rango 20-29 para uso interno
+// de comercios -- nunca se le asigna a un producto real, asi que un
+// codigo generado acá no puede chocar con uno de fabrica.
+function generarCodigoInterno(){
+  let body = '20';
+  for(let i = 0; i < 10; i++) body += Math.floor(Math.random()*10);
+  return body + ean13CheckDigit(body);
+}
+document.getElementById('prodGenBarcodeBtn').addEventListener('click', ()=>{
+  document.getElementById('prodBarcode').value = generarCodigoInterno();
+});
 
 document.getElementById('newProductBtn').addEventListener('click', ()=>{
   const form = document.getElementById('productForm');
@@ -1913,6 +1945,12 @@ document.getElementById('prodSubmitBtn').addEventListener('click', async ()=>{
   const nombre = document.getElementById('prodNombre').value.trim();
   const errEl = document.getElementById('prodErrorMsg');
   if(!nombre){ errEl.textContent = 'Ingresá un nombre.'; return; }
+
+  const codigoBarras = document.getElementById('prodBarcode').value.trim();
+  if(codigoBarras){
+    const dup = products.find(p => p.codigo_barras === codigoBarras && String(p.id) !== String(editingProductId));
+    if(dup){ errEl.textContent = `Ese código ya lo tiene "${dup.nombre}".`; return; }
+  }
   errEl.textContent = '';
 
   const fields = {
@@ -1920,7 +1958,8 @@ document.getElementById('prodSubmitBtn').addEventListener('click', async ()=>{
     precio_venta: parseFloat(document.getElementById('prodPrecio').value) || null,
     costo_unitario: parseFloat(document.getElementById('prodCosto').value) || null,
     stock_actual: parseFloat(document.getElementById('prodStock').value) || 0,
-    stock_minimo: document.getElementById('prodStockMin').value === '' ? null : parseFloat(document.getElementById('prodStockMin').value)
+    stock_minimo: document.getElementById('prodStockMin').value === '' ? null : parseFloat(document.getElementById('prodStockMin').value),
+    codigo_barras: codigoBarras || null
   };
 
   document.getElementById('prodSubmitBtn').disabled = true;
@@ -1935,10 +1974,17 @@ document.getElementById('prodSubmitBtn').addEventListener('click', async ()=>{
   }
 });
 
+// El unique index de la base es la fuente de verdad contra duplicados
+// (el chequeo del form es solo para feedback inmediato); 23505 es el
+// codigo de Postgres para "violacion de restriccion unica".
 async function addProduct(fields){
   try{
     const { data, error } = await sb.from('products').insert({ user_id: currentUserId, ...fields }).select().single();
-    if(error){ console.error(error); showToast('No se pudo guardar el producto'); return null; }
+    if(error){
+      console.error(error);
+      showToast(error.code === '23505' ? 'Ese código de barras ya está en uso' : 'No se pudo guardar el producto');
+      return null;
+    }
     products.push(data);
     return data;
   }catch(err){ console.error(err); showToast('No se pudo guardar el producto'); return null; }
@@ -1947,7 +1993,11 @@ async function addProduct(fields){
 async function updateProduct(id, fields){
   try{
     const { data, error } = await sb.from('products').update(fields).eq('id', id).eq('user_id', currentUserId).select().single();
-    if(error){ console.error(error); showToast('No se pudo actualizar el producto'); return null; }
+    if(error){
+      console.error(error);
+      showToast(error.code === '23505' ? 'Ese código de barras ya está en uso' : 'No se pudo actualizar el producto');
+      return null;
+    }
     const idx = products.findIndex(p => String(p.id) === String(id));
     if(idx !== -1) products[idx] = data;
     return data;
@@ -1963,6 +2013,7 @@ function editProduct(id){
   document.getElementById('prodCosto').value = p.costo_unitario ?? '';
   document.getElementById('prodStock').value = p.stock_actual ?? '';
   document.getElementById('prodStockMin').value = p.stock_minimo ?? '';
+  document.getElementById('prodBarcode').value = p.codigo_barras || '';
   document.getElementById('prodSubmitBtn').textContent = 'Guardar cambios';
   document.getElementById('productForm').style.display = 'block';
   document.getElementById('prodNombre').scrollIntoView({behavior:'smooth', block:'center'});
@@ -2173,21 +2224,50 @@ document.getElementById('precioUnit').addEventListener('input', recalcMonto);
 document.getElementById('costoUnit').addEventListener('input', recalcGananciaPreview);
 document.getElementById('monto').addEventListener('input', recalcGananciaPreview);
 
-// Elegir un producto del catálogo precarga descripción/precio/costo y liga la venta
-// a ese producto (para descontar stock al guardar). Si el usuario edita la
-// descripción a mano después, se desliga: esa venta ya no es "de catálogo".
+// Elegir un producto (del selector o escaneando su codigo) precarga
+// descripción/precio/costo y liga la venta a ese producto (para descontar
+// stock al guardar). Si el usuario edita la descripción a mano después,
+// se desliga: esa venta ya no es "de catálogo".
+function selectProductoParaVenta(p){
+  selectedProductId = p.id;
+  document.getElementById('productoSelect').value = p.id;
+  document.getElementById('descripcion').value = p.nombre;
+  if(p.precio_venta){ document.getElementById('precioUnit').value = p.precio_venta; }
+  if(p.costo_unitario){ document.getElementById('costoUnit').value = p.costo_unitario; }
+  recalcMonto();
+}
 document.getElementById('productoSelect').addEventListener('change', (e)=>{
   const id = e.target.value;
   selectedProductId = id || null;
   if(!id) return;
   const p = products.find(x => String(x.id) === String(id));
-  if(!p) return;
-  document.getElementById('descripcion').value = p.nombre;
-  if(p.precio_venta){ document.getElementById('precioUnit').value = p.precio_venta; }
-  if(p.costo_unitario){ document.getElementById('costoUnit').value = p.costo_unitario; }
-  recalcMonto();
+  if(p) selectProductoParaVenta(p);
 });
 document.getElementById('descripcion').addEventListener('input', ()=>{ selectedProductId = null; });
+
+// Los lectores de codigo de barras funcionan como teclados: tipean el
+// numero muy rapido y mandan Enter solos, no hace falta ningun driver
+// ni permiso especial -- alcanza con escuchar el evento normal de teclado.
+document.getElementById('scanBarcode').addEventListener('keydown', (e)=>{
+  if(e.key !== 'Enter') return;
+  e.preventDefault();
+  const input = document.getElementById('scanBarcode');
+  const codigo = input.value.trim();
+  const msg = document.getElementById('scanBarcodeMsg');
+  if(!codigo){ msg.textContent = ''; return; }
+  const p = products.find(x => x.codigo_barras === codigo);
+  if(p){
+    selectProductoParaVenta(p);
+    msg.style.color = 'var(--venta)';
+    msg.textContent = `✓ ${p.nombre}`;
+    document.getElementById('cantidad').focus();
+  }else{
+    msg.style.color = 'var(--gasto)';
+    msg.textContent = 'No encontramos ningún producto con ese código.';
+  }
+  input.value = '';
+  input.focus();
+});
 
 document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const desc = document.getElementById('descripcion').value.trim();
