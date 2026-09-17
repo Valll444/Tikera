@@ -498,6 +498,23 @@
   .settings-btn.danger{border-color:var(--gasto);color:var(--gasto);background:transparent;}
   .settings-btn.danger:hover{background:var(--gasto-bg);}
 
+  /* Ticket de venta */
+  .ticket-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .ticket-modal{background:var(--card);border-radius:14px;padding:18px;max-width:340px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  .ticket-paper{background:#fff;color:#141414;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:16px 14px;border-radius:4px;line-height:1.55;}
+  .ticket-paper .tp-center{text-align:center;}
+  .ticket-paper .tp-line{border-top:1px dashed #999;margin:8px 0;}
+  .ticket-paper .tp-row{display:flex;justify-content:space-between;gap:8px;}
+  .ticket-paper .tp-total{font-weight:700;font-size:14px;}
+  .ticket-modal-actions{display:flex;gap:10px;margin-top:16px;}
+  .ticket-modal-actions .settings-btn{flex:1;}
+  @media print{
+    body *{visibility:hidden;}
+    #ticketContent,#ticketContent *{visibility:visible;}
+    #ticketContent{position:fixed;top:0;left:0;width:80mm;margin:0;padding:6mm;border-radius:0;box-shadow:none;}
+    @page{size:80mm auto;margin:0;}
+  }
+
   /* Aviso de cookies */
   .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:none;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:18px 20px;}
   .cookie-banner.show{display:block;}
@@ -969,6 +986,16 @@
 </nav>
 
 <div id="toast" class="toast"></div>
+
+<div id="ticketModal" class="ticket-modal-overlay" style="display:none;" role="dialog" aria-label="Ticket de venta">
+  <div class="ticket-modal">
+    <div id="ticketContent" class="ticket-paper"></div>
+    <div class="ticket-modal-actions">
+      <button type="button" id="ticketCloseBtn" class="settings-btn">Cerrar</button>
+      <button type="button" id="ticketPrintBtn" class="settings-btn primary">Imprimir</button>
+    </div>
+  </div>
+</div>
 
 <div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Aviso de cookies">
   <div class="cookie-banner-inner">
@@ -2420,6 +2447,7 @@ function renderTicket(){
         </div>
         <div class="ti-right">
           <span class="ti-amount ${e.tipo==='Venta'?'venta':'gasto'}">${e.tipo==='Venta'?'+':'-'}${fmtMoney(e.monto)}</span>
+          ${e.tipo==='Venta' ? `<button class="ti-del" aria-label="Ver ticket" onclick="verTicket('${e.id}')">&#128196;</button>` : ''}
           <button class="ti-del" aria-label="Editar" onclick="editEntry('${e.id}')">&#9998;</button>
           <button class="ti-del" aria-label="Eliminar" onclick="deleteEntry('${e.id}')">&times;</button>
         </div>
@@ -2427,6 +2455,42 @@ function renderTicket(){
     `).join('');
   }
 }
+
+// ============================================
+// Ticket de venta: comprobante no fiscal (no reemplaza una factura ARCA),
+// pensado para imprimirse en una impresora termica de 80mm via el dialogo
+// nativo del navegador -- no hace falta driver ni WebUSB, cualquier
+// impresora que el sistema operativo ya reconozca como impresora sirve.
+function verTicket(id){
+  const e = entries.find(x => x.id === id);
+  if(!e) return;
+  const bizName = document.getElementById('bizName').value.trim() || 'Mi negocio';
+  const cantidadLinea = (e.cantidad && e.precioUnitario)
+    ? `<div class="tp-row"><span>${escapeHtml(String(e.cantidad))} x ${fmtMoney(e.precioUnitario)}</span><span></span></div>`
+    : '';
+  document.getElementById('ticketContent').innerHTML = `
+    <div class="tp-center" style="font-weight:700;font-size:14px;">${escapeHtml(bizName)}</div>
+    <div class="tp-center" style="font-size:10px;color:#666;">Comprobante no fiscal</div>
+    <div class="tp-line"></div>
+    <div class="tp-row"><span>${fmtFecha(e.fecha)}</span><span>${escapeHtml(e.hora)}</span></div>
+    <div class="tp-line"></div>
+    <div>${escapeHtml(e.descripcion)}</div>
+    ${cantidadLinea}
+    <div class="tp-line"></div>
+    <div class="tp-row tp-total"><span>TOTAL</span><span>${fmtMoney(e.monto)}</span></div>
+    <div class="tp-row" style="margin-top:4px;"><span>Pago</span><span>${escapeHtml(e.metodoPago)}</span></div>
+    <div class="tp-line"></div>
+    <div class="tp-center" style="font-size:10px;color:#666;">¡Gracias por tu compra!</div>
+  `;
+  document.getElementById('ticketModal').style.display = 'flex';
+}
+document.getElementById('ticketCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('ticketModal').style.display = 'none';
+});
+document.getElementById('ticketPrintBtn').addEventListener('click', ()=>{ window.print(); });
+document.getElementById('ticketModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'ticketModal') document.getElementById('ticketModal').style.display = 'none';
+});
 
 function renderSummary(){
   const today = todayStr();
@@ -2523,6 +2587,7 @@ function renderHistory(){
         <td class="amt ${e.ganancia !== '' && e.ganancia < 0 ? 'gasto' : 'venta'}">${e.ganancia !== '' && e.ganancia !== undefined ? fmtMoney(e.ganancia) : '—'}</td>
         <td>${metodoDot(e.metodoPago)}${escapeHtml(e.metodoPago)}</td>
         <td style="white-space:nowrap;">
+          ${e.tipo==='Venta' ? `<button class="hist-del" aria-label="Ver ticket" onclick="verTicket('${e.id}')" style="margin-right:6px;">&#128196;</button>` : ''}
           <button class="hist-del" aria-label="Editar" onclick="editEntry('${e.id}')" style="margin-right:6px;">&#9998;</button>
           <button class="hist-del" aria-label="Eliminar" onclick="deleteEntry('${e.id}')">&times;</button>
         </td>
