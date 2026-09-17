@@ -4,30 +4,62 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Términos y condiciones — Tikera</title>
-<meta name="description" content="Términos y condiciones de uso de Tikera.">
+<meta name="description" content="Términos y condiciones de uso de Tikera: cuenta, precio, datos, propiedad intelectual, responsabilidad y jurisdicción.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233E5670'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-weight='700' font-size='32' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0D1113;--card:#12171A;--ink:#F4F2ED;--ink-soft:#9BA3A6;
-    --line:rgba(244,242,237,0.10);--accent:#3E5670;--venta:#4CAF80;
+    --line:rgba(244,242,237,0.10);--accent:#3E5670;--venta:#4CAF80;--gasto:#B85B5D;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.65;}
-  .wrap{max-width:720px;margin:0 auto;padding:56px 20px 80px;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.7;}
+  .wrap{max-width:760px;margin:0 auto;padding:56px 20px 100px;}
   a{color:var(--venta);}
   .back{display:inline-flex;align-items:center;gap:6px;color:var(--ink-soft);text-decoration:none;font-size:13.5px;margin-bottom:32px;}
   .back:hover{color:var(--ink);}
   h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:30px;margin:0 0 6px;}
-  .updated{font-size:12.5px;color:var(--ink-soft);margin-bottom:28px;}
-  .notice{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:28px;font-size:14.5px;color:var(--ink-soft);}
-  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;margin:32px 0 10px;}
+  .updated{font-size:12.5px;color:var(--ink-soft);margin-bottom:20px;font-family:'IBM Plex Mono',monospace;}
+  .intro{font-size:15px;color:var(--ink-soft);margin-bottom:8px;}
+  .toc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin:28px 0 40px;}
+  .toc-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-bottom:10px;font-weight:600;}
+  .toc ol{margin:0;padding-left:20px;columns:2;column-gap:24px;}
+  .toc li{font-size:13.5px;margin-bottom:6px;break-inside:avoid;}
+  .toc a{color:var(--ink-soft);text-decoration:none;}
+  .toc a:hover{color:var(--venta);}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:19px;margin:40px 0 12px;scroll-margin-top:20px;display:flex;align-items:baseline;gap:8px;}
+  h2 .num{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--venta);font-weight:500;}
+  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin:22px 0 8px;color:var(--ink);}
   p,li{font-size:14.5px;color:var(--ink-soft);}
-  ul{padding-left:20px;}
+  ul,ol{padding-left:20px;}
   li{margin-bottom:8px;}
   strong{color:var(--ink);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:14px 0;}
+  .card p{margin:0;}
+  .warn{border-color:rgba(184,91,93,0.3);background:rgba(184,91,93,0.08);}
+  .price-box{display:flex;align-items:baseline;gap:8px;background:var(--card);border:1.5px solid var(--venta);border-radius:12px;padding:16px 20px;margin:14px 0;}
+  .price-box .amount{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--venta);}
+  .price-box .period{font-size:13px;color:var(--ink-soft);}
+  .contact-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-top:8px;}
+  .contact-box p{margin:4px 0;}
+  footer.legal-foot{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-soft);}
+  @media(max-width:520px){ .toc ol{columns:1;} }
+
+  /* Aviso de cookies */
+  .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:none;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:18px 20px;}
+  .cookie-banner.show{display:block;}
+  .cookie-banner-inner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;max-width:960px;margin:0 auto;}
+  .cookie-banner-text{font-size:13px;color:var(--ink-soft);margin:0;flex:1;min-width:220px;line-height:1.55;}
+  .cookie-banner-text a{color:var(--venta);}
+  .cookie-banner-actions{display:flex;gap:10px;flex-shrink:0;}
+  .cookie-btn{border-radius:8px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .cookie-btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink-soft);}
+  .cookie-btn-ghost:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .cookie-btn-solid{background:var(--accent);border:1.5px solid var(--accent);color:#fff;}
+  .cookie-btn-solid:hover{opacity:0.9;}
+  @media(max-width:520px){ .cookie-banner-actions{width:100%;} .cookie-btn{flex:1;} }
 </style>
 </head>
 <body>
@@ -36,27 +68,154 @@
   <h1>Términos y condiciones</h1>
   <div class="updated">Última actualización: septiembre de 2026</div>
 
-  <div class="notice">
-    Este es un producto en desarrollo activo: estos términos pueden actualizarse a medida que sumamos funciones. Estas son las condiciones bajo las que funciona Tikera hoy.
+  <p class="intro">Estos términos regulan el uso de Tikera. Al crear una cuenta o usar la aplicación, estás aceptando lo que dice acá abajo. Es un documento largo porque cubre cosas importantes — te recomendamos leerlo entero al menos una vez, no solo la parte de precio.</p>
+
+  <div class="card">
+    <p>Tikera es un producto en desarrollo activo hecho por una sola persona, no por una empresa grande. Estos términos van a seguir evolucionando junto con el producto — cada cambio importante te lo vamos a avisar antes de que entre en vigencia.</p>
   </div>
 
-  <h2>Qué es Tikera</h2>
-  <p>Tikera es una aplicación web para registrar ventas, gastos y calcular la rentabilidad de tu negocio. Se accede desde el navegador, sin necesidad de instalar nada.</p>
+  <div class="toc">
+    <div class="toc-title">Contenido</div>
+    <ol>
+      <li><a href="#aceptacion">Aceptación de estos términos</a></li>
+      <li><a href="#servicio">Qué es Tikera</a></li>
+      <li><a href="#capacidad">Quién puede usar Tikera</a></li>
+      <li><a href="#cuenta">Tu cuenta</a></li>
+      <li><a href="#precio">Prueba gratuita y precio</a></li>
+      <li><a href="#pagos">Facturación y pagos</a></li>
+      <li><a href="#cancelacion">Cancelación</a></li>
+      <li><a href="#tus-datos">Tus datos y tu contenido</a></li>
+      <li><a href="#propiedad">Propiedad intelectual de Tikera</a></li>
+      <li><a href="#uso-aceptable">Uso aceptable</a></li>
+      <li><a href="#terceros">Servicios de terceros</a></li>
+      <li><a href="#disponibilidad">Disponibilidad y cambios al servicio</a></li>
+      <li><a href="#garantias">Garantías y exención de responsabilidad</a></li>
+      <li><a href="#responsabilidad">Limitación de responsabilidad</a></li>
+      <li><a href="#indemnidad">Indemnidad</a></li>
+      <li><a href="#terminacion">Suspensión y cierre de cuenta</a></li>
+      <li><a href="#ley">Ley aplicable y jurisdicción</a></li>
+      <li><a href="#consumidor">Defensa del consumidor</a></li>
+      <li><a href="#generales">Disposiciones generales</a></li>
+      <li><a href="#cambios">Cambios a estos términos</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ol>
+  </div>
 
-  <h2>Tu cuenta</h2>
-  <p>Sos responsable de mantener segura tu contraseña. Los datos que cargás (ventas, gastos, productos) son tuyos — vos decidís qué cargar y podés borrarlos cuando quieras desde la propia app.</p>
+  <h2 id="aceptacion"><span class="num">01</span> Aceptación de estos términos</h2>
+  <p>Al crear una cuenta, iniciar sesión o usar Tikera de cualquier forma, confirmás que leíste, entendiste y aceptás estos términos y nuestra <a href="privacidad.html">Política de Privacidad</a>. Si no estás de acuerdo con alguna parte, no deberías usar la app.</p>
 
-  <h2>Prueba gratuita y precio</h2>
-  <p>Tikera se ofrece con una prueba gratuita de 14 días con acceso completo, sin necesidad de tarjeta para empezar. Al terminar la prueba, seguir usando Tikera tiene un costo de $9.500 por mes, un solo plan con todo incluido y sin costos ocultos. Te vamos a avisar dentro de la app antes de que termine tu prueba, y no se te va a cobrar nada sin que lo confirmes vos.</p>
+  <h2 id="servicio"><span class="num">02</span> Qué es Tikera</h2>
+  <p>Tikera es una aplicación web pensada para kioscos, almacenes y pequeños comercios, que permite registrar ventas y gastos, calcular la ganancia real de tu negocio (venta menos costo de mercadería), llevar un catálogo de productos con control de stock, y generar reportes. Se usa desde el navegador, sin necesidad de instalar software.</p>
+  <p>Tikera <strong>no</strong> es, hoy, un sistema de facturación electrónica ante ARCA/AFIP, ni un servicio contable ni de asesoramiento impositivo o legal. Los cálculos que muestra la app (ganancia, márgenes, estimaciones) son herramientas de gestión interna, no sustituyen la contabilidad formal de tu negocio ni el asesoramiento de un contador.</p>
 
-  <h2>Uso aceptable</h2>
-  <p>Usá Tikera para gestionar tu propio negocio. No está permitido intentar acceder a datos de otras cuentas ni usar la app para fines ilegales.</p>
+  <h2 id="capacidad"><span class="num">03</span> Quién puede usar Tikera</h2>
+  <p>Para usar Tikera necesitás ser mayor de 18 años y tener capacidad legal para contratar según la legislación argentina. Si usás Tikera en representación de un negocio, declarás que tenés la autorización necesaria para hacerlo y para aceptar estos términos en su nombre.</p>
 
-  <h2>Disponibilidad</h2>
-  <p>Hacemos lo posible para que Tikera esté disponible en todo momento, pero al ser un producto en desarrollo activo puede haber interrupciones o cambios mientras seguimos mejorándolo.</p>
+  <h2 id="cuenta"><span class="num">04</span> Tu cuenta</h2>
+  <ul>
+    <li>Sos responsable de mantener segura tu contraseña y de todo lo que ocurra bajo tu cuenta.</li>
+    <li>Tenés que darnos un email válido y mantenerlo actualizado — es el medio que usamos para avisos importantes (fin de prueba, cambios de precio, cambios a estos términos).</li>
+    <li>Cada cuenta está pensada para un negocio. Si tenés más de un negocio, podés necesitar más de una cuenta.</li>
+    <li>Si detectás un uso no autorizado de tu cuenta, avisanos apenas puedas a nuestro <a href="#contacto">email de contacto</a>.</li>
+  </ul>
 
-  <h2>Cambios a estos términos</h2>
-  <p>Si estos términos cambian de forma importante (por ejemplo, si el precio cambia o sumamos facturación electrónica), te lo vamos a avisar dentro de la app antes de que entren en vigencia.</p>
+  <h2 id="precio"><span class="num">05</span> Prueba gratuita y precio</h2>
+  <p>Tikera se ofrece con una prueba gratuita de 14 días, con acceso completo a la app, sin necesidad de tarjeta para empezar.</p>
+  <div class="price-box">
+    <span class="amount">$9.500</span>
+    <span class="period">por mes, después de la prueba — un solo plan, con todo incluido</span>
+  </div>
+  <p>Este es el precio del plan único de Tikera al día de esta actualización. No hay niveles escondidos ni funciones que solo se desbloquean pagando más. Te vamos a avisar dentro de la app antes de que termine tu período de prueba. Si el precio cambia en el futuro, te lo vamos a comunicar con anticipación razonable antes de que te afecte.</p>
+
+  <h2 id="pagos"><span class="num">06</span> Facturación y pagos</h2>
+  <p>Al día de esta actualización, Tikera todavía no tiene un sistema de cobro automático integrado dentro de la app. Esto significa que, mientras eso no esté disponible, <strong>no se te va a cobrar nada sin que primero te avisemos cómo y cuándo pagar, y sin que vos lo confirmes</strong>. Cuando el cobro automático esté disponible, esta sección se va a actualizar con el detalle del medio de pago, la frecuencia de facturación y cómo ver tu historial de pagos.</p>
+
+  <h2 id="cancelacion"><span class="num">07</span> Cancelación</h2>
+  <p>Podés dejar de usar Tikera cuando quieras. Como todavía no hay cobro automático (ver sección anterior), hoy no existe un "trámite de baja" de una suscripción activa — simplemente dejás de usar la cuenta. Cuando activemos la facturación, vas a poder cancelar en cualquier momento desde la propia app, sin necesidad de llamar ni escribir a nadie, y sin períodos de permanencia obligatoria.</p>
+
+  <h2 id="tus-datos"><span class="num">08</span> Tus datos y tu contenido</h2>
+  <p>Los datos que cargás en Tikera (ventas, gastos, productos, notas) son tuyos. No los usamos para publicidad ni los vendemos. Nos das una licencia limitada para almacenarlos, procesarlos y mostrártelos únicamente con el fin de operar el servicio que nos pediste. Podés exportar tus datos a Excel o PDF desde la propia app en cualquier momento, y podés eliminarlos o cerrar tu cuenta cuando quieras. Para más detalle sobre cómo tratamos tus datos personales, leé nuestra <a href="privacidad.html">Política de Privacidad</a>.</p>
+
+  <h2 id="propiedad"><span class="num">09</span> Propiedad intelectual de Tikera</h2>
+  <p>El software, el diseño, la marca "Tikera", el logo y los demás elementos de la aplicación y el sitio son propiedad de quien administra Tikera (ver sección 1 de la <a href="privacidad.html#responsable">Política de Privacidad</a>) o se usan bajo licencia. No podés copiar, modificar, distribuir, hacer ingeniería inversa ni revender Tikera o partes de él sin autorización previa por escrito. Esto no afecta en nada a tu propiedad sobre los datos que vos cargás (ver sección anterior).</p>
+
+  <h2 id="uso-aceptable"><span class="num">10</span> Uso aceptable</h2>
+  <p>Al usar Tikera, te comprometés a:</p>
+  <ul>
+    <li>Usar la app para gestionar tu propio negocio, de buena fe.</li>
+    <li>No intentar acceder a cuentas o datos de otros usuarios sin autorización.</li>
+    <li>No usar la app para actividades ilegales, fraudulentas o que infrinjan derechos de terceros.</li>
+    <li>No intentar interferir con el funcionamiento del servicio (por ejemplo, sobrecargarlo intencionalmente o intentar vulnerar su seguridad).</li>
+    <li>No usar técnicas automatizadas (bots, scraping) para extraer datos de la aplicación sin autorización.</li>
+  </ul>
+  <p>Podemos suspender o cerrar cuentas que incumplan estas condiciones (ver <a href="#terminacion">Suspensión y cierre de cuenta</a>).</p>
+
+  <h2 id="terceros"><span class="num">11</span> Servicios de terceros</h2>
+  <p>Tikera funciona apoyándose en infraestructura de terceros, principalmente Supabase (base de datos y autenticación) y GitHub Pages (hosting del sitio). El funcionamiento de Tikera depende, en parte, de la disponibilidad de estos servicios. Más detalle sobre estos proveedores en la sección "Con quién compartimos tus datos" de la <a href="privacidad.html#terceros">Política de Privacidad</a>.</p>
+
+  <h2 id="disponibilidad"><span class="num">12</span> Disponibilidad y cambios al servicio</h2>
+  <p>Hacemos lo posible para que Tikera esté disponible en todo momento, pero al ser un producto en desarrollo activo, puede haber interrupciones, mantenimientos o cambios en las funciones mientras seguimos mejorándolo. Cuando sea posible, vamos a avisar con anticipación las interrupciones planificadas. No garantizamos disponibilidad ininterrumpida del servicio.</p>
+
+  <h2 id="garantias"><span class="num">13</span> Garantías y exención de responsabilidad</h2>
+  <p>Tikera se ofrece "tal cual" ("as is") y "según disponibilidad". Hacemos nuestro mejor esfuerzo para que los cálculos, reportes y funciones de la app sean correctos y útiles, pero no garantizamos que la app esté libre de errores en todo momento, ni que los resultados que muestra (ganancia estimada, márgenes, proyecciones de la calculadora de la landing) sean exactos en todos los casos. Vos sos responsable de verificar la información importante para decisiones financieras relevantes de tu negocio, idealmente con el apoyo de un profesional contable.</p>
+
+  <h2 id="responsabilidad"><span class="num">14</span> Limitación de responsabilidad</h2>
+  <p>En la máxima medida permitida por la ley aplicable, no seremos responsables por daños indirectos, incidentales, especiales o consecuentes derivados del uso o la imposibilidad de usar Tikera, incluyendo pérdida de ganancias, de datos o de oportunidades de negocio, incluso si fuimos advertidos de la posibilidad de esos daños. Nada en esta sección busca excluir o limitar responsabilidades que no puedan ser excluidas o limitadas bajo la Ley 24.240 de Defensa del Consumidor u otra norma de orden público aplicable.</p>
+
+  <h2 id="indemnidad"><span class="num">15</span> Indemnidad</h2>
+  <p>Aceptás mantenernos indemnes frente a reclamos, daños o gastos razonables (incluidos honorarios legales) que surjan de un uso de Tikera que viole estos términos o que infrinja derechos de terceros, en la medida en que ese reclamo se derive de tu conducta.</p>
+
+  <h2 id="terminacion"><span class="num">16</span> Suspensión y cierre de cuenta</h2>
+  <p>Podés cerrar tu cuenta cuando quieras. Nosotros podemos suspender o cerrar una cuenta si detectamos un incumplimiento grave de estos términos (por ejemplo, uso fraudulento o intentos de vulnerar la seguridad de otras cuentas), avisándote por email salvo que la urgencia del caso lo impida. Si tu cuenta se cierra, vas a poder exportar tus datos antes del cierre efectivo, salvo en casos de uso fraudulento comprobado.</p>
+
+  <h2 id="ley"><span class="num">17</span> Ley aplicable y jurisdicción</h2>
+  <p>Estos términos se rigen por las leyes de la República Argentina. Para cualquier controversia que no se resuelva por la vía de reclamo directo descripta en <a href="#consumidor">Defensa del consumidor</a>, las partes se someten a la jurisdicción de los tribunales ordinarios competentes, sin perjuicio del derecho que te asiste como consumidor a elegir la jurisdicción correspondiente a tu domicilio, conforme la Ley 24.240.</p>
+
+  <h2 id="consumidor"><span class="num">18</span> Defensa del consumidor</h2>
+  <p>Si sos consumidor final en los términos de la Ley 24.240 de Defensa del Consumidor, esa ley te da derechos que estos términos no pueden dejar sin efecto. Ante cualquier inconveniente, te pedimos que primero nos escribas a nuestro <a href="#contacto">email de contacto</a> para intentar resolverlo directamente. Si no llegamos a una solución, podés recurrir a los organismos de defensa del consumidor de tu jurisdicción (por ejemplo, la Dirección Nacional de Defensa del Consumidor) o a los mecanismos de resolución de conflictos que la ley pone a tu disposición.</p>
+
+  <h2 id="generales"><span class="num">19</span> Disposiciones generales</h2>
+  <p>Si alguna cláusula de estos términos fuera considerada inválida o inaplicable por una autoridad competente, el resto de los términos sigue vigente. El hecho de que no ejerzamos un derecho previsto en estos términos en un caso puntual no implica que renunciemos a ejercerlo en el futuro. Estos términos, junto con la Política de Privacidad, constituyen el acuerdo completo entre vos y Tikera respecto del uso del servicio.</p>
+
+  <h2 id="cambios"><span class="num">20</span> Cambios a estos términos</h2>
+  <p>Podemos actualizar estos términos a medida que Tikera evoluciona. Si el cambio es importante (por ejemplo, si el precio cambia, si sumamos facturación electrónica, o si cambian tus derechos u obligaciones de forma relevante), te lo vamos a avisar dentro de la app o por email antes de que entre en vigencia. Seguir usando Tikera después de ese aviso implica que aceptás los nuevos términos.</p>
+
+  <h2 id="contacto"><span class="num">21</span> Contacto</h2>
+  <div class="contact-box">
+    <p><strong>Email:</strong> <a href="mailto:contacto.tikera@gmail.com">contacto.tikera@gmail.com</a></p>
+    <p>Escribinos ante cualquier duda sobre estos términos, un reclamo, o antes de recurrir a cualquier otra instancia.</p>
+  </div>
+
+  <footer class="legal-foot">
+    Este documento describe de buena fe las condiciones bajo las que funciona Tikera hoy. No reemplaza el asesoramiento de un profesional legal para tu situación particular ni para la de tu negocio.
+  </footer>
 </div>
+
+<div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Aviso de cookies">
+  <div class="cookie-banner-inner">
+    <p class="cookie-banner-text">Usamos almacenamiento del navegador para que la sesión y las funciones básicas de Tikera funcionen. No usamos cookies de publicidad ni de seguimiento. <a href="privacidad.html">Más información</a>.</p>
+    <div class="cookie-banner-actions">
+      <button type="button" id="cookieReject" class="cookie-btn cookie-btn-ghost">Rechazar</button>
+      <button type="button" id="cookieAccept" class="cookie-btn cookie-btn-solid">Aceptar</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'tikera_cookie_consent';
+  var banner = document.getElementById('cookieBanner');
+  if(!banner) return;
+  var saved;
+  try{ saved = localStorage.getItem(KEY); }catch(e){ saved = null; }
+  if(saved === 'accepted' || saved === 'rejected') return;
+  banner.classList.add('show');
+  function decide(value){
+    try{ localStorage.setItem(KEY, value); }catch(e){}
+    banner.classList.remove('show');
+  }
+  document.getElementById('cookieAccept').addEventListener('click', function(){ decide('accepted'); });
+  document.getElementById('cookieReject').addEventListener('click', function(){ decide('rejected'); });
+})();
+</script>
 </body>
 </html>

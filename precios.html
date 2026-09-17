@@ -94,6 +94,20 @@
   #mobile-menu.open{transform:translateY(0);opacity:1;pointer-events:auto;}
 
   a:focus-visible, button:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:6px;}
+
+  /* Aviso de cookies */
+  .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:none;background:var(--bg-card);border:1px solid var(--hairline);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:18px 20px;}
+  .cookie-banner.show{display:block;}
+  .cookie-banner-inner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;max-width:960px;margin:0 auto;}
+  .cookie-banner-text{font-size:13px;color:var(--text-dim);margin:0;flex:1;min-width:220px;line-height:1.55;}
+  .cookie-banner-text a{color:var(--green);}
+  .cookie-banner-actions{display:flex;gap:10px;flex-shrink:0;}
+  .cookie-btn{border-radius:8px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .cookie-btn-ghost{background:transparent;border:1.5px solid var(--hairline);color:var(--text-dim);}
+  .cookie-btn-ghost:hover{border-color:var(--text-dim);color:var(--text);}
+  .cookie-btn-solid{background:var(--brand-gradient);border:none;color:#fff;}
+  .cookie-btn-solid:hover{opacity:0.9;}
+  @media(max-width:520px){ .cookie-banner-actions{width:100%;} .cookie-btn{flex:1;} }
 </style>
 </head>
 <body class="antialiased">
@@ -114,7 +128,6 @@
       <a href="index.html" class="nav-link">Inicio</a>
       <a href="index.html#calculadora" class="nav-link">Calculadora</a>
       <a href="index.html#funcionalidades" class="nav-link">Funcionalidades</a>
-      <a href="index.html#comparativa" class="nav-link">Comparativa</a>
       <a href="index.html#faqs" class="nav-link">FAQs</a>
       <a href="precios.html" class="nav-link current">Precios</a>
     </nav>
@@ -134,7 +147,6 @@
       <a href="index.html" class="nav-link text-base">Inicio</a>
       <a href="index.html#calculadora" class="nav-link text-base">Calculadora</a>
       <a href="index.html#funcionalidades" class="nav-link text-base">Funcionalidades</a>
-      <a href="index.html#comparativa" class="nav-link text-base">Comparativa</a>
       <a href="index.html#faqs" class="nav-link text-base">FAQs</a>
       <a href="precios.html" class="nav-link text-base current">Precios</a>
       <div class="divider-fade my-1"></div>
@@ -235,6 +247,32 @@
   </div>
 </footer>
 
+<div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Aviso de cookies">
+  <div class="cookie-banner-inner">
+    <p class="cookie-banner-text">Usamos almacenamiento del navegador para que la sesión y las funciones básicas de Tikera funcionen. No usamos cookies de publicidad ni de seguimiento. <a href="privacidad.html">Más información</a>.</p>
+    <div class="cookie-banner-actions">
+      <button type="button" id="cookieReject" class="cookie-btn cookie-btn-ghost">Rechazar</button>
+      <button type="button" id="cookieAccept" class="cookie-btn cookie-btn-solid">Aceptar</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'tikera_cookie_consent';
+  var banner = document.getElementById('cookieBanner');
+  if(!banner) return;
+  var saved;
+  try{ saved = localStorage.getItem(KEY); }catch(e){ saved = null; }
+  if(saved === 'accepted' || saved === 'rejected') return;
+  banner.classList.add('show');
+  function decide(value){
+    try{ localStorage.setItem(KEY, value); }catch(e){}
+    banner.classList.remove('show');
+  }
+  document.getElementById('cookieAccept').addEventListener('click', function(){ decide('accepted'); });
+  document.getElementById('cookieReject').addEventListener('click', function(){ decide('rejected'); });
+})();
+</script>
 <script>
   const menuBtn = document.getElementById('menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');

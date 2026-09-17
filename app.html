@@ -433,6 +433,23 @@
   #entryCardTitle{transition:color .15s ease;}
   #entryCard.mode-gasto #entryCardTitle{color:var(--gasto);}
   #entryCard.mode-venta #entryCardTitle{color:var(--venta);}
+
+  /* Aviso de cookies */
+  .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:none;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:18px 20px;}
+  .cookie-banner.show{display:block;}
+  .cookie-banner-inner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;max-width:960px;margin:0 auto;}
+  .cookie-banner-text{font-size:13px;color:var(--ink-soft);margin:0;flex:1;min-width:220px;line-height:1.55;}
+  .cookie-banner-text a{color:var(--venta);}
+  .cookie-banner-actions{display:flex;gap:10px;flex-shrink:0;}
+  .cookie-btn{border-radius:8px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .cookie-btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink-soft);}
+  .cookie-btn-ghost:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .cookie-btn-solid{background:var(--accent);border:1.5px solid var(--accent);color:#fff;}
+  .cookie-btn-solid:hover{opacity:0.9;}
+  @media(max-width:520px){ .cookie-banner-actions{width:100%;} .cookie-btn{flex:1;} }
+  /* Ojo con la barra de navegacion inferior de la app en mobile (fixed, ~80px) */
+  body.app-active .cookie-banner{bottom:calc(80px + env(safe-area-inset-bottom,0px));}
+  @media(min-width:900px){ body.app-active .cookie-banner{bottom:16px;} }
 </style>
 </head>
 <body>
@@ -746,6 +763,32 @@
 
 <div id="toast" class="toast"></div>
 
+<div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Aviso de cookies">
+  <div class="cookie-banner-inner">
+    <p class="cookie-banner-text">Usamos almacenamiento del navegador para tu sesión y para guardar ventas cargadas sin conexión. No usamos cookies de publicidad ni de seguimiento. <a href="privacidad.html">Más información</a>.</p>
+    <div class="cookie-banner-actions">
+      <button type="button" id="cookieReject" class="cookie-btn cookie-btn-ghost">Rechazar</button>
+      <button type="button" id="cookieAccept" class="cookie-btn cookie-btn-solid">Aceptar</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'tikera_cookie_consent';
+  var banner = document.getElementById('cookieBanner');
+  if(!banner) return;
+  var saved;
+  try{ saved = localStorage.getItem(KEY); }catch(e){ saved = null; }
+  if(saved === 'accepted' || saved === 'rejected') return;
+  banner.classList.add('show');
+  function decide(value){
+    try{ localStorage.setItem(KEY, value); }catch(e){}
+    banner.classList.remove('show');
+  }
+  document.getElementById('cookieAccept').addEventListener('click', function(){ decide('accepted'); });
+  document.getElementById('cookieReject').addEventListener('click', function(){ decide('rejected'); });
+})();
+</script>
 <script>
 let entries = [];
 let currentTipo = 'Venta';

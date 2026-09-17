@@ -4,29 +4,65 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Política de privacidad — Tikera</title>
-<meta name="description" content="Qué datos recopila Tikera, para qué los usa y cómo los protege.">
+<meta name="description" content="Qué datos personales recopila Tikera, para qué los usa, con quién los comparte y cómo ejercer tus derechos sobre ellos.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233E5670'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-weight='700' font-size='32' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0D1113;--card:#12171A;--ink:#F4F2ED;--ink-soft:#9BA3A6;
-    --line:rgba(244,242,237,0.10);--accent:#3E5670;--venta:#4CAF80;
+    --line:rgba(244,242,237,0.10);--accent:#3E5670;--venta:#4CAF80;--gasto:#B85B5D;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.65;}
-  .wrap{max-width:720px;margin:0 auto;padding:56px 20px 80px;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.7;}
+  .wrap{max-width:760px;margin:0 auto;padding:56px 20px 100px;}
   a{color:var(--venta);}
   .back{display:inline-flex;align-items:center;gap:6px;color:var(--ink-soft);text-decoration:none;font-size:13.5px;margin-bottom:32px;}
   .back:hover{color:var(--ink);}
   h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:30px;margin:0 0 6px;}
-  .updated{font-size:12.5px;color:var(--ink-soft);margin-bottom:36px;}
-  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;margin:36px 0 10px;}
+  .updated{font-size:12.5px;color:var(--ink-soft);margin-bottom:20px;font-family:'IBM Plex Mono',monospace;}
+  .intro{font-size:15px;color:var(--ink-soft);margin-bottom:8px;}
+  .toc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin:28px 0 40px;}
+  .toc-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-bottom:10px;font-weight:600;}
+  .toc ol{margin:0;padding-left:20px;columns:2;column-gap:24px;}
+  .toc li{font-size:13.5px;margin-bottom:6px;break-inside:avoid;}
+  .toc a{color:var(--ink-soft);text-decoration:none;}
+  .toc a:hover{color:var(--venta);}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:19px;margin:40px 0 12px;scroll-margin-top:20px;display:flex;align-items:baseline;gap:8px;}
+  h2 .num{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--venta);font-weight:500;}
+  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin:22px 0 8px;color:var(--ink);}
   p,li{font-size:14.5px;color:var(--ink-soft);}
-  ul{padding-left:20px;}
+  ul,ol{padding-left:20px;}
   li{margin-bottom:8px;}
   strong{color:var(--ink);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:14px 0;}
+  .card p{margin:0;}
+  .warn{border-color:rgba(184,91,93,0.3);background:rgba(184,91,93,0.08);}
+  .table-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:12px;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px;}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{color:var(--ink);font-weight:600;background:var(--card);font-size:12.5px;text-transform:uppercase;letter-spacing:.03em;}
+  td{color:var(--ink-soft);}
+  tr:last-child td{border-bottom:none;}
+  .contact-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-top:8px;}
+  .contact-box p{margin:4px 0;}
+  footer.legal-foot{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-soft);}
+  @media(max-width:520px){ .toc ol{columns:1;} }
+
+  /* Aviso de cookies */
+  .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:none;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:18px 20px;}
+  .cookie-banner.show{display:block;}
+  .cookie-banner-inner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;max-width:960px;margin:0 auto;}
+  .cookie-banner-text{font-size:13px;color:var(--ink-soft);margin:0;flex:1;min-width:220px;line-height:1.55;}
+  .cookie-banner-text a{color:var(--venta);}
+  .cookie-banner-actions{display:flex;gap:10px;flex-shrink:0;}
+  .cookie-btn{border-radius:8px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .cookie-btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink-soft);}
+  .cookie-btn-ghost:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .cookie-btn-solid{background:var(--accent);border:1.5px solid var(--accent);color:#fff;}
+  .cookie-btn-solid:hover{opacity:0.9;}
+  @media(max-width:520px){ .cookie-banner-actions{width:100%;} .cookie-btn{flex:1;} }
 </style>
 </head>
 <body>
@@ -35,30 +71,185 @@
   <h1>Política de privacidad</h1>
   <div class="updated">Última actualización: septiembre de 2026</div>
 
-  <p>Esta página explica, en términos simples, qué información recopila Tikera y qué hacemos con ella.</p>
+  <p class="intro">Esta política explica qué datos personales recolecta Tikera, para qué los usamos, con quién los compartimos y qué derechos tenés sobre ellos. La escribimos en el idioma más claro posible, pero es un documento con efectos legales — si algo no te queda claro, escribinos antes de usar la app.</p>
 
-  <h2>Qué datos recopilamos</h2>
+  <div class="toc">
+    <div class="toc-title">Contenido</div>
+    <ol>
+      <li><a href="#responsable">Quién es el responsable de tus datos</a></li>
+      <li><a href="#alcance">A qué aplica esta política</a></li>
+      <li><a href="#datos">Qué datos personales recolectamos</a></li>
+      <li><a href="#origen">Cómo obtenemos estos datos</a></li>
+      <li><a href="#finalidades">Para qué usamos tus datos</a></li>
+      <li><a href="#base-legal">Por qué podemos usar tus datos (base legal)</a></li>
+      <li><a href="#terceros">Con quién compartimos tus datos</a></li>
+      <li><a href="#internacional">Transferencia internacional de datos</a></li>
+      <li><a href="#conservacion">Cuánto tiempo los conservamos</a></li>
+      <li><a href="#seguridad">Cómo protegemos tus datos</a></li>
+      <li><a href="#derechos">Tus derechos y cómo ejercerlos</a></li>
+      <li><a href="#datos-clientes">Datos de tus propios clientes</a></li>
+      <li><a href="#menores">Menores de edad</a></li>
+      <li><a href="#cookies">Cookies y almacenamiento local</a></li>
+      <li><a href="#cambios">Cambios a esta política</a></li>
+      <li><a href="#autoridad">Autoridad de control</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ol>
+  </div>
+
+  <h2 id="responsable"><span class="num">01</span> Quién es el responsable de tus datos</h2>
+  <p>Tikera es un proyecto individual, no una sociedad constituida todavía. Quien administra Tikera y decide cómo se tratan los datos personales de sus usuarios ("el responsable del tratamiento", en los términos de la Ley 25.326) es la persona a cargo de este proyecto, a quien podés contactar por los medios que figuran en la sección de <a href="#contacto">Contacto</a>. A medida que Tikera crezca y eventualmente se constituya como empresa, esta sección se va a actualizar con esos datos formales (razón social, CUIT, domicilio legal).</p>
+
+  <h2 id="alcance"><span class="num">02</span> A qué aplica esta política</h2>
+  <p>Esta política cubre los datos personales que recolectamos a través de:</p>
   <ul>
-    <li><strong>Datos de cuenta:</strong> tu email y contraseña (la contraseña nunca la vemos nosotros — la maneja directamente nuestro proveedor de autenticación, Supabase).</li>
-    <li><strong>Nombre de tu negocio:</strong> el que vos cargás al crear la cuenta.</li>
-    <li><strong>Movimientos de caja:</strong> las ventas, gastos y productos frecuentes que registrás dentro de la app.</li>
+    <li>El sitio público de Tikera (<code>valll444.github.io/Tikera</code> y sus páginas: landing, precios, términos, esta política).</li>
+    <li>La aplicación web de Tikera (registro de caja, catálogo y todo lo que usás una vez que iniciás sesión).</li>
   </ul>
-  <p>No recopilamos datos de pago, ubicación ni navegación fuera de la app. No usamos cookies de seguimiento ni publicidad.</p>
+  <p>No cubre sitios de terceros a los que Tikera pueda enlazar, ni el tratamiento de datos que hagan esos terceros por su cuenta.</p>
 
-  <h2>Para qué usamos estos datos</h2>
-  <p>Únicamente para que la app funcione: mostrarte tus propios movimientos, calcular tus reportes y mantener tu sesión iniciada. No usamos tus datos para publicidad ni los analizamos con fines comerciales.</p>
+  <h2 id="datos"><span class="num">03</span> Qué datos personales recolectamos</h2>
+  <p>Separamos los datos en tres grupos, porque cada uno se trata de forma distinta:</p>
 
-  <h2>Con quién compartimos los datos</h2>
-  <p>Tus datos se guardan en <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a>, la infraestructura de base de datos que usamos para operar Tikera. No vendemos ni compartimos tu información con terceros para marketing.</p>
+  <h3>a) Datos de tu cuenta</h3>
+  <ul>
+    <li><strong>Email:</strong> lo usamos para identificarte, para que inicies sesión y para avisos importantes sobre tu cuenta.</li>
+    <li><strong>Contraseña:</strong> nunca la vemos ni la guardamos nosotros en texto plano — la gestiona directamente nuestro proveedor de autenticación (Supabase), que la almacena de forma cifrada (hasheada).</li>
+    <li><strong>Nombre de tu negocio:</strong> el que vos elegís al crear la cuenta o desde la configuración de la app.</li>
+  </ul>
 
-  <h2>Seguridad</h2>
-  <p>Cada cuenta solo puede ver y modificar sus propios datos — está reforzado a nivel de base de datos (Row Level Security), no solo en la app. Aun así, ningún sistema es 100% infalible; si detectás algo raro en tu cuenta, escribinos.</p>
+  <h3>b) Datos que cargás para usar la app</h3>
+  <ul>
+    <li><strong>Movimientos de caja:</strong> fecha, hora, tipo (venta o gasto), descripción, cantidad, precio, costo, ganancia calculada, monto, método de pago y notas que vos cargues.</li>
+    <li><strong>Catálogo de productos:</strong> nombre, precio, costo y stock de los productos que registrás.</li>
+    <li><strong>Productos y gastos frecuentes:</strong> los atajos que guardás para cargar más rápido.</li>
+  </ul>
+  <p>Estos datos son, en general, información de <strong>tu negocio</strong> — no datos personales de terceros, salvo que vos decidas incluirlos (ver la sección <a href="#datos-clientes">Datos de tus propios clientes</a>).</p>
 
-  <h2>Tus derechos</h2>
-  <p>Podés pedirnos en cualquier momento que te mostremos, corrijamos o eliminemos tus datos, escribiéndonos por los medios de contacto de la página principal.</p>
+  <h3>c) Datos técnicos recolectados automáticamente</h3>
+  <ul>
+    <li><strong>Datos de conexión:</strong> la infraestructura que usamos para operar Tikera (hosting del sitio y Supabase) recolecta automáticamente datos técnicos estándar de cualquier request web — dirección IP, tipo de navegador y dispositivo, fecha y hora de acceso — principalmente con fines de seguridad y funcionamiento del servicio.</li>
+    <li><strong>Datos guardados en tu propio dispositivo:</strong> usamos el almacenamiento local del navegador (<em>localStorage</em>) para mantener tu sesión iniciada, guardar movimientos cargados sin conexión a internet hasta que se sincronizan, y recordar tu elección sobre cookies. Esta información vive en tu dispositivo, no en nuestros servidores, salvo cuando se sincroniza.</li>
+  </ul>
 
-  <h2>Cambios a esta política</h2>
-  <p>Si esta política cambia de forma importante, lo vamos a avisar en la propia app o en esta página.</p>
+  <div class="card">
+    <p><strong>Lo que no recolectamos:</strong> no pedimos ni procesamos datos de tarjetas de pago (todavía no hay cobros dentro de la app), no accedemos a tu ubicación, no usamos cookies de publicidad ni de seguimiento entre sitios, y no vendemos datos a nadie.</p>
+  </div>
+
+  <h2 id="origen"><span class="num">04</span> Cómo obtenemos estos datos</h2>
+  <p>Todos los datos personales que tratamos los obtenemos directamente de vos: los que cargás al registrarte, y los que cargás usando la app día a día. No compramos datos a terceros ni los obtenemos de fuentes públicas.</p>
+
+  <h2 id="finalidades"><span class="num">05</span> Para qué usamos tus datos</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Finalidad</th><th>Qué datos involucra</th></tr></thead>
+      <tbody>
+        <tr><td>Darte acceso a la app y mantener tu sesión</td><td>Email, contraseña (vía Supabase)</td></tr>
+        <tr><td>Mostrarte tus movimientos, reportes y catálogo</td><td>Movimientos de caja, productos</td></tr>
+        <tr><td>Calcular tu ganancia real, resúmenes y exportaciones</td><td>Movimientos de caja</td></tr>
+        <tr><td>Avisarte sobre tu cuenta o cambios importantes (fin de prueba, cambios de precio, de estos términos)</td><td>Email</td></tr>
+        <tr><td>Mantener la seguridad del servicio y prevenir abusos</td><td>Datos técnicos de conexión</td></tr>
+        <tr><td>Diagnosticar errores y mejorar la app</td><td>Datos técnicos, uso agregado y anónimo cuando es posible</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>No usamos tus datos para armar perfiles publicitarios, ni los cruzamos con datos de otras fuentes para venderte cosas.</p>
+
+  <h2 id="base-legal"><span class="num">06</span> Por qué podemos usar tus datos (base legal)</h2>
+  <p>Tratamos tus datos porque son necesarios para prestarte el servicio que vos mismo pediste al crear una cuenta (ejecución de un contrato/relación de servicio), porque nos diste tu consentimiento al registrarte y aceptar estos términos, y en algunos casos porque tenemos una obligación legal de conservar cierta información (por ejemplo, ante un requerimiento de una autoridad competente).</p>
+
+  <h2 id="terceros"><span class="num">07</span> Con quién compartimos tus datos</h2>
+  <p>No vendemos tus datos. Los compartimos únicamente con los proveedores que necesitamos para que Tikera funcione, que actúan como "encargados del tratamiento" (procesan datos por nuestra cuenta, bajo nuestras instrucciones):</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Proveedor</th><th>Para qué lo usamos</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a></td><td>Base de datos, autenticación de usuarios y almacenamiento de tus movimientos, productos y datos de cuenta.</td></tr>
+        <tr><td>GitHub Pages</td><td>Hosting del sitio público (landing, precios, esta página).</td></tr>
+        <tr><td>Google Fonts</td><td>Entrega de las tipografías del sitio. Google Fonts no usa cookies ni registra tu IP con fines publicitarios.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Solo compartiríamos datos con otras personas u organismos si la ley nos obliga (por ejemplo, ante un requerimiento judicial válido), o si vos nos autorizás expresamente a hacerlo.</p>
+
+  <h2 id="internacional"><span class="num">08</span> Transferencia internacional de datos</h2>
+  <p>Los proveedores que usamos (como Supabase) pueden operar con servidores ubicados fuera de la Argentina. Esto significa que tus datos podrían almacenarse o procesarse en otros países. En esos casos, exigimos a nuestros proveedores que mantengan niveles de protección adecuados para tus datos, en línea con lo que pide la Ley 25.326 para este tipo de transferencias.</p>
+
+  <h2 id="conservacion"><span class="num">09</span> Cuánto tiempo conservamos tus datos</h2>
+  <p>Guardamos tus datos mientras tu cuenta esté activa. Si borrás un movimiento, un producto o tu cuenta desde la app, esos datos se eliminan de nuestra base en un plazo razonable. Podemos conservar cierta información por más tiempo si una obligación legal nos lo exige, o para resolver disputas.</p>
+
+  <h2 id="seguridad"><span class="num">10</span> Cómo protegemos tus datos</h2>
+  <p>Cada cuenta solo puede ver y modificar sus propios datos — esto está reforzado a nivel de base de datos mediante políticas de seguridad por fila (<em>Row Level Security</em>), no solo dentro de la aplicación. La conexión entre tu navegador y nuestros servidores viaja cifrada (HTTPS). Ningún sistema es 100% infalible: si en algún momento detectamos un incidente de seguridad que afecte tus datos, te lo vamos a comunicar sin demora injustificada.</p>
+
+  <h2 id="derechos"><span class="num">11</span> Tus derechos y cómo ejercerlos</h2>
+  <p>De acuerdo con la Ley 25.326 de Protección de Datos Personales, tenés derecho a:</p>
+  <ul>
+    <li><strong>Acceso:</strong> pedirnos qué datos tuyos tenemos guardados.</li>
+    <li><strong>Rectificación:</strong> pedirnos que corrijamos datos incorrectos o desactualizados.</li>
+    <li><strong>Actualización:</strong> pedirnos que actualicemos tus datos.</li>
+    <li><strong>Supresión:</strong> pedirnos que eliminemos tus datos (podés borrar tu cuenta y tu información vos mismo desde la app, o pedírnoslo por email).</li>
+    <li><strong>Revocar tu consentimiento</strong> en cualquier momento, entendiendo que eso puede implicar que dejemos de poder darte el servicio.</li>
+  </ul>
+  <p>Para ejercer cualquiera de estos derechos, escribinos a nuestro <a href="#contacto">email de contacto</a> indicando qué querés hacer. Vamos a responderte en un plazo razonable, y en cualquier caso dentro de los plazos que marca la ley aplicable.</p>
+
+  <h2 id="datos-clientes"><span class="num">12</span> Datos de tus propios clientes</h2>
+  <div class="card warn">
+    <p>Tikera está pensado para registrar <strong>tus</strong> ventas y gastos, no para llevar una base de datos de tus clientes. Si igual decidís anotar el nombre, número de teléfono u otro dato personal de un cliente tuyo en el campo de notas, <strong>vos pasás a ser responsable del tratamiento de ese dato personal</strong> frente a esa persona y frente a la ley — nosotros solo lo almacenamos técnicamente porque lo cargaste vos. Te recomendamos evitar cargar datos personales de terceros que no sean estrictamente necesarios para tu registro contable.</p>
+  </div>
+
+  <h2 id="menores"><span class="num">13</span> Menores de edad</h2>
+  <p>Tikera está pensado para personas mayores de 18 años que manejan o son dueñas de un comercio. No recolectamos intencionalmente datos de menores de edad. Si creés que un menor nos dio sus datos sin la autorización correspondiente, escribinos y lo vamos a eliminar.</p>
+
+  <h2 id="cookies"><span class="num">14</span> Cookies y almacenamiento local</h2>
+  <p>Tikera no usa cookies de publicidad ni de seguimiento entre sitios. Usamos almacenamiento local del navegador (<em>localStorage</em>), que técnicamente no son cookies pero cumplen una función similar, para:</p>
+  <ul>
+    <li>Mantener tu sesión iniciada en la app.</li>
+    <li>Guardar movimientos cargados sin conexión hasta que se sincronizan con el servidor.</li>
+    <li>Recordar si aceptaste o rechazaste el aviso de cookies de este sitio.</li>
+  </ul>
+  <p>Todo esto es estrictamente necesario para que Tikera funcione — por eso, aunque rechaces el aviso de cookies, esta funcionalidad esencial sigue activa (de lo contrario, no podrías ni iniciar sesión). Si en el futuro sumamos analítica o publicidad, vamos a actualizar esta sección y el banner de cookies para pedirte consentimiento específico antes de activarlas.</p>
+
+  <h2 id="cambios"><span class="num">15</span> Cambios a esta política</h2>
+  <p>Podemos actualizar esta política a medida que Tikera cambia. Si el cambio es importante, te lo vamos a avisar dentro de la app o por email antes de que entre en vigencia. La fecha al principio de esta página siempre va a reflejar la última actualización.</p>
+
+  <h2 id="autoridad"><span class="num">16</span> Autoridad de control</h2>
+  <p>La Agencia de Acceso a la Información Pública (AAIP) es el organismo de control en la Argentina en materia de protección de datos personales. Si considerás que no resolvimos tu reclamo de forma adecuada, tenés derecho a presentar una denuncia ante la AAIP.</p>
+
+  <h2 id="contacto"><span class="num">17</span> Contacto</h2>
+  <div class="contact-box">
+    <p><strong>Email:</strong> <a href="mailto:contacto.tikera@gmail.com">contacto.tikera@gmail.com</a></p>
+    <p>Usá este email para consultas sobre esta política, para ejercer tus derechos sobre tus datos personales, o para reportar cualquier problema de seguridad o privacidad que detectes.</p>
+  </div>
+
+  <footer class="legal-foot">
+    Este documento describe nuestras prácticas actuales de tratamiento de datos personales de buena fe y en lenguaje simple. No reemplaza el asesoramiento de un profesional legal para tu situación particular.
+  </footer>
 </div>
+
+<div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Aviso de cookies">
+  <div class="cookie-banner-inner">
+    <p class="cookie-banner-text">Usamos almacenamiento del navegador para que la sesión y las funciones básicas de Tikera funcionen. No usamos cookies de publicidad ni de seguimiento. <a href="privacidad.html">Más información</a>.</p>
+    <div class="cookie-banner-actions">
+      <button type="button" id="cookieReject" class="cookie-btn cookie-btn-ghost">Rechazar</button>
+      <button type="button" id="cookieAccept" class="cookie-btn cookie-btn-solid">Aceptar</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'tikera_cookie_consent';
+  var banner = document.getElementById('cookieBanner');
+  if(!banner) return;
+  var saved;
+  try{ saved = localStorage.getItem(KEY); }catch(e){ saved = null; }
+  if(saved === 'accepted' || saved === 'rejected') return;
+  banner.classList.add('show');
+  function decide(value){
+    try{ localStorage.setItem(KEY, value); }catch(e){}
+    banner.classList.remove('show');
+  }
+  document.getElementById('cookieAccept').addEventListener('click', function(){ decide('accepted'); });
+  document.getElementById('cookieReject').addEventListener('click', function(){ decide('rejected'); });
+})();
+</script>
 </body>
 </html>

@@ -41,8 +41,6 @@
     --green-soft:rgba(76,175,128,0.14);
     --red:#B85B5D;
     --red-soft:rgba(184,91,93,0.14);
-    --gold:#D9A251;
-    --gold-soft:rgba(217,162,81,0.13);
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -175,18 +173,6 @@
   .demo-pane{display:none;}
   .demo-pane.active{display:block;}
 
-  /* Comparativa vs competencia */
-  .compare-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;}
-  .compare-table th,.compare-table td{padding:15px 18px;border-bottom:1px solid var(--hairline);white-space:nowrap;}
-  .compare-table tbody tr:last-child th,.compare-table tbody tr:last-child td{border-bottom:none;}
-  .compare-table th{font-family:'Manrope';font-weight:700;font-size:13.5px;color:var(--text-dim);text-align:center;background:var(--bg-elevated);}
-  .compare-table td:first-child,.compare-table th:first-child{text-align:left;color:var(--text-dim);white-space:normal;max-width:220px;font-size:13.5px;}
-  .compare-table td{text-align:center;color:var(--text-faint);}
-  .compare-col-tikera{background:var(--gold-soft);}
-  th.compare-col-tikera{color:var(--gold);}
-  td.compare-check.compare-col-tikera{color:var(--gold);font-weight:700;}
-  .compare-check{color:var(--green);font-weight:700;}
-
   .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);}
 
   .divider-fade{height:1px;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);}
@@ -219,6 +205,22 @@
   }
   .faq-item[open] summary::after{transform:translateY(-50%) rotate(45deg);color:var(--slate-bright);}
   .faq-item p{font-size:14px;color:var(--text-dim);line-height:1.6;margin:0 0 18px;max-width:640px;}
+
+  /* Aviso de cookies */
+  .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:none;background:var(--bg-card);border:1px solid var(--hairline);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:18px 20px;}
+  .cookie-banner.show{display:block;}
+  .cookie-banner-inner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;max-width:960px;margin:0 auto;}
+  .cookie-banner-text{font-size:13px;color:var(--text-dim);margin:0;flex:1;min-width:220px;line-height:1.55;}
+  .cookie-banner-text a{color:var(--green);}
+  .cookie-banner-actions{display:flex;gap:10px;flex-shrink:0;}
+  .cookie-btn{border-radius:8px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .cookie-btn-ghost{background:transparent;border:1.5px solid var(--hairline);color:var(--text-dim);}
+  .cookie-btn-ghost:hover{border-color:var(--text-dim);color:var(--text);}
+  .cookie-btn-solid{background:var(--brand-gradient);border:none;color:#fff;}
+  .cookie-btn-solid:hover{opacity:0.9;}
+  @media(max-width:520px){ .cookie-banner-actions{width:100%;} .cookie-btn{flex:1;} }
+  /* En mobile el CTA fijo de "Probar gratis" ocupa la franja inferior */
+  @media(max-width:767px){ .cookie-banner{bottom:78px;} }
 </style>
 </head>
 <body class="antialiased">
@@ -239,7 +241,6 @@
       <a href="#top" class="nav-link">Inicio</a>
       <a href="#calculadora" class="nav-link">Calculadora</a>
       <a href="#funcionalidades" class="nav-link">Funcionalidades</a>
-      <a href="#comparativa" class="nav-link">Comparativa</a>
       <a href="#faqs" class="nav-link">FAQs</a>
       <a href="precios.html" class="nav-link">Precios</a>
     </nav>
@@ -259,7 +260,6 @@
       <a href="#top" class="nav-link text-base">Inicio</a>
       <a href="#calculadora" class="nav-link text-base">Calculadora</a>
       <a href="#funcionalidades" class="nav-link text-base">Funcionalidades</a>
-      <a href="#comparativa" class="nav-link text-base">Comparativa</a>
       <a href="#faqs" class="nav-link text-base">FAQs</a>
       <a href="precios.html" class="nav-link text-base">Precios</a>
       <div class="divider-fade my-1"></div>
@@ -505,64 +505,6 @@
   </div>
 </section>
 
-<!-- COMPARATIVA -->
-<section id="comparativa" class="py-16 md:py-24 border-t border-[var(--hairline)]">
-  <div class="container-w">
-    <div class="reveal chip mb-6 border border-[var(--gold)] rounded-full px-4 py-2 w-fit" style="background:rgba(217,162,81,0.13);">
-      <span class="w-2 h-2 rounded-full bg-[var(--gold)]"></span>
-      Comparado con el resto del mercado
-    </div>
-    <h2 class="reveal font-display font-extrabold text-[30px] sm:text-[36px] leading-tight max-w-[640px] mb-4">
-      Lo mismo que las apps de kiosco más grandes de Argentina, sin pagar de más.
-    </h2>
-    <p class="reveal text-[15px] text-[var(--text-dim)] max-w-[620px] mb-10 leading-relaxed">
-      Relevamos las apps de caja y punto de venta que más se usan en kioscos y almacenes argentinos, sin nombrar marcas en particular. Esto es lo que suele costar y ofrecer el resto del mercado, al lado de lo que ofrece Tikera.
-    </p>
-
-    <div class="reveal overflow-x-auto rounded-2xl border border-[var(--hairline)]">
-      <table class="compare-table" style="min-width:520px;">
-        <thead>
-          <tr>
-            <th></th>
-            <th class="compare-col-tikera">Tikera</th>
-            <th>Resto del mercado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Precio de entrada</td>
-            <td class="compare-col-tikera" style="color:var(--gold);font-weight:700;">$9.500<span style="color:var(--text-faint);font-weight:400;">/mes</span></td>
-            <td>entre $9.900/mes y $390.000 pago único</td>
-          </tr>
-          <tr>
-            <td>Ganancia real (venta menos costo, no solo lo facturado)</td>
-            <td class="compare-check compare-col-tikera">✓</td>
-            <td>la mayoría solo muestra ventas totales</td>
-          </tr>
-          <tr>
-            <td>Catálogo de productos con stock</td>
-            <td class="compare-check compare-col-tikera">✓</td>
-            <td>sí, en casi todas</td>
-          </tr>
-          <tr>
-            <td>Funciona sin internet</td>
-            <td class="compare-check compare-col-tikera">✓</td>
-            <td>depende de cada una</td>
-          </tr>
-          <tr>
-            <td>Factura electrónica ARCA</td>
-            <td class="compare-col-tikera">todavía no</td>
-            <td>algunas sí la ofrecen</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="reveal text-[12px] text-[var(--text-faint)] mt-4 max-w-[620px]">
-      Basado en precios y funciones publicados por varias apps de punto de venta argentinas a septiembre de 2026 — pueden haber cambiado desde entonces.
-    </p>
-  </div>
-</section>
-
 <!-- DEMO -->
 <section id="demo" class="py-16 md:py-24 border-t border-[var(--hairline)]">
   <div class="container-w">
@@ -762,6 +704,32 @@
   <a href="precios.html" class="btn-primary rounded-xl px-5 py-3.5 text-[14.5px] w-full flex items-center justify-center shadow-lg">Probar Tikera gratis</a>
 </div>
 
+<div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Aviso de cookies">
+  <div class="cookie-banner-inner">
+    <p class="cookie-banner-text">Usamos almacenamiento del navegador para que la sesión y las funciones básicas de Tikera funcionen. No usamos cookies de publicidad ni de seguimiento. <a href="privacidad.html">Más información</a>.</p>
+    <div class="cookie-banner-actions">
+      <button type="button" id="cookieReject" class="cookie-btn cookie-btn-ghost">Rechazar</button>
+      <button type="button" id="cookieAccept" class="cookie-btn cookie-btn-solid">Aceptar</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'tikera_cookie_consent';
+  var banner = document.getElementById('cookieBanner');
+  if(!banner) return;
+  var saved;
+  try{ saved = localStorage.getItem(KEY); }catch(e){ saved = null; }
+  if(saved === 'accepted' || saved === 'rejected') return;
+  banner.classList.add('show');
+  function decide(value){
+    try{ localStorage.setItem(KEY, value); }catch(e){}
+    banner.classList.remove('show');
+  }
+  document.getElementById('cookieAccept').addEventListener('click', function(){ decide('accepted'); });
+  document.getElementById('cookieReject').addEventListener('click', function(){ decide('rejected'); });
+})();
+</script>
 <script>
   // Header scroll state
   const header = document.getElementById('site-header');
