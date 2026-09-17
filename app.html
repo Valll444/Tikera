@@ -336,6 +336,14 @@
   }
   .login-brand{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--ink);line-height:1.1;}
   .login-sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  #trialBlocked{display:none;}
+  #trialBlocked.show{display:flex;}
+  #trialBlocked .price-box{
+    display:flex;align-items:baseline;gap:8px;background:var(--paper);
+    border:1.5px solid var(--venta);border-radius:12px;padding:14px 16px;
+  }
+  #trialBlocked .amount{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--venta);}
+  #trialBlocked .period{font-size:12.5px;color:var(--ink-soft);}
   .login-title{font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:700;margin:0 0 6px;color:var(--ink);text-align:center;}
   .login-desc{font-size:13.5px;color:var(--ink-soft);margin:0 0 24px;text-align:center;}
   .form-label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:500;}
@@ -586,6 +594,31 @@
 
     <p class="login-note" id="gateNote">
       Podés entrar desde cualquier dispositivo con el mismo email y contraseña.
+    </p>
+  </div>
+</div>
+
+<div id="trialBlocked" style="min-height:100vh;align-items:center;justify-content:center;padding:24px 16px;background:var(--counter);">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-badge">T</div>
+      <div>
+        <div class="login-brand">Tikera</div>
+      </div>
+    </div>
+    <h2 class="login-title">Tu prueba de 14 días terminó</h2>
+    <p class="login-desc">Ya usaste los 14 días gratis de Tikera. Para seguir viendo tus ventas, gastos y el catálogo, activá el plan pago.</p>
+    <div class="price-box" style="margin:18px 0;">
+      <span class="amount">$9.500</span>
+      <span class="period">por mes, un solo plan con todo incluido</span>
+    </div>
+    <a id="trialBlockedPayBtn" href="#" target="_blank" rel="noopener" class="submit-btn" style="display:none;text-decoration:none;text-align:center;">Pagar y activar</a>
+    <div id="trialBlockedContact" style="display:none;">
+      <p class="login-desc" style="margin-top:0;">Todavía estamos activando el cobro automático. Escribinos y te activamos el plan en el momento:</p>
+      <a href="mailto:contacto.tikera@gmail.com" class="submit-btn" style="display:block;text-decoration:none;text-align:center;">Escribir a contacto.tikera@gmail.com</a>
+    </div>
+    <p class="login-note" style="margin-top:18px;">
+      ¿Ya pagaste? Puede tardar unos minutos en activarse. <a href="#" id="trialBlockedRefresh" style="color:var(--venta);">Volver a intentar</a> o <button type="button" id="trialBlockedLogout" style="background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;padding:0;font:inherit;">cerrar sesión</button>.
     </p>
   </div>
 </div>
@@ -968,6 +1001,28 @@ let editingProductId = null;
 let selectedProductId = null;
 
 // ============================================
+// Plan y prueba gratuita.
+// currentPlan: 'trial' | 'pago' | 'cortesia' -- viene de profiles.plan.
+// Mientras no tengamos el link de pago real conectado, dejamos
+// PAYMENT_LINK_URL vacio y la pantalla de bloqueo muestra el email
+// de contacto en su lugar; el dia que exista el link, va solo acá.
+// ============================================
+const PAYMENT_LINK_URL = '';
+let currentPlan = 'trial';
+let currentTrialStartedAt = null;
+const TRIAL_DAYS = 14;
+
+function trialDiasRestantes(){
+  if(!currentTrialStartedAt) return TRIAL_DAYS;
+  const transcurridos = Math.floor((Date.now() - currentTrialStartedAt.getTime()) / 86400000);
+  return TRIAL_DAYS - transcurridos;
+}
+function isTrialExpired(){
+  if(currentPlan === 'pago' || currentPlan === 'cortesia') return false;
+  return trialDiasRestantes() <= 0;
+}
+
+// ============================================
 // Apariencia: color de acento, elegible desde Cuenta > Apariencia.
 // Se persiste en localStorage y se aplica pisando las variables CSS
 // del root -- no toca los colores semanticos (venta/gasto/dorado/turquesa).
@@ -1292,7 +1347,40 @@ function switchView(view){
 }
 document.getElementById('settingsBtn').addEventListener('click', ()=> switchView('cuenta'));
 
+function showTrialBlocked(){
+  const gate = document.getElementById('gate');
+  const blocked = document.getElementById('trialBlocked');
+  gate.classList.add('leaving');
+  setTimeout(()=>{
+    gate.style.display = 'none';
+    gate.classList.remove('leaving');
+    if(PAYMENT_LINK_URL){
+      document.getElementById('trialBlockedPayBtn').href = PAYMENT_LINK_URL;
+      document.getElementById('trialBlockedPayBtn').style.display = 'block';
+      document.getElementById('trialBlockedContact').style.display = 'none';
+    }else{
+      document.getElementById('trialBlockedPayBtn').style.display = 'none';
+      document.getElementById('trialBlockedContact').style.display = 'block';
+    }
+    blocked.classList.add('show');
+  }, 180);
+}
+document.getElementById('trialBlockedRefresh').addEventListener('click', async (e)=>{
+  e.preventDefault();
+  await loadData();
+  if(isTrialExpired()){
+    showToast('Todavía no se activó el pago.');
+  }else{
+    document.getElementById('trialBlocked').classList.remove('show');
+    revealApp();
+  }
+});
+document.getElementById('trialBlockedLogout').addEventListener('click', ()=>{
+  document.getElementById('switchBizBtn').click();
+});
+
 function revealApp(){
+  if(isTrialExpired()){ showTrialBlocked(); return; }
   const gate = document.getElementById('gate');
   const app = document.getElementById('app');
   gate.classList.add('leaving');
@@ -1322,6 +1410,7 @@ document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
     document.getElementById('gateEmail').value = '';
     app.style.display = 'none';
     app.classList.remove('leaving-app');
+    document.getElementById('trialBlocked').classList.remove('show');
     document.body.classList.remove('app-active');
     document.getElementById('bottomNav').style.display = 'none';
     gate.style.display = 'flex';
@@ -1372,27 +1461,33 @@ async function loadSettingsView(){
     const { data } = await sb.auth.getUser();
     const user = data && data.user;
     document.getElementById('settEmailActual').value = user ? user.email : '';
-    renderPlanCard(user);
+    renderPlanCard();
   }catch(err){
     console.error(err);
     planCard.innerHTML = '<div class="settings-msg err">No pudimos cargar tu plan. Probá de nuevo.</div>';
   }
 }
 
-function renderPlanCard(user){
+function renderPlanCard(){
   const planCard = document.getElementById('planCard');
-  if(!user || !user.created_at){
-    planCard.innerHTML = '<div class="settings-msg err">No pudimos cargar tu plan. Probá de nuevo.</div>';
-    return;
-  }
-  const createdAt = new Date(user.created_at);
-  const diasTranscurridos = Math.floor((Date.now() - createdAt.getTime()) / 86400000);
-  const diasRestantes = Math.max(0, 14 - diasTranscurridos);
-  const vencida = diasRestantes <= 0;
 
-  const badge = vencida
-    ? '<span class="plan-badge expired"><span class="dot"></span>Prueba vencida</span>'
-    : `<span class="plan-badge trial"><span class="dot"></span>Prueba — ${diasRestantes} día${diasRestantes===1?'':'s'}</span>`;
+  let badge, note;
+  if(currentPlan === 'cortesia'){
+    badge = '<span class="plan-badge cortesia"><span class="dot"></span>Cortesía</span>';
+    note = 'Tenés acceso completo a Tikera sin costo. Gracias por ser de las primeras cuentas.';
+  }else if(currentPlan === 'pago'){
+    badge = '<span class="plan-badge trial"><span class="dot"></span>Activo</span>';
+    note = 'Tu plan está activo. Todavía no hay portal de facturación conectado -- para cualquier cambio, escribinos a contacto.tikera@gmail.com.';
+  }else{
+    const diasRestantes = Math.max(0, trialDiasRestantes());
+    const vencida = isTrialExpired();
+    badge = vencida
+      ? '<span class="plan-badge expired"><span class="dot"></span>Prueba vencida</span>'
+      : `<span class="plan-badge trial"><span class="dot"></span>Prueba — ${diasRestantes} día${diasRestantes===1?'':'s'}</span>`;
+    note = vencida
+      ? 'Tu prueba de 14 días ya terminó. Escribinos a contacto.tikera@gmail.com para seguir usando Tikera mientras activamos el cobro automático.'
+      : 'Cuando termine la prueba vas a poder pagar y esta sección va a mostrar tu estado real.';
+  }
 
   planCard.innerHTML = `
     <div class="plan-card-top">
@@ -1410,9 +1505,7 @@ function renderPlanCard(user){
       <li>Reportes y exportación</li>
       <li>Uso desde celular y compu</li>
     </ul>
-    <div class="plan-note">${vencida
-      ? 'Tu prueba de 14 días ya terminó. El cobro automático todavía no está conectado — escribinos a contacto.tikera@gmail.com para seguir usando Tikera mientras lo activamos.'
-      : 'Esta información es orientativa: todavía no hay cobro automático conectado a tu cuenta. Cuando lo esté, esta sección va a mostrar tu estado real y vas a poder cambiar de plan desde acá.'}</div>
+    <div class="plan-note">${note}</div>
   `;
 }
 
@@ -1656,8 +1749,10 @@ async function loadData(){
     if(!user){ entries = []; return; }
     currentUserId = user.id;
 
-    const { data: profile } = await sb.from('profiles').select('business_name').eq('id', user.id).single();
+    const { data: profile } = await sb.from('profiles').select('business_name, plan, trial_started_at').eq('id', user.id).single();
     document.getElementById('bizName').value = (profile && profile.business_name) || 'Mi negocio';
+    currentPlan = (profile && profile.plan) || 'trial';
+    currentTrialStartedAt = profile && profile.trial_started_at ? new Date(profile.trial_started_at) : null;
 
     const { data: movRows, error: movErr } = await sb.from('movements').select('*').eq('user_id', user.id).order('created_at', {ascending:true});
     entries = movErr ? [] : (movRows || []).map(mapRowToEntry);
