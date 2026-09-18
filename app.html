@@ -409,6 +409,20 @@
   .sales-chart-day{font-size:11px;color:var(--ink-soft);text-transform:capitalize;}
   .sales-chart-empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:24px 0;}
 
+  .stock-wheel-wrap{display:flex;align-items:center;gap:16px;margin-top:4px;}
+  .stock-wheel-center{position:relative;flex-shrink:0;width:96px;height:96px;}
+  .stock-wheel-center svg circle{transition:stroke-dasharray .35s ease, stroke .35s ease;}
+  .stock-wheel-count{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .stock-wheel-count .num{font-family:'IBM Plex Mono';font-size:22px;font-weight:700;color:var(--ink);line-height:1;}
+  .stock-wheel-count .cap{font-size:9.5px;color:var(--ink-soft);text-align:center;margin-top:3px;line-height:1.25;max-width:64px;}
+  .stock-wheel-list{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0;}
+  .stock-wheel-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:13px;}
+  .stock-wheel-name{color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stock-wheel-qty{font-family:'IBM Plex Mono';font-size:12px;color:var(--gasto);flex-shrink:0;}
+  .stock-wheel-more{font-size:12px;color:var(--ink-soft);}
+  .stock-wheel-empty{color:var(--ink-soft);font-size:13px;line-height:1.5;padding:6px 0;}
+  .stock-wheel-ok{color:var(--venta);font-size:13px;display:flex;align-items:center;gap:8px;}
+
   /* pantalla de acceso */
   #gate{
     min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -839,14 +853,24 @@
       <button type="button" id="cancelEditBtn" style="display:none;width:100%;margin-top:8px;padding:9px 0;border:1.5px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:8px;font-size:13px;cursor:pointer;">Cancelar edición</button>
     </div>
 
-    <div class="ticket-card">
-      <div class="ticket-head">
-        <div class="title-row" style="margin-bottom:0;">
-          <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h3"/></svg></span>
-          <h2 style="margin:0;">Movimientos de hoy</h2>
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="ticket-card">
+        <div class="ticket-head">
+          <div class="title-row" style="margin-bottom:0;">
+            <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h3"/></svg></span>
+            <h2 style="margin:0;">Movimientos de hoy</h2>
+          </div>
         </div>
+        <div class="ticket-list" id="ticketList"></div>
       </div>
-      <div class="ticket-list" id="ticketList"></div>
+
+      <div class="card" style="padding:20px 22px;">
+        <div class="title-row">
+          <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/></svg></span>
+          <h2 style="margin:0;">Estado del stock</h2>
+        </div>
+        <div id="stockWheelBody"></div>
+      </div>
     </div>
   </div>
   </div>
@@ -2160,6 +2184,7 @@ function fillProductSelectOptions(){
   }
   updateProductoSelectLabel();
   document.getElementById('productoSelectWrap').style.display = (currentTipo === 'Venta' && products.length) ? 'block' : 'none';
+  renderStockWheel();
 }
 
 // Mantiene el texto visible del desplegable propio en sincronia con el
@@ -2355,6 +2380,7 @@ async function applyStockDelta(productId, cantidadVendida){
     const p = products.find(x => String(x.id) === String(productId));
     if(p) p.stock_actual = nuevoStock;
     if(document.getElementById('viewCatalogo').style.display !== 'none') renderCatalog();
+    renderStockWheel();
   }catch(err){ console.error(err); }
 }
 
@@ -2711,6 +2737,61 @@ function render(){
   renderTicket();
   renderSummary();
   renderHistory();
+  renderStockWheel();
+}
+
+// Rueda de stock: cuantos productos del catalogo estan en o por debajo del
+// minimo configurado, con la lista de cuales son -- vive junto al formulario
+// de carga porque ahi es cuando el kiosquero mas se beneficia de verlo (esta
+// mirando la pantalla igual, no tiene que ir a buscarlo al Catalogo aparte).
+function renderStockWheel(){
+  const wrap = document.getElementById('stockWheelBody');
+  if(!wrap) return;
+  if(products.length === 0){
+    wrap.innerHTML = `<div class="stock-wheel-empty">Todavía no cargaste productos en el catálogo.</div>`;
+    return;
+  }
+  const tracked = products.filter(p => p.stock_minimo !== null && p.stock_minimo !== undefined && p.stock_minimo !== '');
+  if(tracked.length === 0){
+    wrap.innerHTML = `<div class="stock-wheel-empty">Ningún producto tiene un stock mínimo configurado todavía. Agregalo en Catálogo para activar esta alerta.</div>`;
+    return;
+  }
+  const low = tracked
+    .filter(p => (Number(p.stock_actual)||0) <= Number(p.stock_minimo))
+    .sort((a,b)=>(Number(a.stock_actual)||0)-(Number(b.stock_actual)||0));
+
+  const total = tracked.length;
+  const lowCount = low.length;
+  const circumference = 2 * Math.PI * 42;
+  const arcLen = lowCount === 0 ? circumference : (lowCount/total) * circumference;
+  const color = lowCount === 0 ? 'var(--venta)' : 'var(--gasto)';
+
+  const listHtml = lowCount === 0
+    ? `<div class="stock-wheel-ok"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Todo tu stock está en buen nivel.</div>`
+    : low.slice(0,4).map(p => `
+        <div class="stock-wheel-row">
+          <span class="stock-wheel-name">${escapeHtml(p.nombre)}</span>
+          <span class="stock-wheel-qty">${Number(p.stock_actual)||0} / ${Number(p.stock_minimo)}</span>
+        </div>
+      `).join('') + (lowCount > 4 ? `<div class="stock-wheel-more">+${lowCount-4} más</div>` : '');
+
+  wrap.innerHTML = `
+    <div class="stock-wheel-wrap">
+      <div class="stock-wheel-center">
+        <svg width="96" height="96" viewBox="0 0 96 96">
+          <circle cx="48" cy="48" r="42" fill="none" stroke="var(--line)" stroke-width="11"/>
+          <circle cx="48" cy="48" r="42" fill="none" stroke="${color}" stroke-width="11"
+            stroke-dasharray="${arcLen} ${circumference}" stroke-linecap="round"
+            transform="rotate(-90 48 48)"/>
+        </svg>
+        <div class="stock-wheel-count">
+          <span class="num">${lowCount}</span>
+          <span class="cap">${lowCount===1?'producto bajo':'productos bajos'}</span>
+        </div>
+      </div>
+      <div class="stock-wheel-list">${listHtml}</div>
+    </div>
+  `;
 }
 
 function renderTicket(){
