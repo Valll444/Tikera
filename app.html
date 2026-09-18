@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="Tikera">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -45,6 +45,7 @@
     --bg-elevated:#151A1D;
     --text-light:#F4F2ED;
     --radius:10px;
+    --font-body:'Inter',sans-serif;
   }
   /* Tema claro: se activa poniendo data-theme="light" en <html> (ver
      Cuenta > Apariencia). El resto de la hoja de estilos no cambia --
@@ -81,7 +82,7 @@
     margin:0;
     background:var(--counter);
     color:var(--ink);
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-body);
     min-height:100vh;
     animation:pageIn .4s ease;
     position:relative;
@@ -112,7 +113,7 @@
   }
   .app-logo-word{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--ink);letter-spacing:.01em;}
   .biz-name{
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-body);
     font-weight:500;font-size:17px;color:var(--ink-soft);
     background:transparent;border:none;border-bottom:1.5px dashed var(--line-strong);
     padding:2px 0;max-width:420px;width:100%;
@@ -149,7 +150,7 @@
   .type-toggle{display:flex;gap:8px;margin-bottom:16px;}
   .type-btn{
     flex:1;padding:10px 0;border-radius:8px;border:1.5px solid var(--line);
-    background:var(--paper);font-family:'Inter';font-weight:600;font-size:14px;
+    background:var(--paper);font-family:var(--font-body);font-weight:600;font-size:14px;
     cursor:pointer;color:var(--ink-soft);transition:all .12s;
   }
   .type-btn.active-venta{background:var(--venta-bg);border-color:var(--venta);color:var(--venta);}
@@ -158,7 +159,7 @@
   label{display:block;font-size:12.5px;color:var(--ink-soft);margin:12px 0 5px;font-weight:500;}
   input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],select,textarea{
     width:100%;padding:9px 11px;border-radius:8px;border:1.5px solid var(--line);
-    font-family:'Inter';font-size:16px;color:var(--ink);background:var(--paper);
+    font-family:var(--font-body);font-size:16px;color:var(--ink);background:var(--paper);
   }
   input:focus,select:focus{outline:none;border-color:var(--accent);}
   input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.85);cursor:pointer;}
@@ -231,7 +232,7 @@
   }
   .bottom-nav-btn{
     background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;
-    color:var(--ink-soft);font-size:11px;font-family:'Inter',sans-serif;font-weight:500;
+    color:var(--ink-soft);font-size:11px;font-family:var(--font-body);font-weight:500;
     cursor:pointer;padding:5px 20px;border-radius:10px;transition:color .15s ease,background .15s ease;
   }
   .bottom-nav-btn svg{width:22px;height:22px;}
@@ -281,7 +282,7 @@
   .export-btn{
     padding:9px 16px;border:1.5px solid var(--accent);background:transparent;
     color:var(--accent);border-radius:8px;font-weight:600;font-size:13.5px;cursor:pointer;
-    font-family:'Inter';white-space:nowrap;
+    font-family:var(--font-body);white-space:nowrap;
   }
   .export-btn:hover{background:var(--accent);color:#fff;}
   .export-group{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:9px;}
@@ -396,7 +397,7 @@
   .input-wrap{position:relative;}
   .form-input{
     width:100%;padding:12px 42px 12px 14px;border-radius:14px;border:1.5px solid var(--line);
-    font-family:'Inter';font-size:16px;color:var(--ink);background:var(--line-faint);
+    font-family:var(--font-body);font-size:16px;color:var(--ink);background:var(--line-faint);
     transition:border-color .15s ease, box-shadow .15s ease;
   }
   .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(62,86,112,0.25);}
@@ -568,7 +569,7 @@
   .cookie-banner-text{font-size:13px;color:var(--ink-soft);margin:0;flex:1;min-width:220px;line-height:1.55;}
   .cookie-banner-text a{color:var(--venta);}
   .cookie-banner-actions{display:flex;gap:10px;flex-shrink:0;}
-  .cookie-btn{border-radius:8px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .cookie-btn{border-radius:8px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font-body);}
   .cookie-btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink-soft);}
   .cookie-btn-ghost:hover{border-color:var(--ink-soft);color:var(--ink);}
   .cookie-btn-solid{background:var(--accent);border:1.5px solid var(--accent);color:#fff;}
@@ -970,6 +971,9 @@
 
       <label style="margin-top:18px;">Color de acento</label>
       <div class="swatch-row" id="colorSwatches"></div>
+
+      <label style="margin-top:18px;">Tipo de letra</label>
+      <div class="type-toggle" id="fontToggle" style="max-width:420px;"></div>
       <div class="appearance-preview">
         <button type="button" class="submit-btn">Botón de ejemplo</button>
         <span class="nav-link" style="color:var(--accent);font-size:13px;font-weight:600;">Un link con este color</span>
@@ -1035,7 +1039,7 @@
     <span>Catálogo</span>
   </button>
   <button type="button" class="bottom-nav-btn nav-btn-cuenta" id="navBtnCuenta" onclick="switchView('cuenta')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/></svg>
     <span>Cuenta</span>
   </button>
 </nav>
@@ -1137,6 +1141,29 @@ function getSavedAccentId(){
   try{ return localStorage.getItem(ACCENT_KEY) || 'pizarra'; }catch(e){ return 'pizarra'; }
 }
 applyAccentColor(getSavedAccentId());
+
+// ============================================
+// Tipografia del cuerpo (Cuenta > Apariencia). Los titulos (Space
+// Grotesk) y los numeros (IBM Plex Mono) no cambian -- son parte de la
+// identidad de Tikera, no algo que el usuario deberia poder romper.
+// El color del texto siempre sale de --ink/--ink-soft, nunca de la
+// tipografia, asi que cualquiera de estas opciones queda legible tanto
+// en oscuro como en claro.
+// ============================================
+const FONT_PRESETS = [
+  { id: 'inter', label: 'Inter (por defecto)', value: "'Inter',sans-serif" },
+  { id: 'manrope', label: 'Manrope', value: "'Manrope',sans-serif" },
+  { id: 'sistema', label: 'La del sistema', value: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" }
+];
+const FONT_KEY = 'tikera_font_body';
+function applyFontBody(id){
+  const preset = FONT_PRESETS.find(p => p.id === id) || FONT_PRESETS[0];
+  document.documentElement.style.setProperty('--font-body', preset.value);
+}
+function getSavedFontId(){
+  try{ return localStorage.getItem(FONT_KEY) || 'inter'; }catch(e){ return 'inter'; }
+}
+applyFontBody(getSavedFontId());
 
 // ============================================
 // Tema oscuro/claro/sistema. "Oscuro" es como Tikera se ve siempre por
@@ -1593,8 +1620,26 @@ document.querySelectorAll('#themeToggle .type-btn').forEach(btn => {
   });
 });
 
+function renderFontToggle(){
+  const wrap = document.getElementById('fontToggle');
+  const current = getSavedFontId();
+  wrap.innerHTML = FONT_PRESETS.map(p => `
+    <button type="button" class="type-btn${p.id===current ? ' active-accent' : ''}" style="font-family:${p.value};" data-font-opt="${p.id}">${p.label}</button>
+  `).join('');
+  wrap.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.fontOpt;
+      applyFontBody(id);
+      try{ localStorage.setItem(FONT_KEY, id); }catch(e){}
+      renderFontToggle();
+      showToast('Tipografía actualizada');
+    });
+  });
+}
+
 async function loadSettingsView(){
   renderColorSwatches();
+  renderFontToggle();
   renderThemeToggle();
   document.getElementById('settNegocio').value = document.getElementById('bizName').value;
   document.getElementById('settPerfilMsg').textContent = '';
