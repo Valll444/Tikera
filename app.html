@@ -165,6 +165,37 @@
   }
   input:focus,select:focus{outline:none;border-color:var(--accent);}
   input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.85);cursor:pointer;}
+
+  /* Desplegable propio para "Producto del catálogo": un <select> nativo dibuja
+     la lista de opciones con la fuente del sistema operativo, ignorando la
+     tipografia del sitio -- por eso se ve "distinto" al resto de la app.
+     Este componente reemplaza esa lista visualmente y mantiene el <select>
+     real oculto solo para no reescribir la logica que ya depende de el. */
+  .custom-select{position:relative;}
+  .custom-select-trigger{
+    width:100%;padding:9px 11px;border-radius:8px;border:1.5px solid var(--line);
+    font-family:var(--font-body);font-size:16px;color:var(--ink);background:var(--paper);
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    cursor:pointer;text-align:left;
+  }
+  .custom-select-trigger:focus-visible{outline:none;border-color:var(--accent);}
+  .custom-select-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .custom-select-trigger span.placeholder{color:var(--ink-soft);}
+  .custom-select-trigger svg{flex-shrink:0;color:var(--ink-soft);transition:transform .15s ease;}
+  .custom-select.open .custom-select-trigger svg{transform:rotate(180deg);}
+  .custom-select-list{
+    display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    max-height:220px;overflow-y:auto;box-shadow:0 12px 30px rgba(0,0,0,0.35);
+    padding:4px;
+  }
+  .custom-select.open .custom-select-list{display:block;}
+  .custom-select-option{
+    padding:9px 10px;border-radius:7px;font-size:14.5px;font-family:var(--font-body);
+    color:var(--ink);cursor:pointer;
+  }
+  .custom-select-option:hover,.custom-select-option.active{background:var(--line-faint, var(--line));}
+  .custom-select-option.placeholder{color:var(--ink-soft);}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .monto-display{
     font-family:'IBM Plex Mono';font-size:22px;font-weight:500;margin-top:4px;
@@ -726,8 +757,15 @@
         <label for="scanBarcode" style="margin-top:0;">Escanear código de barras</label>
         <input type="text" id="scanBarcode" placeholder="Escaneá o escribí el código y Enter" inputmode="numeric" autocomplete="off">
         <div class="settings-hint" id="scanBarcodeMsg" style="margin-bottom:4px;"></div>
-        <label for="productoSelect">Producto del catálogo</label>
-        <select id="productoSelect"><option value="">— Elegir del catálogo (opcional) —</option></select>
+        <label id="productoSelectLbl">Producto del catálogo</label>
+        <div class="custom-select" id="productoSelectCustom">
+          <button type="button" class="custom-select-trigger" id="productoSelectTrigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="productoSelectLbl">
+            <span id="productoSelectLabel" class="placeholder">— Elegir del catálogo (opcional) —</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="custom-select-list" id="productoSelectList" role="listbox" tabindex="-1"></div>
+        </div>
+        <select id="productoSelect" style="display:none;" aria-hidden="true" tabindex="-1"><option value="">— Elegir del catálogo (opcional) —</option></select>
       </div>
 
       <label for="descripcion" style="margin-top:0;">Descripción</label>
@@ -2082,8 +2120,58 @@ function fillProductSelectOptions(){
   sel.innerHTML = '<option value="">— Elegir del catálogo (opcional) —</option>' +
     sorted.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)} · stock ${Number(p.stock_actual)||0}</option>`).join('');
   sel.value = sorted.some(p => String(p.id) === current) ? current : '';
+
+  const list = document.getElementById('productoSelectList');
+  if(list){
+    list.innerHTML = '<div class="custom-select-option placeholder" role="option" data-value="">— Elegir del catálogo (opcional) —</div>' +
+      sorted.map(p => `<div class="custom-select-option" role="option" data-value="${p.id}">${escapeHtml(p.nombre)} · stock ${Number(p.stock_actual)||0}</div>`).join('');
+  }
+  updateProductoSelectLabel();
   document.getElementById('productoSelectWrap').style.display = (currentTipo === 'Venta' && products.length) ? 'block' : 'none';
 }
+
+// Mantiene el texto visible del desplegable propio en sincronia con el
+// <select> real (que sigue siendo la unica fuente de verdad del valor).
+function updateProductoSelectLabel(){
+  const sel = document.getElementById('productoSelect');
+  const label = document.getElementById('productoSelectLabel');
+  if(!sel || !label) return;
+  const opt = sel.options[sel.selectedIndex];
+  const text = (opt && sel.value) ? opt.textContent : '— Elegir del catálogo (opcional) —';
+  label.textContent = text;
+  label.classList.toggle('placeholder', !sel.value);
+  document.querySelectorAll('#productoSelectList .custom-select-option').forEach(el=>{
+    el.classList.toggle('active', el.dataset.value === sel.value);
+  });
+}
+
+function closeProductoSelect(){
+  document.getElementById('productoSelectCustom').classList.remove('open');
+  document.getElementById('productoSelectTrigger').setAttribute('aria-expanded', 'false');
+}
+
+document.getElementById('productoSelectTrigger').addEventListener('click', ()=>{
+  const wrap = document.getElementById('productoSelectCustom');
+  const opening = !wrap.classList.contains('open');
+  wrap.classList.toggle('open', opening);
+  document.getElementById('productoSelectTrigger').setAttribute('aria-expanded', String(opening));
+});
+document.getElementById('productoSelectList').addEventListener('click', (e)=>{
+  const opt = e.target.closest('.custom-select-option');
+  if(!opt) return;
+  const sel = document.getElementById('productoSelect');
+  sel.value = opt.dataset.value;
+  sel.dispatchEvent(new Event('change'));
+  updateProductoSelectLabel();
+  closeProductoSelect();
+});
+document.addEventListener('click', (e)=>{
+  const wrap = document.getElementById('productoSelectCustom');
+  if(wrap && !wrap.contains(e.target)) closeProductoSelect();
+});
+document.getElementById('productoSelectTrigger').addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') closeProductoSelect();
+});
 
 function resetProductForm(){
   editingProductId = null;
@@ -2340,6 +2428,7 @@ function setTipo(t){
     document.getElementById('costoUnit').value = '';
     document.getElementById('gananciaPreview').textContent = '';
     document.getElementById('productoSelect').value = '';
+    updateProductoSelectLabel();
     selectedProductId = null;
   }else{
     rowCantPrecio.style.display = 'grid';
@@ -2419,6 +2508,7 @@ document.getElementById('monto').addEventListener('input', recalcGananciaPreview
 function selectProductoParaVenta(p){
   selectedProductId = p.id;
   document.getElementById('productoSelect').value = p.id;
+  updateProductoSelectLabel();
   document.getElementById('descripcion').value = p.nombre;
   if(p.precio_venta){ document.getElementById('precioUnit').value = p.precio_venta; }
   if(p.costo_unitario){ document.getElementById('costoUnit').value = p.costo_unitario; }
@@ -2524,6 +2614,7 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
     document.getElementById('monto').value = '';
     document.getElementById('nota').value = '';
     document.getElementById('productoSelect').value = '';
+    updateProductoSelectLabel();
     selectedProductId = null;
     document.getElementById('descripcion').focus();
   }
@@ -2549,6 +2640,7 @@ document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
 function editEntry(id){
   const e = entries.find(x => x.id === id);
   if(!e) return;
+  switchView('cargar');
   editingId = id;
   editingHora = e.hora || null;
   document.getElementById('errorMsg').textContent = '';
