@@ -385,6 +385,14 @@
   .top-product-amount{font-family:'IBM Plex Mono';font-size:13px;color:var(--venta);flex-shrink:0;min-width:70px;text-align:right;}
   .top-product-empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:16px 0;}
 
+  .sales-chart{display:flex;align-items:flex-end;gap:7px;height:110px;margin:6px 0 2px;padding:0 2px;}
+  .sales-chart-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0;}
+  .sales-chart-bar-wrap{flex:1;display:flex;align-items:flex-end;width:100%;}
+  .sales-chart-bar{width:100%;background:var(--venta);border-radius:5px 5px 2px 2px;min-height:3px;transition:height .35s ease;}
+  .sales-chart-bar.is-today{background:var(--gold);}
+  .sales-chart-day{font-size:11px;color:var(--ink-soft);text-transform:capitalize;}
+  .sales-chart-empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:24px 0;}
+
   /* pantalla de acceso */
   #gate{
     min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -841,6 +849,14 @@
   <div class="summary" id="summary"></div>
   <div id="paymentBreakdown"></div>
   <div class="balance-bar" id="balanceBar"><div class="seg-venta" id="segVenta" style="width:50%;"></div><div class="seg-gasto" id="segGasto" style="width:50%;"></div></div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="title-row">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>
+      <h2 class="section-title" style="margin:0;">Ventas de los últimos 7 días</h2>
+    </div>
+    <div class="sales-chart" id="salesChart"></div>
+  </div>
 
   <div class="card" style="margin-top:16px;">
     <div class="title-row">
@@ -2819,6 +2835,41 @@ function renderSummary(){
       </div>
     `).join('');
   }
+
+  renderSalesChart();
+}
+
+// Grafico de barras de los ultimos 7 dias (independiente del toggle Hoy/Mes:
+// una semana fija le da al kiosquero una foto rapida de la tendencia, sin
+// tener que ir a Historial a compararla a mano).
+function renderSalesChart(){
+  const wrap = document.getElementById('salesChart');
+  if(!wrap) return;
+  const dayNames = ['dom','lun','mar','mié','jue','vie','sáb'];
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    const key = `${y}-${m}-${day}`;
+    const total = entries.filter(e => e.tipo==='Venta' && e.fecha===key).reduce((s,e)=>s+e.monto,0);
+    days.push({ key, label: dayNames[d.getDay()], total, isToday: i===0 });
+  }
+  const max = Math.max(...days.map(d=>d.total));
+  if(max === 0){
+    wrap.innerHTML = `<div class="sales-chart-empty">Todavía no hay ventas esta semana para graficar.</div>`;
+    return;
+  }
+  wrap.innerHTML = days.map(d => `
+    <div class="sales-chart-col">
+      <div class="sales-chart-bar-wrap">
+        <div class="sales-chart-bar${d.isToday ? ' is-today' : ''}" style="height:${d.total ? Math.max(6, d.total/max*100) : 0}%;" title="${fmtFecha(d.key)}: ${fmtMoney(d.total)}"></div>
+      </div>
+      <div class="sales-chart-day">${d.label}</div>
+    </div>
+  `).join('');
 }
 
 function renderHistory(){
