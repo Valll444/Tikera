@@ -26,6 +26,7 @@
     --ink-soft:#9BA3A6;
     --line:rgba(244,242,237,0.10);
     --line-strong:rgba(244,242,237,0.18);
+    --line-faint:rgba(244,242,237,0.04);
     --accent:#3E5670;
     --accent-dark:#547096;
     --accent-bg:rgba(62,86,112,0.16);
@@ -44,6 +45,36 @@
     --bg-elevated:#151A1D;
     --text-light:#F4F2ED;
     --radius:10px;
+  }
+  /* Tema claro: se activa poniendo data-theme="light" en <html> (ver
+     Cuenta > Apariencia). El resto de la hoja de estilos no cambia --
+     todo pasa por estas mismas variables, asi que redefinirlas acá alcanza.
+     Los semanticos (venta/gasto/dorado/turquesa) se oscurecen un poco
+     respecto del modo oscuro para mantener contraste legible sobre blanco. */
+  :root[data-theme="light"]{
+    --paper:#EDF0F2;
+    --card:#FFFFFF;
+    --ink:#14191C;
+    --ink-soft:#5B666B;
+    --line:rgba(20,25,28,0.10);
+    --line-strong:rgba(20,25,28,0.18);
+    --line-faint:rgba(20,25,28,0.025);
+    --accent:#3E5670;
+    --accent-dark:#2C4256;
+    --accent-bg:rgba(62,86,112,0.10);
+    --venta:#2E8F63;
+    --venta-bg:rgba(46,143,99,0.12);
+    --gasto:#A23F42;
+    --gasto-bg:rgba(162,63,66,0.10);
+    --gold:#B8791F;
+    --gold-dark:#96611A;
+    --gold-bg:rgba(184,121,31,0.12);
+    --teal:#2D7573;
+    --teal-dark:#235D5B;
+    --teal-bg:rgba(45,117,115,0.12);
+    --counter:#F4F6F7;
+    --bg-elevated:#F4F6F7;
+    --text-light:#14191C;
   }
   *{box-sizing:border-box;}
   body{
@@ -79,15 +110,15 @@
     display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';
     font-weight:700;font-size:13px;flex-shrink:0;
   }
-  .app-logo-word{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:#F4F2ED;letter-spacing:.01em;}
+  .app-logo-word{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--ink);letter-spacing:.01em;}
   .biz-name{
     font-family:'Inter',sans-serif;
-    font-weight:500;font-size:17px;color:rgba(244,242,237,0.75);
-    background:transparent;border:none;border-bottom:1.5px dashed rgba(244,242,237,0.25);
+    font-weight:500;font-size:17px;color:var(--ink-soft);
+    background:transparent;border:none;border-bottom:1.5px dashed var(--line-strong);
     padding:2px 0;max-width:420px;width:100%;
   }
-  .biz-name:focus{outline:none;border-bottom-color:var(--accent);color:#F4F2ED;}
-  .today-label{color:rgba(244,242,237,0.6);font-size:13px;text-align:right;}
+  .biz-name:focus{outline:none;border-bottom-color:var(--accent);color:var(--ink);}
+  .today-label{color:var(--ink-soft);font-size:13px;text-align:right;}
   .grid{
     display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;
   }
@@ -239,7 +270,7 @@
 
   /* Filas interactivas */
   .ticket-item{transition:background-color .15s ease, transform .12s ease;}
-  .ticket-item:hover{background:rgba(244,242,237,0.025);}
+  .ticket-item:hover{background:var(--line-faint);}
   #histBody tr{transition:background-color .12s ease;}
   #histBody tr:hover{background:var(--paper);}
 
@@ -272,7 +303,7 @@
   .amt.gasto{color:var(--gasto);font-family:'IBM Plex Mono';}
   .hist-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;}
   .hist-del:hover{color:var(--gasto);}
-  .save-note{font-size:11.5px;color:rgba(244,242,237,0.45);text-align:center;margin-top:10px;}
+  .save-note{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:10px;}
 
   /* interactividad y pulido */
   @keyframes slideIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
@@ -339,7 +370,7 @@
   .login-card{
     background:var(--card);border-radius:24px;padding:36px 30px;
     max-width:400px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.35);
-    border:1px solid rgba(244,242,237,0.06);
+    border:1px solid var(--line);
     animation:cardIn .35s ease;position:relative;z-index:1;
   }
   @keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
@@ -364,8 +395,8 @@
   .form-label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:500;}
   .input-wrap{position:relative;}
   .form-input{
-    width:100%;padding:12px 42px 12px 14px;border-radius:14px;border:1.5px solid rgba(244,242,237,0.08);
-    font-family:'Inter';font-size:16px;color:var(--ink);background:rgba(244,242,237,0.04);
+    width:100%;padding:12px 42px 12px 14px;border-radius:14px;border:1.5px solid var(--line);
+    font-family:'Inter';font-size:16px;color:var(--ink);background:var(--line-faint);
     transition:border-color .15s ease, box-shadow .15s ease;
   }
   .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(62,86,112,0.25);}
@@ -665,7 +696,7 @@
     </div>
     <div style="text-align:right;">
       <div class="today-label" id="todayLabel"></div>
-      <button id="switchBizBtn" style="background:none;border:none;color:rgba(244,242,237,0.55);font-size:12px;cursor:pointer;text-decoration:underline;padding:2px 0;">Cerrar sesión</button>
+      <button id="switchBizBtn" style="background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;text-decoration:underline;padding:2px 0;">Cerrar sesión</button>
     </div>
   </div>
 
@@ -929,6 +960,15 @@
         <h2><span class="sec-dot" style="background:#8B7EC8;"></span>Apariencia</h2>
         <p>Elegí el color de acento de tu Tikera. Los colores de venta, gasto y alertas no cambian — siguen significando lo mismo.</p>
       </div>
+
+      <label style="margin-top:0;">Tema</label>
+      <div class="type-toggle" id="themeToggle" style="max-width:340px;">
+        <button type="button" class="type-btn" data-theme-opt="oscuro">Oscuro</button>
+        <button type="button" class="type-btn" data-theme-opt="claro">Claro</button>
+        <button type="button" class="type-btn" data-theme-opt="sistema">Sistema</button>
+      </div>
+
+      <label style="margin-top:18px;">Color de acento</label>
       <div class="swatch-row" id="colorSwatches"></div>
       <div class="appearance-preview">
         <button type="button" class="submit-btn">Botón de ejemplo</button>
@@ -1097,6 +1137,33 @@ function getSavedAccentId(){
   try{ return localStorage.getItem(ACCENT_KEY) || 'pizarra'; }catch(e){ return 'pizarra'; }
 }
 applyAccentColor(getSavedAccentId());
+
+// ============================================
+// Tema oscuro/claro/sistema. "Oscuro" es como Tikera se ve siempre por
+// defecto; "claro" pisa las mismas variables via [data-theme="light"]
+// en <html> (ver el bloque de variables mas arriba); "sistema" resuelve
+// contra prefers-color-scheme del SO y se actualiza solo si el usuario
+// cambia el tema de Windows/Mac mientras la app sigue abierta.
+const THEME_KEY = 'tikera_theme';
+function getSavedThemePref(){
+  try{ return localStorage.getItem(THEME_KEY) || 'oscuro'; }catch(e){ return 'oscuro'; }
+}
+function resolveTheme(pref){
+  if(pref === 'claro') return 'light';
+  if(pref === 'oscuro') return 'dark';
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+function applyThemePref(pref){
+  const resolved = resolveTheme(pref);
+  if(resolved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+}
+applyThemePref(getSavedThemePref());
+try{
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', ()=>{
+    if(getSavedThemePref() === 'sistema') applyThemePref('sistema');
+  });
+}catch(e){}
 
 const todayStr = () => {
   const d = new Date();
@@ -1510,8 +1577,25 @@ function renderColorSwatches(){
   });
 }
 
+function renderThemeToggle(){
+  const current = getSavedThemePref();
+  document.querySelectorAll('#themeToggle .type-btn').forEach(btn => {
+    btn.classList.toggle('active-accent', btn.dataset.themeOpt === current);
+  });
+}
+document.querySelectorAll('#themeToggle .type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const pref = btn.dataset.themeOpt;
+    try{ localStorage.setItem(THEME_KEY, pref); }catch(e){}
+    applyThemePref(pref);
+    renderThemeToggle();
+    showToast('Tema actualizado');
+  });
+});
+
 async function loadSettingsView(){
   renderColorSwatches();
+  renderThemeToggle();
   document.getElementById('settNegocio').value = document.getElementById('bizName').value;
   document.getElementById('settPerfilMsg').textContent = '';
   document.getElementById('settEmailMsg').textContent = '';
