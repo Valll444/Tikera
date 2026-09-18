@@ -2,6 +2,15 @@
 <html lang="es-AR">
 <head>
 <meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var pref = localStorage.getItem('tikera_theme') || 'oscuro';
+      var resolved = pref === 'claro' ? 'light' : pref === 'oscuro' ? 'dark' : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      if(resolved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    }catch(e){}
+  })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Página no encontrada — Tikera</title>
 <meta name="robots" content="noindex">
@@ -19,7 +28,25 @@
     --accent:#3E5670;
     --venta:#4CAF80;
   }
+  :root[data-theme="light"]{
+    --counter:#EDF0F2;
+    --card:#FFFFFF;
+    --ink:#14191C;
+    --ink-soft:#5B666B;
+    --line:rgba(20,25,28,0.10);
+    --venta:#2E8F63;
+  }
   *{box-sizing:border-box;}
+  *{transition:background-color .3s ease, border-color .3s ease, color .25s ease;}
+  @media(prefers-reduced-motion:reduce){ *{transition-duration:0.001ms!important;} }
+  .theme-toggle-btn{
+    position:fixed;top:18px;right:18px;z-index:100;
+    width:38px;height:38px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--card);border:1px solid var(--line);color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .theme-toggle-btn:hover{color:var(--ink);border-color:var(--ink-soft);}
   body{
     margin:0;min-height:100vh;background:var(--counter);color:var(--ink);
     font-family:'Inter',sans-serif;
@@ -33,7 +60,7 @@
   body::after{bottom:-20%;right:-14%;width:60%;height:60%;background:radial-gradient(circle, rgba(62,86,112,0.42), transparent 70%);}
   .card{
     position:relative;z-index:1;text-align:center;max-width:420px;width:100%;
-    background:var(--card);border:1px solid rgba(244,242,237,0.06);border-radius:24px;
+    background:var(--card);border:1px solid var(--line);border-radius:24px;
     padding:44px 32px;box-shadow:0 20px 50px rgba(0,0,0,0.35);
   }
   .badge{
@@ -54,7 +81,7 @@
   .btn-primary{background:var(--venta);color:#0D1113;}
   .btn-primary:hover{filter:brightness(1.08);}
   .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
-  .btn-ghost:hover{border-color:rgba(244,242,237,0.3);}
+  .btn-ghost:hover{border-color:var(--ink-soft);}
 
   /* Aviso de cookies */
   .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:none;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:18px 20px;}
@@ -72,6 +99,10 @@
 </style>
 </head>
 <body>
+  <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Cambiar a tema claro" title="Cambiar tema">
+    <svg id="themeToggleIconMoon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <svg id="themeToggleIconSun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  </button>
   <div class="card">
     <div class="badge">T</div>
     <div class="code">Error 404</div>
@@ -107,6 +138,30 @@
     }
     document.getElementById('cookieAccept').addEventListener('click', function(){ decide('accepted'); });
     document.getElementById('cookieReject').addEventListener('click', function(){ decide('rejected'); });
+  })();
+  </script>
+  <script>
+  (function(){
+    function isLightNow(){ return document.documentElement.getAttribute('data-theme') === 'light'; }
+    function updateThemeIcons(){
+      var light = isLightNow();
+      var moon = document.getElementById('themeToggleIconMoon');
+      var sun = document.getElementById('themeToggleIconSun');
+      if(moon) moon.style.display = light ? 'none' : 'block';
+      if(sun) sun.style.display = light ? 'block' : 'none';
+      var btn = document.getElementById('themeToggleBtn');
+      if(btn) btn.setAttribute('aria-label', light ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro');
+    }
+    function toggleTheme(){
+      var next = isLightNow() ? 'oscuro' : 'claro';
+      try{ localStorage.setItem('tikera_theme', next); }catch(e){}
+      if(next === 'claro') document.documentElement.setAttribute('data-theme', 'light');
+      else document.documentElement.removeAttribute('data-theme');
+      updateThemeIcons();
+    }
+    updateThemeIcons();
+    var themeBtn = document.getElementById('themeToggleBtn');
+    if(themeBtn) themeBtn.addEventListener('click', toggleTheme);
   })();
   </script>
 </body>
