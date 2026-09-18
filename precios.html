@@ -59,6 +59,7 @@
     border-color:rgba(46,143,99,0.28);
   }
   *{box-sizing:border-box;}
+  *{transition:background-color .3s ease, border-color .3s ease, color .25s ease;}
   html{scroll-behavior:smooth;}
   body{
     background:var(--bg);
@@ -66,9 +67,14 @@
     font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
     overflow-x:hidden;
     animation:pageIn .4s ease;
+    transition:background-color .4s ease, color .35s ease;
   }
   @keyframes pageIn{from{opacity:0;}to{opacity:1;}}
-  @media(prefers-reduced-motion:reduce){body{animation:none;}}
+  @media(prefers-reduced-motion:reduce){
+    body{animation:none;}
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms!important;animation-iteration-count:1!important;transition-duration:0.001ms!important;}
+  }
   .font-display{font-family:'Manrope',ui-sans-serif,system-ui,sans-serif;}
   ::selection{background:var(--slate-soft);color:var(--text);}
 
@@ -85,6 +91,7 @@
     backdrop-filter:blur(14px) saturate(140%);
     -webkit-backdrop-filter:blur(14px) saturate(140%);
     border-bottom:1px solid var(--hairline);
+    transition:border-color .35s ease, background-color .35s ease;
   }
   .nav-link{color:var(--text-dim);font-size:14.5px;transition:color .2s ease;}
   .nav-link:hover{color:var(--text);}
@@ -108,7 +115,7 @@
   }
   .btn-ghost:hover{border-color:var(--text-dim);background:var(--hairline);}
 
-  .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);transition:background-color .35s ease, color .3s ease, border-color .3s ease;}
   .divider-fade{height:1px;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);}
 
   .trial-card{
@@ -119,7 +126,7 @@
   .feature-row{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;color:var(--text-dim);}
   .feature-check{color:var(--green);flex-shrink:0;margin-top:1px;}
 
-  #mobile-menu{transform:translateY(-8px);opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease;}
+  #mobile-menu{transform:translateY(-8px);opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease, background-color .35s ease;}
   #mobile-menu.open{transform:translateY(0);opacity:1;pointer-events:auto;}
 
   a:focus-visible, button:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:6px;}

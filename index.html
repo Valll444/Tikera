@@ -85,12 +85,14 @@
   :root[data-theme="light"] #site-header{background:rgba(244,246,247,0.72);}
   :root[data-theme="light"] #site-header.scrolled{background:rgba(244,246,247,0.92);}
   *{box-sizing:border-box;}
+  *{transition:background-color .3s ease, border-color .3s ease, color .25s ease;}
   html{scroll-behavior:smooth;}
   body{
     background:var(--bg);
     color:var(--text);
     font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
     overflow-x:hidden;
+    transition:background-color .4s ease, color .35s ease;
   }
   /* Deja lugar abajo en mobile para que el CTA fijo no tape el final de cada seccion */
   @media(max-width:767px){ main{padding-bottom:88px;} }
@@ -206,7 +208,7 @@
     background:var(--bg-card);
     border:1px solid var(--hairline);
     border-radius:16px;
-    transition:border-color .25s ease, transform .25s ease;
+    transition:border-color .25s ease, transform .25s ease, background-color .35s ease;
   }
   .bento-card:hover{border-color:var(--hairline-strong);}
   .bento-hero-card{
@@ -232,11 +234,11 @@
   .demo-pane{display:none;}
   .demo-pane.active{display:block;}
 
-  .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);transition:background-color .35s ease, color .3s ease, border-color .3s ease;}
 
   .divider-fade{height:1px;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);}
 
-  #mobile-menu{transform:translateY(-8px);opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease;}
+  #mobile-menu{transform:translateY(-8px);opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease, background-color .35s ease;}
   #mobile-menu.open{transform:translateY(0);opacity:1;pointer-events:auto;}
 
   .sticky-cta{
@@ -250,7 +252,7 @@
   .counter-num{font-variant-numeric:tabular-nums;}
 
   /* FAQ accordion */
-  .faq-item{background:var(--bg-card);border:1px solid var(--hairline);border-radius:14px;padding:4px 20px;transition:border-color .2s ease;}
+  .faq-item{background:var(--bg-card);border:1px solid var(--hairline);border-radius:14px;padding:4px 20px;transition:border-color .2s ease, background-color .35s ease;}
   .faq-item:hover{border-color:var(--hairline-strong);}
   .faq-item[open]{border-color:rgba(62,86,112,0.35);}
   .faq-item summary{
