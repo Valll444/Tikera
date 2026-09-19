@@ -328,9 +328,10 @@
     }
     .nav-logo{
       width:32px;height:32px;border-radius:10px;background:var(--accent);color:#fff;
-      display:flex;align-items:center;justify-content:center;
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
       font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;flex-shrink:0;
     }
+    .nav-logo img{width:100%;height:100%;object-fit:cover;}
   }
   .metric{background:var(--card);border-radius:12px;padding:14px 16px;border:1px solid var(--line);border-left:3px solid var(--line);transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;}
   .metric:hover{transform:translateY(-2px);box-shadow:0 8px 20px -8px rgba(0,0,0,0.4);}
@@ -619,6 +620,20 @@
   .settings-section-head{margin-bottom:16px;}
   .settings-section-head h2{font-family:'Space Grotesk',sans-serif;font-size:15.5px;font-weight:700;margin:0 0 3px;color:var(--ink);display:flex;align-items:center;gap:8px;}
   .sec-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .sec-icon{
+    width:22px;height:22px;border-radius:7px;background:var(--accent-dark);color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .sec-icon svg{width:13px;height:13px;}
+  .avatar-upload-row{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+  .avatar-preview{
+    width:56px;height:56px;border-radius:50%;flex-shrink:0;
+    background:var(--accent);color:#fff;font-family:'Space Grotesk';font-weight:700;font-size:19px;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .avatar-preview img{width:100%;height:100%;object-fit:cover;}
+  .avatar-upload-actions{display:flex;flex-wrap:wrap;gap:8px;}
   .settings-section-head p{font-size:12.5px;color:var(--ink-soft);margin:0;max-width:520px;line-height:1.5;}
   .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:560px;}
   @media(max-width:640px){.settings-grid{grid-template-columns:1fr;}}
@@ -1070,9 +1085,23 @@
     <!-- Perfil -->
     <div class="settings-section">
       <div class="settings-section-head">
-        <h2><span class="sec-dot" style="background:var(--accent-dark);"></span>Perfil</h2>
-        <p>El nombre de tu negocio aparece en tus reportes y exportaciones.</p>
+        <h2><span class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Perfil y configuración</h2>
+        <p>El nombre y la foto de tu negocio aparecen en tus reportes, exportaciones y en el menú de la app.</p>
       </div>
+
+      <div class="settings-field" style="max-width:340px;">
+        <label style="margin-top:0;">Foto de perfil</label>
+        <div class="avatar-upload-row">
+          <div class="avatar-preview" id="settAvatarPreview">T</div>
+          <div class="avatar-upload-actions">
+            <button type="button" class="settings-btn" id="settAvatarBtn">Subir foto</button>
+            <button type="button" class="settings-btn danger" id="settAvatarRemoveBtn" style="display:none;">Quitar</button>
+            <input type="file" id="settAvatarFile" accept="image/*" style="display:none;">
+          </div>
+        </div>
+        <div class="settings-msg" id="settAvatarMsg"></div>
+      </div>
+
       <div class="settings-field" style="max-width:340px;">
         <label for="settNegocio">Nombre del negocio</label>
         <input type="text" id="settNegocio" placeholder="Mi kiosco">
@@ -1263,6 +1292,7 @@ let selectedProductId = null;
 const PAYMENT_LINK_URL = '';
 let currentPlan = 'trial';
 let currentTrialStartedAt = null;
+let currentAvatarUrl = null;
 const TRIAL_DAYS = 14;
 
 function trialDiasRestantes(){
@@ -1807,6 +1837,9 @@ async function loadSettingsView(){
   document.getElementById('settEmailNuevo').value = '';
   document.getElementById('settPass1').value = '';
   document.getElementById('settPass2').value = '';
+  document.getElementById('settAvatarMsg').textContent = '';
+  renderAvatarInto(document.getElementById('settAvatarPreview'));
+  document.getElementById('settAvatarRemoveBtn').style.display = currentAvatarUrl ? 'inline-block' : 'none';
 
   const planCard = document.getElementById('planCard');
   planCard.innerHTML = 'Cargando...';
@@ -1871,12 +1904,67 @@ document.getElementById('settPerfilBtn').addEventListener('click', async ()=>{
     const { error } = await sb.from('profiles').update({ business_name: val }).eq('id', currentUserId);
     if(error) throw error;
     document.getElementById('bizName').value = val;
+    updateNavLogoBadge();
     msg.className = 'settings-msg ok'; msg.textContent = 'Guardado.';
     showToast('Perfil actualizado');
   }catch(err){
     console.error(err);
     msg.className = 'settings-msg err'; msg.textContent = 'No se pudo guardar. Probá de nuevo.';
   }
+});
+
+document.getElementById('settAvatarBtn').addEventListener('click', ()=>{
+  document.getElementById('settAvatarFile').click();
+});
+
+document.getElementById('settAvatarFile').addEventListener('change', async (e)=>{
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  const msg = document.getElementById('settAvatarMsg');
+  if(!file.type.startsWith('image/')){ msg.className = 'settings-msg err'; msg.textContent = 'Elegí un archivo de imagen.'; return; }
+  if(file.size > 4*1024*1024){ msg.className = 'settings-msg err'; msg.textContent = 'La imagen no puede pesar más de 4MB.'; return; }
+  msg.className = 'settings-msg'; msg.textContent = 'Subiendo...';
+  document.getElementById('settAvatarBtn').disabled = true;
+  try{
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${currentUserId}/profile/avatar.${ext}`;
+    const { error: upErr } = await sb.storage.from('uploads').upload(path, file, { upsert: true, cacheControl: '3600' });
+    if(upErr) throw upErr;
+    const { data: pub } = sb.storage.from('uploads').getPublicUrl(path);
+    const url = pub.publicUrl + '?t=' + Date.now();
+    const { error: updErr } = await sb.from('profiles').update({ avatar_url: url }).eq('id', currentUserId);
+    if(updErr) throw updErr;
+    currentAvatarUrl = url;
+    renderAvatarInto(document.getElementById('settAvatarPreview'));
+    updateNavLogoBadge();
+    document.getElementById('settAvatarRemoveBtn').style.display = 'inline-block';
+    msg.className = 'settings-msg ok'; msg.textContent = 'Foto actualizada.';
+    showToast('Foto de perfil actualizada');
+  }catch(err){
+    console.error(err);
+    msg.className = 'settings-msg err'; msg.textContent = 'No se pudo subir la foto. Revisá que hayas corrido la migración de Storage y probá de nuevo.';
+  }
+  document.getElementById('settAvatarBtn').disabled = false;
+});
+
+document.getElementById('settAvatarRemoveBtn').addEventListener('click', async ()=>{
+  const msg = document.getElementById('settAvatarMsg');
+  msg.className = 'settings-msg'; msg.textContent = '';
+  document.getElementById('settAvatarRemoveBtn').disabled = true;
+  try{
+    const { error } = await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUserId);
+    if(error) throw error;
+    currentAvatarUrl = null;
+    renderAvatarInto(document.getElementById('settAvatarPreview'));
+    updateNavLogoBadge();
+    document.getElementById('settAvatarRemoveBtn').style.display = 'none';
+    showToast('Foto de perfil eliminada');
+  }catch(err){
+    console.error(err);
+    msg.className = 'settings-msg err'; msg.textContent = 'No se pudo quitar la foto. Probá de nuevo.';
+  }
+  document.getElementById('settAvatarRemoveBtn').disabled = false;
 });
 
 document.getElementById('settEmailBtn').addEventListener('click', async ()=>{
@@ -2106,6 +2194,15 @@ async function loadData(){
     document.getElementById('bizName').value = (profile && profile.business_name) || 'Mi negocio';
     currentPlan = (profile && profile.plan) || 'trial';
     currentTrialStartedAt = profile && profile.trial_started_at ? new Date(profile.trial_started_at) : null;
+
+    // Select aparte y con su propio try/catch: si todavia no corriste la
+    // migracion que agrega avatar_url, esto falla solo (sin foto, iniciales
+    // como respaldo) en vez de tirar abajo el resto del perfil/plan.
+    try{
+      const { data: avatarRow } = await sb.from('profiles').select('avatar_url').eq('id', user.id).single();
+      currentAvatarUrl = (avatarRow && avatarRow.avatar_url) || null;
+    }catch(e){ currentAvatarUrl = null; }
+
     updateNavLogoBadge();
 
     const { data: movRows, error: movErr } = await sb.from('movements').select('*').eq('user_id', user.id).order('created_at', {ascending:true});
@@ -2560,16 +2657,26 @@ document.getElementById('bizName').addEventListener('change', async (e)=>{
 
 // Badge de arriba del dock: mientras no haya foto de perfil subida, muestra
 // las iniciales del negocio (hasta 2 letras) en vez del logo generico de Tikera.
-function updateNavLogoBadge(){
-  const el = document.getElementById('navLogoBadge');
-  if(!el) return;
+function businessInitials(){
   const name = (document.getElementById('bizName').value || '').trim();
-  if(!name){ el.textContent = 'T'; return; }
+  if(!name) return 'T';
   const words = name.split(/\s+/).filter(Boolean);
-  const initials = words.length >= 2
-    ? (words[0][0] + words[1][0])
-    : name.slice(0,2);
-  el.textContent = initials.toUpperCase();
+  return (words.length >= 2 ? (words[0][0] + words[1][0]) : name.slice(0,2)).toUpperCase();
+}
+
+// Usado por el badge del dock y por la vista previa en Cuenta: si hay foto
+// de perfil subida se muestra esa, si no, las iniciales del negocio.
+function renderAvatarInto(el){
+  if(!el) return;
+  if(currentAvatarUrl){
+    el.innerHTML = `<img src="${escapeHtml(currentAvatarUrl)}" alt="">`;
+  }else{
+    el.textContent = businessInitials();
+  }
+}
+
+function updateNavLogoBadge(){
+  renderAvatarInto(document.getElementById('navLogoBadge'));
 }
 
 document.getElementById('fecha').value = todayStr();
