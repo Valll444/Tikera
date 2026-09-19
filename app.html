@@ -1161,13 +1161,13 @@
 
 <nav class="bottom-nav" id="bottomNav" style="display:none;">
   <div class="nav-logo-wrap"><div class="nav-logo" aria-hidden="true">T</div></div>
-  <button type="button" class="bottom-nav-btn" id="navBtnCargar" onclick="switchView('cargar')" aria-label="Cargar">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    <span>Cargar</span>
-  </button>
   <button type="button" class="bottom-nav-btn" id="navBtnInicio" onclick="switchView('inicio')" aria-label="Inicio">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
     <span>Inicio</span>
+  </button>
+  <button type="button" class="bottom-nav-btn" id="navBtnCargar" onclick="switchView('cargar')" aria-label="Cargar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>Cargar</span>
   </button>
   <button type="button" class="bottom-nav-btn" id="navBtnHistorial" onclick="switchView('historial')" aria-label="Historial">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
@@ -1690,7 +1690,7 @@ function revealApp(){
     document.body.classList.add('app-active');
     setTimeout(()=> app.classList.remove('entering'), 350);
     document.getElementById('bottomNav').style.display = 'flex';
-    switchView('cargar');
+    switchView('inicio');
   }, 180);
 }
 
@@ -1925,7 +1925,7 @@ document.getElementById('settDeleteBtn').addEventListener('click', ()=>{
       document.getElementById('app').style.display = 'block';
       document.body.classList.add('app-active');
       document.getElementById('bottomNav').style.display = 'flex';
-      switchView('cargar');
+      switchView('inicio');
     }
   }catch(e){ console.error(e); }
 })();
