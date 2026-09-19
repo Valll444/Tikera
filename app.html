@@ -448,6 +448,15 @@
   .stock-wheel-empty{color:var(--ink-soft);font-size:13px;line-height:1.5;padding:6px 0;}
   .stock-wheel-ok{color:var(--venta);font-size:13px;display:flex;align-items:center;gap:8px;}
 
+  .restock-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .restock-row:last-child{border-bottom:none;}
+  .restock-name{flex:1;min-width:0;font-size:13.5px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .restock-days{flex-shrink:0;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  .restock-days.urgent{color:var(--gasto);background:var(--gasto-bg);}
+  .restock-days.soon{color:var(--gold);background:var(--gold-bg);}
+  .restock-qty{flex-shrink:0;font-family:'IBM Plex Mono';font-size:12px;color:var(--ink-soft);min-width:74px;text-align:right;}
+  .restock-empty{color:var(--ink-soft);font-size:13px;line-height:1.5;padding:6px 0;}
+
   /* pantalla de acceso */
   #gate{
     min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -895,6 +904,14 @@
           <h2 style="margin:0;">Estado del stock</h2>
         </div>
         <div id="stockWheelBody"></div>
+      </div>
+
+      <div class="card" style="padding:20px 22px;">
+        <div class="title-row">
+          <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
+          <h2 style="margin:0;">Reposición sugerida</h2>
+        </div>
+        <div id="restockBody"></div>
       </div>
     </div>
   </div>
@@ -2211,6 +2228,7 @@ function fillProductSelectOptions(){
   updateProductoSelectLabel();
   document.getElementById('productoSelectWrap').style.display = (currentTipo === 'Venta' && products.length) ? 'block' : 'none';
   renderStockWheel();
+  renderRestockPrediction();
 }
 
 // Mantiene el texto visible del desplegable propio en sincronia con el
@@ -2407,6 +2425,7 @@ async function applyStockDelta(productId, cantidadVendida){
     if(p) p.stock_actual = nuevoStock;
     if(document.getElementById('viewCatalogo').style.display !== 'none') renderCatalog();
     renderStockWheel();
+    renderRestockPrediction();
   }catch(err){ console.error(err); }
 }
 
@@ -2764,6 +2783,7 @@ function render(){
   renderSummary();
   renderHistory();
   renderStockWheel();
+  renderRestockPrediction();
 }
 
 // Rueda de stock: cuantos productos del catalogo estan en o por debajo del
@@ -2818,6 +2838,58 @@ function renderStockWheel(){
       <div class="stock-wheel-list">${listHtml}</div>
     </div>
   `;
+}
+
+// Reposicion sugerida: a diferencia de "Estado del stock" (que solo mira si
+// ya estas por debajo de un minimo que vos configuraste a mano), esto calcula
+// la velocidad de venta real de cada producto de los ultimos 14 dias y avisa
+// ANTES de que se agote, aunque nunca hayas puesto un stock minimo -- es la
+// diferencia entre un umbral fijo y una prediccion basada en la tendencia.
+// Matchea por nombre igual que "Productos que mas facturan" (las ventas no
+// guardan el id del producto, solo la descripcion) asi que solo cuenta ventas
+// hechas eligiendo el producto del catalogo o escaneando su codigo.
+function renderRestockPrediction(){
+  const wrap = document.getElementById('restockBody');
+  if(!wrap) return;
+  if(products.length === 0){
+    wrap.innerHTML = `<div class="restock-empty">Todavía no cargaste productos en el catálogo.</div>`;
+    return;
+  }
+  const WINDOW_DAYS = 14;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - WINDOW_DAYS);
+
+  const predictions = products.map(p => {
+    const nameKey = (p.nombre || '').trim().toLowerCase();
+    if(!nameKey) return null;
+    const vendido = entries
+      .filter(e => e.tipo === 'Venta' && e.fecha && new Date(e.fecha) >= cutoff && (e.descripcion || '').trim().toLowerCase() === nameKey)
+      .reduce((s,e) => s + (Number(e.cantidad) || 0), 0);
+    const dailyRate = vendido / WINDOW_DAYS;
+    if(dailyRate <= 0) return null;
+    const stock = Number(p.stock_actual) || 0;
+    const daysLeft = stock / dailyRate;
+    if(daysLeft > 10) return null;
+    const suggestedQty = Math.max(1, Math.ceil(dailyRate * WINDOW_DAYS - stock));
+    return { nombre: p.nombre, daysLeft, suggestedQty };
+  }).filter(Boolean).sort((a,b) => a.daysLeft - b.daysLeft);
+
+  if(predictions.length === 0){
+    wrap.innerHTML = `<div class="restock-empty">Con las ventas de las últimas dos semanas, ningún producto se está por quedar sin stock pronto.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = predictions.slice(0,5).map(p => {
+    const urgencyClass = p.daysLeft <= 2 ? 'urgent' : 'soon';
+    const daysLabel = p.daysLeft < 1 ? 'Se agota hoy' : `~${Math.floor(p.daysLeft)} días`;
+    return `
+      <div class="restock-row">
+        <span class="restock-name">${escapeHtml(p.nombre)}</span>
+        <span class="restock-days ${urgencyClass}">${daysLabel}</span>
+        <span class="restock-qty">Reponer ${p.suggestedQty}</span>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderTicket(){
