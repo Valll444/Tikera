@@ -310,7 +310,7 @@
        espacio ocupado, look mas "app de escritorio". El label de cada boton
        sigue en el DOM (accesibilidad + <span> reutilizado como tooltip) y
        aparece al pasar el mouse o al enfocar con teclado. */
-    body.app-active{padding-left:118px;}
+    body.app-active{padding-left:100px;}
     .bottom-nav{
       top:50%;bottom:auto;left:22px;right:auto;width:auto;
       transform:translateY(-50%);
@@ -327,10 +327,10 @@
     }
     .bottom-nav-btn{
       flex:none;flex-direction:row;justify-content:center;gap:0;
-      padding:0;font-size:14px;width:52px;height:52px;border-radius:16px;
+      padding:0;font-size:14px;width:42px;height:42px;border-radius:13px;
       position:relative;
     }
-    .bottom-nav-btn svg{width:24px;height:24px;}
+    .bottom-nav-btn svg{width:19px;height:19px;}
     .bottom-nav-btn span{
       position:absolute;left:calc(100% + 12px);top:50%;
       transform:translate(-6px,-50%);
@@ -348,9 +348,9 @@
       margin-bottom:10px;padding-bottom:16px;border-bottom:1px solid var(--line);
     }
     .nav-logo{
-      width:40px;height:40px;border-radius:13px;background:var(--accent);color:#fff;
+      width:32px;height:32px;border-radius:10px;background:var(--accent);color:#fff;
       display:flex;align-items:center;justify-content:center;overflow:hidden;
-      font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;flex-shrink:0;
+      font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;flex-shrink:0;
     }
     .nav-logo img{width:100%;height:100%;object-fit:cover;}
   }
@@ -1099,19 +1099,17 @@
   <div id="viewCuenta" style="display:none;">
   <div class="card">
     <div class="settings-intro">
-      <h1>Cuenta y configuración</h1>
-      <p>Tu perfil, seguridad, apariencia y el estado de tu plan en Tikera.</p>
+      <h1>Tu perfil</h1>
+      <p>Quién sos vos en Tikera: tu foto, tu acceso y el estado de tu cuenta.</p>
     </div>
 
-    <!-- Perfil -->
+    <!-- Foto -->
     <div class="settings-section">
       <div class="settings-section-head">
-        <h2><span class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Perfil y configuración</h2>
-        <p>El nombre y la foto de tu negocio aparecen en tus reportes, exportaciones y en el menú de la app.</p>
+        <h2><span class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/></svg></span>Tu foto</h2>
+        <p>Se muestra arriba del menú para reconocer rápido que sos vos.</p>
       </div>
-
       <div class="settings-field" style="max-width:340px;">
-        <label style="margin-top:0;">Foto de perfil</label>
         <div class="avatar-upload-row">
           <div class="avatar-preview" id="settAvatarPreview">T</div>
           <div class="avatar-upload-actions">
@@ -1121,13 +1119,6 @@
           </div>
         </div>
         <div class="settings-msg" id="settAvatarMsg"></div>
-      </div>
-
-      <div class="settings-field" style="max-width:340px;">
-        <label for="settNegocio">Nombre del negocio</label>
-        <input type="text" id="settNegocio" placeholder="Mi kiosco">
-        <button type="button" class="settings-btn primary" id="settPerfilBtn" style="margin-top:12px;">Guardar cambios</button>
-        <div class="settings-msg" id="settPerfilMsg"></div>
       </div>
     </div>
 
@@ -1163,6 +1154,59 @@
       </div>
     </div>
 
+    <!-- Plan -->
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <h2><span class="sec-dot" style="background:var(--gold);"></span>Tu plan</h2>
+        <p>Así está tu cuenta hoy. Todavía no hay cobro automático conectado — cuando lo esté, vas a poder ver tus pagos acá.</p>
+      </div>
+      <div id="planCard" class="plan-card">Cargando...</div>
+    </div>
+
+    <!-- Zona avanzada -->
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <h2><span class="sec-dot" style="background:var(--gasto);"></span>Zona avanzada</h2>
+      </div>
+      <div class="danger-zone">
+        <div class="danger-row">
+          <div class="danger-row-text"><b>Cerrar sesión</b><span>Salís de tu cuenta en este dispositivo.</span></div>
+          <button type="button" class="settings-btn" id="settLogoutBtn">Cerrar sesión</button>
+        </div>
+        <div class="danger-row">
+          <div class="danger-row-text"><b>Eliminar cuenta</b><span>Borra tu cuenta y todos tus datos. No se puede deshacer.</span></div>
+          <button type="button" class="settings-btn danger" id="settDeleteBtn">Eliminar cuenta</button>
+        </div>
+        <div class="settings-msg" id="settDeleteMsg"></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="save-note">Los datos se guardan automáticamente en esta app.</div>
+</div>
+
+  <div id="viewAjustes" style="display:none;">
+  <div class="card">
+    <div class="settings-intro">
+      <h1>Ajustes</h1>
+      <p>Cómo funciona tu negocio y cómo se ve tu Tikera.</p>
+    </div>
+
+    <!-- Mi negocio -->
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <h2><span class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span>Mi negocio</h2>
+        <p>Este nombre aparece en tus tickets, reportes y exportaciones.</p>
+      </div>
+      <div class="settings-field" style="max-width:340px;">
+        <label for="settNegocio">Nombre del negocio</label>
+        <input type="text" id="settNegocio" placeholder="Mi kiosco">
+        <button type="button" class="settings-btn primary" id="settPerfilBtn" style="margin-top:12px;">Guardar cambios</button>
+        <div class="settings-msg" id="settPerfilMsg"></div>
+      </div>
+    </div>
+
     <!-- Apariencia -->
     <div class="settings-section">
       <div class="settings-section-head">
@@ -1187,43 +1231,6 @@
         <span class="nav-link" style="color:var(--accent);font-size:13px;font-weight:600;">Un link con este color</span>
       </div>
     </div>
-
-    <!-- Plan -->
-    <div class="settings-section">
-      <div class="settings-section-head">
-        <h2><span class="sec-dot" style="background:var(--gold);"></span>Tu plan</h2>
-        <p>Así queda tu cuenta hoy. Todavía no hay cobro automático conectado — cuando lo esté, esta sección se actualiza sola.</p>
-      </div>
-      <div id="planCard" class="plan-card">Cargando...</div>
-    </div>
-
-    <!-- Facturación -->
-    <div class="settings-section">
-      <div class="settings-section-head">
-        <h2><span class="sec-dot" style="background:var(--ink-soft);"></span>Facturación</h2>
-        <p>Método de pago, facturas e historial de pagos.</p>
-      </div>
-      <div class="billing-empty">Todavía no hay información de facturación disponible. Vas a poder ver tus pagos acá apenas activemos el cobro dentro de la app.</div>
-    </div>
-
-    <!-- Zona avanzada -->
-    <div class="settings-section">
-      <div class="settings-section-head">
-        <h2><span class="sec-dot" style="background:var(--gasto);"></span>Zona avanzada</h2>
-      </div>
-      <div class="danger-zone">
-        <div class="danger-row">
-          <div class="danger-row-text"><b>Cerrar sesión</b><span>Salís de tu cuenta en este dispositivo.</span></div>
-          <button type="button" class="settings-btn" id="settLogoutBtn">Cerrar sesión</button>
-        </div>
-        <div class="danger-row">
-          <div class="danger-row-text"><b>Eliminar cuenta</b><span>Borra tu cuenta y todos tus datos. No se puede deshacer.</span></div>
-          <button type="button" class="settings-btn danger" id="settDeleteBtn">Eliminar cuenta</button>
-        </div>
-        <div class="settings-msg" id="settDeleteMsg"></div>
-      </div>
-    </div>
-  </div>
   </div>
 
   <div class="save-note">Los datos se guardan automáticamente en esta app.</div>
@@ -1251,7 +1258,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/></svg>
     <span>Cuenta</span>
   </button>
-  <button type="button" class="bottom-nav-btn" id="navBtnConfig" onclick="switchView('cuenta')" aria-label="Configuración">
+  <button type="button" class="bottom-nav-btn" id="navBtnConfig" onclick="switchView('ajustes')" aria-label="Configuración">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     <span>Ajustes</span>
   </button>
@@ -1702,17 +1709,19 @@ function switchView(view){
   document.getElementById('viewHistorial').style.display = view==='historial' ? 'block' : 'none';
   document.getElementById('viewCatalogo').style.display = view==='catalogo' ? 'block' : 'none';
   document.getElementById('viewCuenta').style.display = view==='cuenta' ? 'block' : 'none';
+  document.getElementById('viewAjustes').style.display = view==='ajustes' ? 'block' : 'none';
   document.getElementById('navBtnCargar').classList.toggle('active', view==='cargar');
   document.getElementById('navBtnInicio').classList.toggle('active', view==='inicio');
   document.getElementById('navBtnHistorial').classList.toggle('active', view==='historial');
   document.getElementById('navBtnCatalogo').classList.toggle('active', view==='catalogo');
   document.getElementById('navBtnCuenta').classList.toggle('active', view==='cuenta');
-  document.getElementById('navBtnConfig').classList.toggle('active', view==='cuenta');
+  document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
   if(view==='catalogo') renderCatalog();
-  if(view==='cuenta') loadSettingsView();
+  if(view==='cuenta') loadPerfilView();
+  if(view==='ajustes') loadAjustesView();
   window.scrollTo({top:0, behavior:'instant'});
 
-  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', historial:'viewHistorial', catalogo:'viewCatalogo', cuenta:'viewCuenta'};
+  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', historial:'viewHistorial', catalogo:'viewCatalogo', cuenta:'viewCuenta', ajustes:'viewAjustes'};
   const activeEl = document.getElementById(viewIds[view]);
   if(activeEl){
     activeEl.classList.remove('view-fade-in');
@@ -1852,12 +1861,8 @@ function renderFontToggle(){
   });
 }
 
-async function loadSettingsView(){
-  renderColorSwatches();
-  renderFontToggle();
-  renderThemeToggle();
-  document.getElementById('settNegocio').value = document.getElementById('bizName').value;
-  document.getElementById('settPerfilMsg').textContent = '';
+// Perfil = quién sos vos: foto, correo, contraseña, plan, cerrar/eliminar cuenta.
+async function loadPerfilView(){
   document.getElementById('settEmailMsg').textContent = '';
   document.getElementById('settPassMsg').textContent = '';
   document.getElementById('settEmailNuevo').value = '';
@@ -1878,6 +1883,15 @@ async function loadSettingsView(){
     console.error(err);
     planCard.innerHTML = '<div class="settings-msg err">No pudimos cargar tu plan. Probá de nuevo.</div>';
   }
+}
+
+// Ajustes = cómo funciona tu negocio y tu Tikera: nombre del comercio y apariencia.
+function loadAjustesView(){
+  renderColorSwatches();
+  renderFontToggle();
+  renderThemeToggle();
+  document.getElementById('settNegocio').value = document.getElementById('bizName').value;
+  document.getElementById('settPerfilMsg').textContent = '';
 }
 
 function renderPlanCard(){
