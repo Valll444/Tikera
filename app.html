@@ -242,6 +242,18 @@
   .ti-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;}
   .ti-del:hover{color:var(--gasto);}
 
+  .catalog-group{margin-top:18px;}
+  .catalog-group:first-child{margin-top:0;}
+  .catalog-group-title{
+    display:flex;align-items:center;gap:8px;
+    font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--ink-soft);padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:4px;
+  }
+  .catalog-group-count{
+    font-family:'IBM Plex Mono';font-weight:600;font-size:10.5px;letter-spacing:0;
+    background:var(--paper);color:var(--ink-soft);border-radius:999px;padding:1px 7px;
+  }
+
   /* resumen */
   .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:24px 0;}
   @media(max-width:640px){.summary{grid-template-columns:1fr 1fr;}}
@@ -270,9 +282,13 @@
   }
   .bottom-nav-btn svg{width:22px;height:22px;}
   .bottom-nav-btn.active{color:var(--accent);background:var(--paper);}
-  #navBtnCargar.active{color:var(--venta);}
   #navBtnHistorial.active{color:var(--gold);}
   #navBtnCatalogo.active{color:var(--teal);}
+  /* Cargar es la accion principal (registrar una venta) -- se destaca fijo
+     en verde, no solo cuando esta activa, para que sea lo primero que el
+     ojo encuentra al querer cargar algo. */
+  #navBtnCargar{background:var(--venta);color:#fff;}
+  #navBtnCargar:hover{filter:brightness(1.08);}
   .nav-logo-wrap{display:none;}
 
   @media (min-width:900px){
@@ -999,6 +1015,10 @@
       <label for="prodNombre" style="margin-top:0;">Nombre del producto</label>
       <input type="text" id="prodNombre" placeholder="Ej: Gaseosa 500ml">
 
+      <label for="prodCategoria">Categoría <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+      <input type="text" id="prodCategoria" placeholder="Ej: Bebidas, Almacén, Cigarrillos..." list="prodCategoriaList" autocomplete="off">
+      <datalist id="prodCategoriaList"></datalist>
+
       <div class="row2">
         <div>
           <label for="prodPrecio">Precio de venta</label>
@@ -1160,7 +1180,7 @@
 </div>
 
 <nav class="bottom-nav" id="bottomNav" style="display:none;">
-  <div class="nav-logo-wrap"><div class="nav-logo" aria-hidden="true">T</div></div>
+  <div class="nav-logo-wrap"><div class="nav-logo" id="navLogoBadge" aria-hidden="true">T</div></div>
   <button type="button" class="bottom-nav-btn" id="navBtnInicio" onclick="switchView('inicio')" aria-label="Inicio">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
     <span>Inicio</span>
@@ -2086,6 +2106,7 @@ async function loadData(){
     document.getElementById('bizName').value = (profile && profile.business_name) || 'Mi negocio';
     currentPlan = (profile && profile.plan) || 'trial';
     currentTrialStartedAt = profile && profile.trial_started_at ? new Date(profile.trial_started_at) : null;
+    updateNavLogoBadge();
 
     const { data: movRows, error: movErr } = await sb.from('movements').select('*').eq('user_id', user.id).order('created_at', {ascending:true});
     entries = movErr ? [] : (movRows || []).map(mapRowToEntry);
@@ -2186,29 +2207,57 @@ async function addFrequent(){
 function renderCatalog(){
   const list = document.getElementById('catalogList');
   const empty = document.getElementById('catalogEmpty');
-  const sorted = [...products].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
-  if(sorted.length === 0){
+  if(products.length === 0){
     empty.style.display = 'block';
     list.innerHTML = '';
     return;
   }
   empty.style.display = 'none';
-  list.innerHTML = sorted.map(p => {
-    const stock = Number(p.stock_actual) || 0;
-    const low = p.stock_minimo !== null && p.stock_minimo !== undefined && p.stock_minimo !== '' && stock <= Number(p.stock_minimo);
+
+  const SIN_CATEGORIA = 'Sin categoría';
+  const groups = {};
+  products.forEach(p => {
+    const cat = (p.categoria || '').trim() || SIN_CATEGORIA;
+    if(!groups[cat]) groups[cat] = [];
+    groups[cat].push(p);
+  });
+  const catNames = Object.keys(groups).sort((a,b) => {
+    if(a === SIN_CATEGORIA) return 1;
+    if(b === SIN_CATEGORIA) return -1;
+    return a.localeCompare(b,'es');
+  });
+
+  list.innerHTML = catNames.map(cat => {
+    const items = groups[cat].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+    const rows = items.map(p => {
+      const stock = Number(p.stock_actual) || 0;
+      const low = p.stock_minimo !== null && p.stock_minimo !== undefined && p.stock_minimo !== '' && stock <= Number(p.stock_minimo);
+      return `
+        <div class="ticket-item">
+          <div class="ti-left">
+            <div class="ti-desc">${escapeHtml(p.nombre)}</div>
+            <div class="ti-meta">${p.precio_venta ? fmtMoney(p.precio_venta) : 'sin precio'} · Stock: <span class="${low ? 'stock-low' : ''}">${stock}${low ? ' — repone ya' : ''}</span>${p.codigo_barras ? ` · <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;">${escapeHtml(p.codigo_barras)}</span>` : ''}</div>
+          </div>
+          <div class="ti-right">
+            <button class="ti-del" aria-label="Editar" onclick="editProduct('${p.id}')">&#9998;</button>
+            <button class="ti-del" aria-label="Eliminar" onclick="deleteProduct('${p.id}')">&times;</button>
+          </div>
+        </div>
+      `;
+    }).join('');
     return `
-      <div class="ticket-item">
-        <div class="ti-left">
-          <div class="ti-desc">${escapeHtml(p.nombre)}</div>
-          <div class="ti-meta">${p.precio_venta ? fmtMoney(p.precio_venta) : 'sin precio'} · Stock: <span class="${low ? 'stock-low' : ''}">${stock}${low ? ' — repone ya' : ''}</span>${p.codigo_barras ? ` · <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;">${escapeHtml(p.codigo_barras)}</span>` : ''}</div>
-        </div>
-        <div class="ti-right">
-          <button class="ti-del" aria-label="Editar" onclick="editProduct('${p.id}')">&#9998;</button>
-          <button class="ti-del" aria-label="Eliminar" onclick="deleteProduct('${p.id}')">&times;</button>
-        </div>
+      <div class="catalog-group">
+        <div class="catalog-group-title">${escapeHtml(cat)} <span class="catalog-group-count">${items.length}</span></div>
+        ${rows}
       </div>
     `;
   }).join('');
+
+  const catList = document.getElementById('prodCategoriaList');
+  if(catList){
+    const usedCats = [...new Set(products.map(p => (p.categoria || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+    catList.innerHTML = usedCats.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+  }
 }
 
 function fillProductSelectOptions(){
@@ -2277,6 +2326,7 @@ document.getElementById('productoSelectTrigger').addEventListener('keydown', (e)
 function resetProductForm(){
   editingProductId = null;
   document.getElementById('prodNombre').value = '';
+  document.getElementById('prodCategoria').value = '';
   document.getElementById('prodPrecio').value = '';
   document.getElementById('prodCosto').value = '';
   document.getElementById('prodStock').value = '';
@@ -2332,6 +2382,7 @@ document.getElementById('prodSubmitBtn').addEventListener('click', async ()=>{
 
   const fields = {
     nombre,
+    categoria: document.getElementById('prodCategoria').value.trim() || null,
     precio_venta: parseFloat(document.getElementById('prodPrecio').value) || null,
     costo_unitario: parseFloat(document.getElementById('prodCosto').value) || null,
     stock_actual: parseFloat(document.getElementById('prodStock').value) || 0,
@@ -2386,6 +2437,7 @@ function editProduct(id){
   if(!p) return;
   editingProductId = id;
   document.getElementById('prodNombre').value = p.nombre;
+  document.getElementById('prodCategoria').value = p.categoria || '';
   document.getElementById('prodPrecio').value = p.precio_venta ?? '';
   document.getElementById('prodCosto').value = p.costo_unitario ?? '';
   document.getElementById('prodStock').value = p.stock_actual ?? '';
@@ -2500,10 +2552,25 @@ async function deleteMovement(id){
 }
 
 document.getElementById('bizName').addEventListener('change', async (e)=>{
+  updateNavLogoBadge();
   try{
     await sb.from('profiles').update({ business_name: e.target.value }).eq('id', currentUserId);
   }catch(err){ console.error(err); }
 });
+
+// Badge de arriba del dock: mientras no haya foto de perfil subida, muestra
+// las iniciales del negocio (hasta 2 letras) en vez del logo generico de Tikera.
+function updateNavLogoBadge(){
+  const el = document.getElementById('navLogoBadge');
+  if(!el) return;
+  const name = (document.getElementById('bizName').value || '').trim();
+  if(!name){ el.textContent = 'T'; return; }
+  const words = name.split(/\s+/).filter(Boolean);
+  const initials = words.length >= 2
+    ? (words[0][0] + words[1][0])
+    : name.slice(0,2);
+  el.textContent = initials.toUpperCase();
+}
 
 document.getElementById('fecha').value = todayStr();
 document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
