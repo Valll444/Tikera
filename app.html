@@ -44,6 +44,13 @@
     --teal:#4FA3A0;
     --teal-dark:#3D8683;
     --teal-bg:rgba(79,163,160,0.14);
+    /* Identidad fija del nav (logo, Inicio, Cuenta): a proposito NO usa
+       --accent, para que elegir un color de acento en Apariencia no deje
+       algunos iconos del dock cambiados y otros no -- o cambian todos o
+       no cambia ninguno, nunca mitad y mitad. */
+    --nav-brand:#3E5670;
+    --nav-brand-dark:#547096;
+    --nav-brand-bg:rgba(62,86,112,0.16);
     --brand-gradient:linear-gradient(135deg, #6089B4 0%, #3E5670 60%, #2C4256 100%);
     --counter:#0D1113;
     --bg-elevated:#151A1D;
@@ -77,6 +84,9 @@
     --teal:#2D7573;
     --teal-dark:#235D5B;
     --teal-bg:rgba(45,117,115,0.12);
+    --nav-brand:#3E5670;
+    --nav-brand-dark:#2C4256;
+    --nav-brand-bg:rgba(62,86,112,0.10);
     --counter:#F4F6F7;
     --bg-elevated:#F4F6F7;
     --text-light:#14191C;
@@ -292,14 +302,14 @@
      vista donde esta cada cosa; el estado activo suma un fondo suave del
      mismo color, ademas del color, para que el cambio se note bien. */
   .bottom-nav-btn.active{background:var(--paper);}
-  #navBtnInicio{color:var(--accent-dark);}
-  #navBtnInicio.active{background:var(--accent-bg);}
+  #navBtnInicio{color:var(--nav-brand-dark);}
+  #navBtnInicio.active{background:var(--nav-brand-bg);}
   #navBtnHistorial{color:var(--gold);}
   #navBtnHistorial.active{background:var(--gold-bg);}
   #navBtnCatalogo{color:var(--teal);}
   #navBtnCatalogo.active{background:var(--teal-bg);}
-  #navBtnCuenta{color:var(--accent);}
-  #navBtnCuenta.active{background:var(--accent-bg);}
+  #navBtnCuenta{color:var(--nav-brand);}
+  #navBtnCuenta.active{background:var(--nav-brand-bg);}
   #navBtnConfig{color:#8B7EC8;}
   #navBtnConfig.active{background:rgba(139,126,200,0.14);}
   /* Cargar es la accion principal (registrar una venta) -- se destaca fijo
@@ -352,7 +362,7 @@
       margin-bottom:8px;padding-bottom:14px;border-bottom:1px solid var(--line);
     }
     .nav-logo{
-      width:32px;height:32px;border-radius:10px;background:var(--accent);color:#fff;
+      width:32px;height:32px;border-radius:10px;background:var(--nav-brand);color:#fff;
       display:flex;align-items:center;justify-content:center;overflow:hidden;
       font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;flex-shrink:0;
     }
