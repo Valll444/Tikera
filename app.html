@@ -2052,10 +2052,33 @@ document.getElementById('settLogoutBtn').addEventListener('click', ()=>{
   document.getElementById('switchBizBtn').click();
 });
 
-document.getElementById('settDeleteBtn').addEventListener('click', ()=>{
+document.getElementById('settDeleteBtn').addEventListener('click', async ()=>{
   const msg = document.getElementById('settDeleteMsg');
+  const sure = confirm('¿Seguro que querés eliminar tu cuenta?\n\nSe van a borrar tu perfil, tus ventas, tus gastos, tu catálogo y tus fotos de Tikera. Esta acción no se puede deshacer.');
+  if(!sure) return;
+
+  const btn = document.getElementById('settDeleteBtn');
+  btn.disabled = true;
   msg.className = 'settings-msg';
-  msg.textContent = 'Todavía no está disponible desde acá. Escribinos a contacto.tikera@gmail.com y te la eliminamos nosotros a mano, junto con todos tus datos.';
+  msg.textContent = 'Eliminando tu cuenta...';
+  try{
+    const { data: sessionData } = await sb.auth.getSession();
+    const token = sessionData && sessionData.session && sessionData.session.access_token;
+    if(!token) throw new Error('Sin sesión activa.');
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const result = await res.json().catch(()=>({}));
+    if(!res.ok || result.error) throw new Error(result.error || 'No se pudo eliminar la cuenta.');
+    await sb.auth.signOut();
+    window.location.reload();
+  }catch(err){
+    console.error(err);
+    msg.className = 'settings-msg err';
+    msg.textContent = 'No se pudo eliminar la cuenta. Probá de nuevo o escribinos a contacto.tikera@gmail.com.';
+    btn.disabled = false;
+  }
 });
 
 // Si ya había una sesión abierta en este navegador, entrar directo sin pedir nada
