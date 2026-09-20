@@ -310,13 +310,13 @@
        espacio ocupado, look mas "app de escritorio". El label de cada boton
        sigue en el DOM (accesibilidad + <span> reutilizado como tooltip) y
        aparece al pasar el mouse o al enfocar con teclado. */
-    body.app-active{padding-left:100px;}
+    body.app-active{padding-left:96px;}
     .bottom-nav{
-      top:50%;bottom:auto;left:22px;right:auto;width:auto;
+      top:50%;bottom:auto;left:20px;right:auto;width:auto;
       transform:translateY(-50%);
       flex-direction:column;justify-content:center;align-items:center;
-      padding:18px 13px;gap:18px;
-      border:1px solid var(--line);border-radius:28px;
+      padding:14px 10px;gap:6px;
+      border:1px solid var(--line);border-radius:24px;
       box-shadow:0 24px 60px -16px rgba(0,0,0,0.5);
       /* Fondo con un poco de color en vez de plano: un resplandor verde
          arriba (cerca de Cargar) y uno violeta abajo (cerca de Config). */
@@ -342,10 +342,10 @@
       z-index:60;
     }
     .bottom-nav-btn:hover span,.bottom-nav-btn:focus-visible span{opacity:1;transform:translate(0,-50%);}
-    .nav-btn-cuenta{margin-top:8px;padding-top:15px;border-top:1px solid var(--line);}
+    .nav-btn-cuenta{margin-top:6px;padding-top:12px;border-top:1px solid var(--line);}
     .nav-logo-wrap{
       display:flex;align-items:center;justify-content:center;width:100%;
-      margin-bottom:10px;padding-bottom:16px;border-bottom:1px solid var(--line);
+      margin-bottom:8px;padding-bottom:14px;border-bottom:1px solid var(--line);
     }
     .nav-logo{
       width:32px;height:32px;border-radius:10px;background:var(--accent);color:#fff;
