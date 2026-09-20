@@ -12,6 +12,11 @@ New query). En el proyecto real de Tikera ya están todas aplicadas.
 | 4 | `004_products_codigo_barras.sql` | Código de barras por producto |
 | 5 | `005_products_categoria.sql` | Categoría por producto (para agrupar el catálogo) |
 | 6 | `006_storage_fotos.sql` | Bucket de Storage `uploads` + columnas `imagen_url` / `avatar_url` para fotos de producto y de perfil |
+| 7 | `007_frequent_items.sql` | Tabla `frequent_items`: chips de "producto/gasto frecuente" en la pantalla Cargar |
+
+Hay además una Edge Function (`functions/delete-account`) para el borrado real
+de cuenta — ver `functions/README.md` para el deploy, que necesita la
+Supabase CLI y no se puede hacer desde acá.
 
 Todas las tablas tienen Row Level Security activado: cada cuenta solo puede
 leer y modificar sus propios datos (`auth.uid() = user_id`, o `= id` en
