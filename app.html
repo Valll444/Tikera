@@ -312,11 +312,8 @@
   #navBtnCuenta.active{background:var(--nav-brand-bg);}
   #navBtnConfig{color:#8B7EC8;}
   #navBtnConfig.active{background:rgba(139,126,200,0.14);}
-  /* Cargar es la accion principal (registrar una venta) -- se destaca fijo
-     en verde, no solo cuando esta activa, para que sea lo primero que el
-     ojo encuentra al querer cargar algo. */
-  #navBtnCargar{background:var(--venta);color:#fff;}
-  #navBtnCargar:hover{filter:brightness(1.08);}
+  #navBtnCargar{color:var(--venta);}
+  #navBtnCargar.active{background:var(--venta-bg);}
   .nav-logo-wrap{display:none;}
 
   @media (min-width:900px){
