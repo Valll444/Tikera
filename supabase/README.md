@@ -14,6 +14,7 @@ New query). En el proyecto real de Tikera ya están todas aplicadas.
 | 6 | `006_storage_fotos.sql` | Bucket de Storage `uploads` + columnas `imagen_url` / `avatar_url` para fotos de producto y de perfil |
 | 7 | `007_frequent_items.sql` | Tabla `frequent_items`: chips de "producto/gasto frecuente" en la pantalla Cargar |
 | 8 | `008_proveedores.sql` | Tablas `proveedores` y `pedidos_proveedor`: a quién le comprás y qué le debés |
+| 9 | `009_cierres_caja.sql` | Tabla `cierres_caja`: efectivo esperado vs. contado por día, para detectar diferencias de caja |
 
 Hay además una Edge Function (`functions/delete-account`) para el borrado real
 de cuenta — ver `functions/README.md` para el deploy, que necesita la
