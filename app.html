@@ -110,6 +110,21 @@
   /* El espacio de abajo para el menu de navegacion solo hace falta una vez logueado
      (antes de eso no existe el bottom-nav, y dejaba un hueco vacio en la pantalla de login). */
   body.app-active{padding-bottom:96px;}
+  /* Mismo resplandor radial verde/slate que ya tiene #gate (la pantalla de login):
+     una vez adentro de la app el fondo quedaba completamente plano. Fixed (no
+     absolute) para que el brillo se sienta "ambiente" y no se vaya scrolleando
+     en pantallas largas como Historial. */
+  body.app-active::before,body.app-active::after{
+    content:'';position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;
+  }
+  body.app-active::before{
+    top:-12%;left:-10%;width:46%;height:46%;
+    background:radial-gradient(circle, rgba(76,175,128,0.24), transparent 70%);
+  }
+  body.app-active::after{
+    bottom:-16%;right:-12%;width:50%;height:50%;
+    background:radial-gradient(circle, rgba(62,86,112,0.36), transparent 70%);
+  }
   .grain{
     position:fixed;inset:0;pointer-events:none;opacity:0.035;z-index:0;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -698,6 +713,9 @@
   .plan-badge.expired .dot{background:var(--gasto);}
   .plan-badge.cortesia{background:var(--gold-bg,rgba(217,162,81,.14));color:var(--gold,#D9A251);}
   .plan-badge.cortesia .dot{background:var(--gold,#D9A251);}
+  .plan-badge.pagado{background:var(--venta-bg);color:var(--venta);}
+  .plan-badge.pagado .dot{background:var(--venta);}
+  button.plan-badge{border:none;font-family:'IBM Plex Mono';cursor:pointer;}
   .plan-features{list-style:none;padding:0;margin:14px 0;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;}
   .plan-features li{font-size:13px;color:var(--ink-soft);display:flex;align-items:baseline;gap:6px;}
   .plan-features li::before{content:'✓';color:var(--venta);font-weight:700;}
@@ -1053,8 +1071,15 @@
         <h2 style="margin:0;">Catálogo</h2>
       </div>
       <button type="button" id="newProductBtn" class="export-btn">+ Nuevo producto</button>
+      <button type="button" id="newProveedorBtn" class="export-btn" style="display:none;">+ Nuevo proveedor</button>
     </div>
 
+    <div class="type-toggle" id="catalogoTabToggle" style="margin:14px 0 4px;width:auto;">
+      <button type="button" class="type-btn active-accent" id="btnCatalogoProductos" style="padding:6px 14px;font-size:12.5px;">Productos</button>
+      <button type="button" class="type-btn" id="btnCatalogoProveedores" style="padding:6px 14px;font-size:12.5px;">Proveedores</button>
+    </div>
+
+    <div id="catalogoProductosPanel">
     <div id="productForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
       <label for="prodNombre" style="margin-top:0;">Nombre del producto</label>
       <input type="text" id="prodNombre" placeholder="Ej: Gaseosa 500ml">
@@ -1094,6 +1119,29 @@
       Todavía no cargaste productos. Agregalos para venderlos en un toque y llevar el stock al día.
     </div>
     <div class="ticket-list" id="catalogList" style="margin-top:10px;"></div>
+    </div>
+
+    <div id="catalogoProveedoresPanel" style="display:none;">
+    <div id="proveedorForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
+      <label for="provNombre" style="margin-top:0;">Nombre del proveedor</label>
+      <input type="text" id="provNombre" placeholder="Ej: Distribuidora del Sur">
+
+      <label for="provContacto">Contacto <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+      <input type="text" id="provContacto" placeholder="Teléfono, WhatsApp o email" autocomplete="off">
+
+      <label for="provNotas">Notas <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+      <input type="text" id="provNotas" placeholder="Ej: entrega los martes" autocomplete="off">
+
+      <div class="error-msg" id="provErrorMsg" role="alert" aria-live="polite"></div>
+      <button class="submit-btn" id="provSubmitBtn" type="button">Guardar proveedor</button>
+      <button type="button" id="provCancelBtn" style="display:block;width:100%;margin-top:8px;padding:9px 0;border:1.5px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
+    </div>
+
+    <div id="proveedoresEmpty" style="display:none;padding:34px 0;text-align:center;color:var(--ink-soft);font-size:13.5px;">
+      Todavía no cargaste proveedores. Agregalos para anotar qué te traen y cuánto les debés.
+    </div>
+    <div class="ticket-list" id="proveedoresList" style="margin-top:10px;"></div>
+    </div>
   </div>
   </div>
 
@@ -1277,6 +1325,34 @@
   </div>
 </div>
 
+<div id="proveedorModal" class="ticket-modal-overlay" style="display:none;" role="dialog" aria-label="Detalle de proveedor">
+  <div class="ticket-modal" style="max-width:440px;">
+    <div id="proveedorModalHeader"></div>
+    <div id="proveedorModalPedidos" style="margin-top:14px;"></div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
+      <label for="pedidoFecha" style="margin-top:0;">Fecha</label>
+      <input type="date" id="pedidoFecha">
+      <label for="pedidoDescripcion">Qué te trajo</label>
+      <input type="text" id="pedidoDescripcion" placeholder="Ej: 2 cajas de gaseosa">
+      <div class="row2">
+        <div>
+          <label for="pedidoCantidad">Cantidad <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+          <input type="text" id="pedidoCantidad" placeholder="0" inputmode="decimal" autocomplete="off">
+        </div>
+        <div>
+          <label for="pedidoMonto">Monto a pagar</label>
+          <input type="text" id="pedidoMonto" placeholder="0.00" inputmode="decimal" autocomplete="off">
+        </div>
+      </div>
+      <div class="error-msg" id="pedidoErrorMsg" role="alert" aria-live="polite"></div>
+      <button class="submit-btn" id="pedidoSubmitBtn" type="button">Agregar pedido</button>
+    </div>
+    <div class="ticket-modal-actions">
+      <button type="button" id="proveedorModalCloseBtn" class="settings-btn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Aviso de cookies">
   <div class="cookie-banner-inner">
     <p class="cookie-banner-text">Usamos almacenamiento del navegador para tu sesión y para guardar ventas cargadas sin conexión. No usamos cookies de publicidad ni de seguimiento. <a href="privacidad.html">Más información</a>.</p>
@@ -1314,6 +1390,11 @@ let summaryScope = 'hoy';
 let products = [];
 let editingProductId = null;
 let selectedProductId = null;
+let proveedores = [];
+let pedidosProveedor = [];
+let editingProveedorId = null;
+let openProveedorId = null;
+let catalogoTab = 'productos';
 
 // ============================================
 // Plan y prueba gratuita.
@@ -1717,7 +1798,7 @@ function switchView(view){
   document.getElementById('navBtnCatalogo').classList.toggle('active', view==='catalogo');
   document.getElementById('navBtnCuenta').classList.toggle('active', view==='cuenta');
   document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
-  if(view==='catalogo') renderCatalog();
+  if(view==='catalogo'){ renderCatalog(); if(catalogoTab === 'proveedores') renderProveedores(); }
   if(view==='cuenta') loadPerfilView();
   if(view==='ajustes') loadAjustesView();
   window.scrollTo({top:0, behavior:'instant'});
@@ -1789,6 +1870,9 @@ document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
     entries = [];
     frequentProducts = [];
     frequentExpenses = [];
+    proveedores = [];
+    pedidosProveedor = [];
+    closeProveedorModal();
     document.getElementById('gateError').textContent = '';
     document.getElementById('gateCode').value = '';
     document.getElementById('gateEmail').value = '';
@@ -2283,6 +2367,16 @@ async function loadData(){
     products = prodErr ? [] : (productRows || []);
     if(prodErr) console.error(prodErr);
 
+    // Igual que "products": si todavía no corriste 008_proveedores.sql,
+    // esta sección queda vacía en vez de romper el resto de la app.
+    const { data: provRows, error: provErr } = await sb.from('proveedores').select('*').eq('user_id', user.id).order('nombre', {ascending:true});
+    proveedores = provErr ? [] : (provRows || []);
+    if(provErr) console.error(provErr);
+
+    const { data: pedidoRows, error: pedidoErr } = await sb.from('pedidos_proveedor').select('*').eq('user_id', user.id).order('fecha', {ascending:false});
+    pedidosProveedor = pedidoErr ? [] : (pedidoRows || []);
+    if(pedidoErr) console.error(pedidoErr);
+
     hydratePendingIntoEntries();
   }catch(e){
     console.error(e);
@@ -2484,6 +2578,19 @@ document.getElementById('productoSelectTrigger').addEventListener('keydown', (e)
   if(e.key === 'Escape') closeProductoSelect();
 });
 
+function setCatalogoTab(tab){
+  catalogoTab = tab;
+  document.getElementById('catalogoProductosPanel').style.display = tab === 'productos' ? 'block' : 'none';
+  document.getElementById('catalogoProveedoresPanel').style.display = tab === 'proveedores' ? 'block' : 'none';
+  document.getElementById('newProductBtn').style.display = tab === 'productos' ? '' : 'none';
+  document.getElementById('newProveedorBtn').style.display = tab === 'proveedores' ? '' : 'none';
+  document.getElementById('btnCatalogoProductos').className = 'type-btn' + (tab==='productos' ? ' active-accent' : '');
+  document.getElementById('btnCatalogoProveedores').className = 'type-btn' + (tab==='proveedores' ? ' active-accent' : '');
+  if(tab === 'proveedores') renderProveedores();
+}
+document.getElementById('btnCatalogoProductos').addEventListener('click', ()=>setCatalogoTab('productos'));
+document.getElementById('btnCatalogoProveedores').addEventListener('click', ()=>setCatalogoTab('proveedores'));
+
 function resetProductForm(){
   editingProductId = null;
   document.getElementById('prodNombre').value = '';
@@ -2592,6 +2699,269 @@ async function deleteProduct(id){
     showToast('Producto eliminado');
   }catch(err){ console.error(err); showToast('No se pudo eliminar'); }
 }
+
+// ============================================
+// Proveedores: a quién le comprás y qué le debés.
+// ============================================
+function pedidosDeProveedor(provId){
+  return pedidosProveedor.filter(x => String(x.proveedor_id) === String(provId));
+}
+function totalPendienteProveedor(provId){
+  return pedidosDeProveedor(provId).filter(x => !x.pagado).reduce((s,x) => s + (Number(x.monto) || 0), 0);
+}
+
+function renderProveedores(){
+  const list = document.getElementById('proveedoresList');
+  const empty = document.getElementById('proveedoresEmpty');
+  if(proveedores.length === 0){
+    empty.style.display = 'block';
+    list.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  const sorted = [...proveedores].sort((a,b) => a.nombre.localeCompare(b.nombre,'es'));
+  list.innerHTML = sorted.map(p => {
+    const pendiente = totalPendienteProveedor(p.id);
+    return `
+      <div class="ticket-item" style="cursor:pointer;" onclick="openProveedorModal('${p.id}')">
+        <div class="ti-left">
+          <div class="ti-desc">${escapeHtml(p.nombre)}</div>
+          <div class="ti-meta">${p.contacto ? escapeHtml(p.contacto) : 'sin contacto'} · ${pendiente > 0 ? `<span class="stock-low">Debés ${fmtMoney(pendiente)}</span>` : `<span style="color:var(--venta);">Al día</span>`}</div>
+        </div>
+        <div class="ti-right">
+          <button class="ti-del" aria-label="Editar" onclick="event.stopPropagation();editProveedor('${p.id}')">&#9998;</button>
+          <button class="ti-del" aria-label="Eliminar" onclick="event.stopPropagation();deleteProveedor('${p.id}')">&times;</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function resetProveedorForm(){
+  editingProveedorId = null;
+  document.getElementById('provNombre').value = '';
+  document.getElementById('provContacto').value = '';
+  document.getElementById('provNotas').value = '';
+  document.getElementById('provErrorMsg').textContent = '';
+  document.getElementById('provSubmitBtn').textContent = 'Guardar proveedor';
+}
+
+document.getElementById('newProveedorBtn').addEventListener('click', ()=>{
+  const form = document.getElementById('proveedorForm');
+  const opening = form.style.display === 'none';
+  if(opening) resetProveedorForm();
+  form.style.display = opening ? 'block' : 'none';
+});
+document.getElementById('provCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('proveedorForm').style.display = 'none';
+  resetProveedorForm();
+});
+
+document.getElementById('provSubmitBtn').addEventListener('click', async ()=>{
+  const nombre = document.getElementById('provNombre').value.trim();
+  const errEl = document.getElementById('provErrorMsg');
+  if(!nombre){ errEl.textContent = 'Ingresá un nombre.'; return; }
+  errEl.textContent = '';
+
+  const fields = {
+    nombre,
+    contacto: document.getElementById('provContacto').value.trim() || null,
+    notas: document.getElementById('provNotas').value.trim() || null
+  };
+
+  document.getElementById('provSubmitBtn').disabled = true;
+  const ok = editingProveedorId ? await updateProveedor(editingProveedorId, fields) : await addProveedor(fields);
+  document.getElementById('provSubmitBtn').disabled = false;
+  if(ok){
+    showToast(editingProveedorId ? 'Proveedor actualizado' : 'Proveedor agregado');
+    document.getElementById('proveedorForm').style.display = 'none';
+    resetProveedorForm();
+    renderProveedores();
+  }
+});
+
+async function addProveedor(fields){
+  try{
+    const { data, error } = await sb.from('proveedores').insert({ user_id: currentUserId, ...fields }).select().single();
+    if(error){ console.error(error); showToast('No se pudo guardar el proveedor'); return null; }
+    proveedores.push(data);
+    return data;
+  }catch(err){ console.error(err); showToast('No se pudo guardar el proveedor'); return null; }
+}
+
+async function updateProveedor(id, fields){
+  try{
+    const { data, error } = await sb.from('proveedores').update(fields).eq('id', id).eq('user_id', currentUserId).select().single();
+    if(error){ console.error(error); showToast('No se pudo actualizar el proveedor'); return null; }
+    const idx = proveedores.findIndex(p => String(p.id) === String(id));
+    if(idx !== -1) proveedores[idx] = data;
+    return data;
+  }catch(err){ console.error(err); showToast('No se pudo actualizar el proveedor'); return null; }
+}
+
+function editProveedor(id){
+  const p = proveedores.find(x => String(x.id) === String(id));
+  if(!p) return;
+  editingProveedorId = id;
+  document.getElementById('provNombre').value = p.nombre;
+  document.getElementById('provContacto').value = p.contacto || '';
+  document.getElementById('provNotas').value = p.notas || '';
+  document.getElementById('provSubmitBtn').textContent = 'Guardar cambios';
+  document.getElementById('proveedorForm').style.display = 'block';
+  document.getElementById('provNombre').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+async function deleteProveedor(id){
+  const p = proveedores.find(x => String(x.id) === String(id));
+  const label = p ? `"${p.nombre}"` : 'este proveedor';
+  if(!confirm(`¿Seguro que querés borrar ${label}? También se van a borrar todos sus pedidos anotados. Esta acción no se puede deshacer.`)) return;
+  try{
+    const { error } = await sb.from('proveedores').delete().eq('id', id).eq('user_id', currentUserId);
+    if(error){ console.error(error); showToast('No se pudo eliminar'); return; }
+    proveedores = proveedores.filter(p => String(p.id) !== String(id));
+    if(String(editingProveedorId) === String(id)){
+      document.getElementById('proveedorForm').style.display = 'none';
+      resetProveedorForm();
+    }
+    pedidosProveedor = pedidosProveedor.filter(x => String(x.proveedor_id) !== String(id));
+    renderProveedores();
+    showToast('Proveedor eliminado');
+  }catch(err){ console.error(err); showToast('No se pudo eliminar'); }
+}
+
+function renderProveedorModalHeader(p){
+  if(!p) return;
+  const pendiente = totalPendienteProveedor(p.id);
+  document.getElementById('proveedorModalHeader').innerHTML = `
+    <h2 style="margin:0 0 4px;font-family:'Space Grotesk',sans-serif;font-size:17px;">${escapeHtml(p.nombre)}</h2>
+    ${p.contacto ? `<div style="font-size:12.5px;color:var(--ink-soft);">${escapeHtml(p.contacto)}</div>` : ''}
+    ${p.notas ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(p.notas)}</div>` : ''}
+    <div class="plan-badge ${pendiente > 0 ? 'expired' : 'pagado'}" style="margin-top:10px;">
+      <span class="dot"></span>${pendiente > 0 ? `Debés ${fmtMoney(pendiente)}` : 'Al día'}
+    </div>
+  `;
+}
+
+function renderProveedorModalPedidos(provId){
+  const wrap = document.getElementById('proveedorModalPedidos');
+  const pedidos = [...pedidosDeProveedor(provId)].sort((a,b) => b.fecha.localeCompare(a.fecha));
+  if(pedidos.length === 0){
+    wrap.innerHTML = `<div style="padding:16px 0;text-align:center;color:var(--ink-soft);font-size:13px;">Todavía no anotaste pedidos de este proveedor.</div>`;
+    return;
+  }
+  wrap.innerHTML = pedidos.map(x => `
+    <div class="ticket-item" data-pedido-id="${x.id}">
+      <div class="ti-left">
+        <div class="ti-desc">${escapeHtml(x.descripcion)}</div>
+        <div class="ti-meta">${fmtFecha(x.fecha)}${x.cantidad ? ' · ' + x.cantidad + ' u.' : ''} · ${fmtMoney(x.monto)}</div>
+      </div>
+      <div class="ti-right">
+        <button type="button" class="plan-badge ${x.pagado ? 'pagado' : 'expired'} pedido-toggle-pagado"><span class="dot"></span>${x.pagado ? 'Pagado' : 'Pendiente'}</button>
+        <button class="ti-del pedido-del" aria-label="Eliminar pedido">&times;</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('proveedorModalPedidos').addEventListener('click', (e)=>{
+  const row = e.target.closest('[data-pedido-id]');
+  if(!row) return;
+  const id = row.dataset.pedidoId;
+  if(e.target.closest('.pedido-toggle-pagado')) togglePedidoPagado(id);
+  else if(e.target.closest('.pedido-del')) deletePedido(id);
+});
+
+async function addPedido(fields){
+  try{
+    const { data, error } = await sb.from('pedidos_proveedor').insert({ user_id: currentUserId, ...fields }).select().single();
+    if(error){ console.error(error); showToast('No se pudo guardar el pedido'); return null; }
+    pedidosProveedor.push(data);
+    return data;
+  }catch(err){ console.error(err); showToast('No se pudo guardar el pedido'); return null; }
+}
+
+async function togglePedidoPagado(id){
+  const x = pedidosProveedor.find(p => String(p.id) === String(id));
+  if(!x) return;
+  const nuevoPagado = !x.pagado;
+  try{
+    const { error } = await sb.from('pedidos_proveedor').update({ pagado: nuevoPagado }).eq('id', id).eq('user_id', currentUserId);
+    if(error){ console.error(error); showToast('No se pudo actualizar'); return; }
+    x.pagado = nuevoPagado;
+    renderProveedorModalPedidos(x.proveedor_id);
+    renderProveedorModalHeader(proveedores.find(p => String(p.id) === String(x.proveedor_id)));
+    renderProveedores();
+  }catch(err){ console.error(err); showToast('No se pudo actualizar'); }
+}
+
+async function deletePedido(id){
+  const x = pedidosProveedor.find(p => String(p.id) === String(id));
+  if(!x) return;
+  if(!confirm('¿Seguro que querés borrar este pedido? Esta acción no se puede deshacer.')) return;
+  try{
+    const { error } = await sb.from('pedidos_proveedor').delete().eq('id', id).eq('user_id', currentUserId);
+    if(error){ console.error(error); showToast('No se pudo eliminar'); return; }
+    pedidosProveedor = pedidosProveedor.filter(p => String(p.id) !== String(id));
+    renderProveedorModalPedidos(x.proveedor_id);
+    renderProveedorModalHeader(proveedores.find(p => String(p.id) === String(x.proveedor_id)));
+    renderProveedores();
+    showToast('Pedido eliminado');
+  }catch(err){ console.error(err); showToast('No se pudo eliminar'); }
+}
+
+function openProveedorModal(id){
+  const p = proveedores.find(x => String(x.id) === String(id));
+  if(!p) return;
+  openProveedorId = id;
+  renderProveedorModalHeader(p);
+  renderProveedorModalPedidos(id);
+  document.getElementById('pedidoFecha').value = todayStr();
+  document.getElementById('pedidoDescripcion').value = '';
+  document.getElementById('pedidoCantidad').value = '';
+  document.getElementById('pedidoMonto').value = '';
+  document.getElementById('pedidoErrorMsg').textContent = '';
+  document.getElementById('proveedorModal').style.display = 'flex';
+}
+function closeProveedorModal(){
+  openProveedorId = null;
+  document.getElementById('proveedorModal').style.display = 'none';
+}
+document.getElementById('proveedorModalCloseBtn').addEventListener('click', closeProveedorModal);
+document.getElementById('proveedorModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'proveedorModal') closeProveedorModal();
+});
+
+document.getElementById('pedidoSubmitBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('pedidoErrorMsg');
+  const fecha = document.getElementById('pedidoFecha').value;
+  const descripcion = document.getElementById('pedidoDescripcion').value.trim();
+  const monto = parseFloat(document.getElementById('pedidoMonto').value);
+  if(!fecha || !descripcion || !monto || monto <= 0){ errEl.textContent = 'Completá fecha, descripción y monto.'; return; }
+  if(!openProveedorId) return;
+  errEl.textContent = '';
+
+  const fields = {
+    proveedor_id: openProveedorId,
+    fecha,
+    descripcion,
+    cantidad: parseFloat(document.getElementById('pedidoCantidad').value) || null,
+    monto,
+    pagado: false
+  };
+
+  document.getElementById('pedidoSubmitBtn').disabled = true;
+  const ok = await addPedido(fields);
+  document.getElementById('pedidoSubmitBtn').disabled = false;
+  if(ok){
+    showToast('Pedido agregado');
+    document.getElementById('pedidoDescripcion').value = '';
+    document.getElementById('pedidoCantidad').value = '';
+    document.getElementById('pedidoMonto').value = '';
+    renderProveedorModalPedidos(openProveedorId);
+    renderProveedorModalHeader(proveedores.find(p => String(p.id) === String(openProveedorId)));
+    renderProveedores();
+  }
+});
 
 // Descuenta stock cuando se confirma una venta ligada a un producto del catálogo.
 // Relee el stock desde la base antes de restar para no perder cambios hechos desde
