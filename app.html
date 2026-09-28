@@ -332,24 +332,20 @@
   .nav-logo-wrap{display:none;}
 
   @media (min-width:900px){
-    /* Dock flotante icon-only en vez del sidebar ancho con etiquetas: menos
-       espacio ocupado, look mas "app de escritorio". El label de cada boton
-       sigue en el DOM (accesibilidad + <span> reutilizado como tooltip) y
-       aparece al pasar el mouse o al enfocar con teclado. */
+    /* Barra lateral fija de borde a borde (como un dashboard de escritorio real),
+       en vez del dock flotante centrado que teniamos antes -- angulos rectos,
+       pegada al borde izquierdo, ocupa todo el alto de la pantalla. El label de
+       cada boton sigue en el DOM (accesibilidad + <span> reutilizado como
+       tooltip) y aparece al pasar el mouse o al enfocar con teclado. */
     body.app-active{padding-left:96px;}
     .bottom-nav{
-      top:50%;bottom:auto;left:20px;right:auto;width:auto;
-      transform:translateY(-50%);
-      flex-direction:column;justify-content:center;align-items:center;
-      padding:14px 10px;gap:6px;
-      border:1px solid var(--line);border-radius:24px;
-      box-shadow:0 24px 60px -16px rgba(0,0,0,0.5);
-      /* Fondo con un poco de color en vez de plano: un resplandor verde
-         arriba (cerca de Cargar) y uno violeta abajo (cerca de Config). */
-      background:
-        radial-gradient(circle at 50% 0%, var(--venta-bg) 0%, transparent 65%),
-        radial-gradient(circle at 50% 100%, rgba(139,126,200,0.14) 0%, transparent 65%),
-        var(--card);
+      top:0;bottom:0;left:0;right:auto;width:72px;height:100vh;
+      transform:none;
+      flex-direction:column;justify-content:flex-start;align-items:center;
+      padding:18px 0 20px;gap:10px;
+      border:none;border-right:1px solid var(--line);border-radius:0;
+      box-shadow:4px 0 28px -12px rgba(0,0,0,0.35);
+      background:var(--counter);
     }
     .bottom-nav-btn{
       flex:none;flex-direction:row;justify-content:center;gap:0;
@@ -368,15 +364,29 @@
       z-index:60;
     }
     .bottom-nav-btn:hover span,.bottom-nav-btn:focus-visible span{opacity:1;transform:translate(0,-50%);}
-    .nav-btn-cuenta{margin-top:6px;padding-top:12px;border-top:1px solid var(--line);}
+    /* El estado activo pasa de un tinte suave (que es lo que sigue usando el
+       bottom-nav de mobile) a una ficha solida del mismo color de la seccion
+       con el icono en blanco -- la seccion actual se tiene que reconocer de
+       un vistazo, sin acercarse a la pantalla. */
+    .bottom-nav-btn.active{background:var(--paper);}
+    #navBtnInicio.active{background:var(--nav-brand-dark);color:#fff;}
+    #navBtnCargar.active{background:var(--venta);color:#fff;}
+    #navBtnHistorial.active{background:var(--gold);color:#fff;}
+    #navBtnCatalogo.active{background:var(--teal);color:#fff;}
+    #navBtnCuenta.active{background:var(--nav-brand);color:#fff;}
+    #navBtnConfig.active{background:#8B7EC8;color:#fff;}
+    /* Cuenta y Ajustes ya no necesitan separador propio -- ahora quedan
+       pegados abajo del todo (como el engranaje de configuracion en el
+       dashboard de referencia), lejos de la navegacion principal de arriba. */
+    .nav-btn-cuenta{margin-top:auto;padding-top:0;border-top:none;}
     .nav-logo-wrap{
       display:flex;align-items:center;justify-content:center;width:100%;
-      margin-bottom:8px;padding-bottom:14px;border-bottom:1px solid var(--line);
+      margin-bottom:4px;padding-bottom:16px;border-bottom:1px solid var(--line);
     }
     .nav-logo{
-      width:32px;height:32px;border-radius:10px;background:var(--nav-brand);color:#fff;
+      width:38px;height:38px;border-radius:11px;background:var(--nav-brand);color:#fff;
       display:flex;align-items:center;justify-content:center;overflow:hidden;
-      font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;flex-shrink:0;
+      font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;flex-shrink:0;
     }
     .nav-logo img{width:100%;height:100%;object-fit:cover;}
   }
