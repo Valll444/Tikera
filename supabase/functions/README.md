@@ -51,9 +51,12 @@ ningún lado, arma la URL sola a partir de `SUPABASE_URL`.
 
 Asistente de IA (chat flotante, ícono abajo a la derecha) que responde
 dudas de plata/negocio con el contexto real del usuario (ventas y gastos
-de los últimos 30 días, productos que más venden, proveedores). Necesita
-la service role key para leer esos datos y la API key de Anthropic para
-llamar al modelo — ninguna de las dos puede estar en app.html.
+de los últimos 30 días, productos que más venden, proveedores). A
+diferencia de `delete-account`, esta función **no** usa la service role
+key: lee y escribe autenticada como el usuario que pregunta (con su
+propio token), así que queda sujeta a las mismas reglas de RLS de
+siempre. Solo necesita la API key de Anthropic, que no puede estar en
+app.html.
 
 ### Deploy
 
@@ -63,9 +66,9 @@ supabase functions deploy ai-agent
 
 ### Secretos que necesita
 
-Además de `SUPABASE_SERVICE_ROLE_KEY` (la misma que ya usa `delete-account`,
-si ya la cargaste no hace falta repetirlo), esta función necesita una API
-key de Anthropic — se consigue en [console.anthropic.com](https://console.anthropic.com/settings/keys):
+`SUPABASE_URL` y `SUPABASE_ANON_KEY` ya los inyecta Supabase solo. Lo
+único que hay que cargar a mano es la API key de Anthropic — se consigue
+en [console.anthropic.com](https://console.anthropic.com/settings/keys):
 
 ```bash
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...

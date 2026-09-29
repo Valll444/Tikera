@@ -4,16 +4,21 @@
 // actual, asi no hay que repetirle todo cada vez que se le pregunta algo.
 //
 // La API key de Anthropic nunca puede viajar al navegador -- por eso esto
-// corre aca, como Edge Function, y no directo desde app.html.
+// corre aca, como Edge Function, y no directo desde app.html. A diferencia
+// de delete-account, esta funcion NO usa la service role key: todas las
+// lecturas/escrituras se hacen con un cliente autenticado como el usuario
+// que pregunta (su propio token), asi que quedan sujetas a las mismas
+// reglas de RLS que ya protegen sus datos en el resto de la app -- no hace
+// falta (ni conviene) una llave que se salte esos permisos.
 //
-// Deploy: ver supabase/functions/README.md. Ademas de las variables que ya
-// usa delete-account, esta funcion necesita el secret ANTHROPIC_API_KEY:
+// Deploy: ver supabase/functions/README.md. Ademas de SUPABASE_URL y
+// SUPABASE_ANON_KEY (que Supabase ya inyecta solo), esta funcion necesita
+// el secret ANTHROPIC_API_KEY:
 //   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 
@@ -52,10 +57,13 @@ Deno.serve(async (req) => {
       return json({ error: "La consulta es demasiado larga." }, 400);
     }
 
-    // A partir de aca, la unica clave que se usa es la service role -- para
-    // leer/escribir datos de este usuario puntual (ya verificado arriba),
-    // no para saltarse RLS de otra cuenta.
-    const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    // Cliente que actua COMO el usuario ya verificado arriba (con su propio
+    // token), no un cliente admin -- RLS filtra solo a auth.uid() de todos
+    // modos, esto es nada mas para no tener que repetir .eq('user_id', ...)
+    // en cada consulta.
+    const db = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
 
     const hoyDesde = new Date();
     hoyDesde.setHours(0, 0, 0, 0);
