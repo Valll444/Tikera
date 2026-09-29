@@ -44,6 +44,12 @@
     --teal:#4FA3A0;
     --teal-dark:#3D8683;
     --teal-bg:rgba(79,163,160,0.14);
+    /* Azul acero -- ya existia como una de las opciones del selector de
+       acento (Ajustes > Apariencia), lo reusamos como el color fijo de
+       Caja en vez de inventar uno nuevo fuera de la paleta. */
+    --caja:#5B7FA6;
+    --caja-dark:#7398BC;
+    --caja-bg:rgba(91,127,166,0.16);
     /* Identidad fija del nav (logo, Inicio, Cuenta): a proposito NO usa
        --accent, para que elegir un color de acento en Apariencia no deje
        algunos iconos del dock cambiados y otros no -- o cambian todos o
@@ -84,6 +90,9 @@
     --teal:#2D7573;
     --teal-dark:#235D5B;
     --teal-bg:rgba(45,117,115,0.12);
+    --caja:#3D5A78;
+    --caja-dark:#2C4256;
+    --caja-bg:rgba(61,90,120,0.10);
     --nav-brand:#3E5670;
     --nav-brand-dark:#2C4256;
     --nav-brand-bg:rgba(62,86,112,0.10);
@@ -178,6 +187,7 @@
   #entryCard.mode-gasto .title-icon{background:var(--gasto);}
   #viewHistorial .title-icon{background:var(--gold);}
   #viewCatalogo .title-icon{background:var(--teal);}
+  #viewCaja .title-icon{background:var(--caja);}
   .type-toggle{display:flex;gap:8px;margin-bottom:16px;}
   .type-btn{
     flex:1;padding:10px 0;border-radius:8px;border:1.5px solid var(--line);
@@ -323,6 +333,8 @@
   #navBtnHistorial.active{background:var(--gold-bg);}
   #navBtnCatalogo{color:var(--teal);}
   #navBtnCatalogo.active{background:var(--teal-bg);}
+  #navBtnCaja{color:var(--caja);}
+  #navBtnCaja.active{background:var(--caja-bg);}
   #navBtnCuenta{color:var(--nav-brand);}
   #navBtnCuenta.active{background:var(--nav-brand-bg);}
   #navBtnConfig{color:#8B7EC8;}
@@ -373,6 +385,7 @@
     #navBtnCargar.active{background:var(--venta);color:#fff;}
     #navBtnHistorial.active{background:var(--gold);color:#fff;}
     #navBtnCatalogo.active{background:var(--teal);color:#fff;}
+    #navBtnCaja.active{background:var(--caja);color:#fff;}
     #navBtnCuenta.active{background:var(--nav-brand);color:#fff;}
     #navBtnConfig.active{background:#8B7EC8;color:#fff;}
     /* Cuenta y Ajustes ya no necesitan separador propio -- ahora quedan
@@ -398,9 +411,24 @@
   .metric-label{font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
   .metric-value{font-family:'IBM Plex Mono';font-size:19px;font-weight:500;}
 
-  /* Transicion al cambiar de vista (Cargar/Inicio/Historial/Catalogo/Cuenta) */
-  @keyframes viewFadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-  .view-fade-in{animation:viewFadeIn .28s ease;}
+  /* Transicion al cambiar de vista (Cargar/Inicio/Historial/Catalogo/Cuenta):
+     mas notoria que un fade plano (translate + escala leve) pero corta, para
+     que se sienta prolijo sin volverse un efecto de presentacion. */
+  @keyframes viewFadeIn{from{opacity:0;transform:translateY(14px) scale(0.985);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .view-fade-in{animation:viewFadeIn .38s cubic-bezier(.16,1,.3,1);}
+
+  /* Caja entra con sus tarjetas en cascada (una despues de la otra) en vez
+     de todo junto -- es la vista con mas datos nuevos de golpe (cotizacion,
+     metricas, grafico, formulario, historial) asi que se beneficia mas de
+     que se vea "armarse" en vez de aparecer entera de un salto. */
+  #viewCaja.view-fade-in{animation:none;opacity:1;transform:none;}
+  #viewCaja.view-fade-in > *{animation:cardIn .45s cubic-bezier(.16,1,.3,1) both;}
+  #viewCaja.view-fade-in > *:nth-child(1){animation-delay:0s;}
+  #viewCaja.view-fade-in > *:nth-child(2){animation-delay:.06s;}
+  #viewCaja.view-fade-in > *:nth-child(3){animation-delay:.12s;}
+  #viewCaja.view-fade-in > *:nth-child(4){animation-delay:.18s;}
+  #viewCaja.view-fade-in > *:nth-child(5){animation-delay:.24s;}
+  #viewCaja.view-fade-in > *:nth-child(6){animation-delay:.30s;}
 
   /* Filas interactivas */
   .ticket-item{transition:background-color .15s ease, transform .12s ease;}
@@ -499,6 +527,11 @@
     background:var(--gold);
     background:linear-gradient(180deg, color-mix(in srgb, var(--gold) 78%, white 22%) 0%, var(--gold) 100%);
     box-shadow:0 2px 10px -3px rgba(217,162,81,0.45);
+  }
+  .sales-chart-bar.is-negative{
+    background:var(--gasto);
+    background:linear-gradient(180deg, color-mix(in srgb, var(--gasto) 78%, white 22%) 0%, var(--gasto) 100%);
+    box-shadow:0 2px 10px -3px rgba(184,91,93,0.45);
   }
   .sales-chart-val{
     position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
@@ -618,7 +651,7 @@
   #gate.entering{animation:fadeIn .3s ease;}
   #app.leaving-app{animation:fadeOut .2s ease forwards;}
   @media (prefers-reduced-motion: reduce){
-    body,.login-card,.ticket-item,.shake,#gate.leaving,#app.entering,#gate.entering,#app.leaving-app,.view-fade-in,.ticket-modal{animation:none !important;}
+    body,.login-card,.ticket-item,.shake,#gate.leaving,#app.entering,#gate.entering,#app.leaving-app,.view-fade-in,.ticket-modal,#viewCaja.view-fade-in > *{animation:none !important;}
     *{transition-duration:0.01ms !important;}
   }
   @media (max-width:420px){
@@ -1021,19 +1054,6 @@
   <div class="balance-bar" id="balanceBar"><div class="seg-venta" id="segVenta" style="width:50%;"></div><div class="seg-gasto" id="segGasto" style="width:50%;"></div></div>
 
   <div class="card" style="margin-top:16px;">
-    <div class="title-row" style="justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:9px;">
-        <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
-        <h2 class="section-title" style="margin:0;">Cierre de caja</h2>
-      </div>
-      <button type="button" id="cierreCajaBtn" class="export-btn">Cerrar caja de hoy</button>
-    </div>
-    <p style="font-size:12.5px;color:var(--ink-soft);margin:-8px 0 0;">Contá el efectivo que tenés en la caja y compará contra lo que Tikera calculó por tus ventas y gastos de hoy en efectivo.</p>
-    <div id="cierreCajaStatus" style="margin-top:12px;"></div>
-    <div class="ticket-list" id="cierresCajaList" style="margin-top:6px;"></div>
-  </div>
-
-  <div class="card" style="margin-top:16px;">
     <div class="title-row">
       <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>
       <h2 class="section-title" style="margin:0;">Ventas de los últimos 7 días</h2>
@@ -1047,6 +1067,77 @@
       <h2 class="section-title" style="margin:0;">Productos que más facturan</h2>
     </div>
     <div id="topProductsList"></div>
+  </div>
+  </div>
+
+  <div id="viewCaja" style="display:none;">
+  <div class="title-row">
+    <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+    <h2 class="section-title">Cierre de caja</h2>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;border-left:3px solid var(--caja);">
+    <div class="title-row" style="justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1.4 1.1-2.5 2.5-2.5s2.5 1 2.5 2.2c0 2.8-5 1.8-5 4.6 0 1.2 1.1 2.2 2.5 2.2s2.5-1.1 2.5-2.5"/></svg></span>
+        <h2 class="section-title" style="margin:0;">Cotización del dólar</h2>
+      </div>
+      <span style="font-size:11px;color:var(--ink-soft);" id="dolarUpdated"></span>
+    </div>
+    <div id="dolarContent">
+      <div style="font-size:12.5px;color:var(--ink-soft);">Cargando cotización...</div>
+    </div>
+  </div>
+
+  <div class="summary" id="cajaMetrics" style="margin-bottom:16px;"></div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="title-row">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>
+      <h2 class="section-title" style="margin:0;">Diferencia de caja — últimos cierres</h2>
+    </div>
+    <div class="sales-chart" id="cajaDiffChart"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;border-left:3px solid var(--caja);">
+    <div class="title-row">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+      <h2 class="section-title" style="margin:0;">Cerrar caja</h2>
+    </div>
+    <label for="cierreCajaFechaInput" style="margin-top:0;">Fecha a cerrar</label>
+    <input type="date" id="cierreCajaFechaInput">
+
+    <div class="payment-block" style="margin:14px 0;">
+      <div class="payment-block-label">Efectivo esperado</div>
+      <div class="metric-value" id="cierreEsperadoValue" style="font-size:19px;">$0,00</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Ventas en efectivo menos gastos en efectivo de ese día.</div>
+    </div>
+
+    <label for="cierreContado">Efectivo contado en la caja</label>
+    <input type="text" id="cierreContado" placeholder="0.00" inputmode="decimal" autocomplete="off">
+
+    <div class="payment-block" style="margin:12px 0 0;">
+      <div class="payment-block-label">Diferencia</div>
+      <div class="metric-value" id="cierreDiferenciaValue" style="font-size:19px;">$0,00</div>
+    </div>
+
+    <label for="cierreNotas">Notas <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+    <input type="text" id="cierreNotas" placeholder="Ej: faltaron $200 de vuelto" autocomplete="off">
+
+    <div class="error-msg" id="cierreCajaErrorMsg" role="alert" aria-live="polite"></div>
+    <button class="submit-btn" id="cierreCajaSubmitBtn" type="button">Guardar cierre</button>
+    <button type="button" id="cierreCajaLimpiarBtn" style="display:block;width:100%;margin-top:8px;padding:9px 0;border:1.5px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:8px;font-size:13px;cursor:pointer;">Volver a hoy</button>
+  </div>
+
+  <div class="card">
+    <div class="title-row">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+      <h2 class="section-title" style="margin:0;">Historial de cierres</h2>
+    </div>
+    <div id="cierresCajaEmpty" style="display:none;padding:24px 0;text-align:center;color:var(--ink-soft);font-size:13.5px;">
+      Todavía no cerraste ninguna caja.
+    </div>
+    <div class="ticket-list" id="cierresCajaList" style="margin-top:6px;"></div>
   </div>
   </div>
 
@@ -1326,6 +1417,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
     <span>Catálogo</span>
   </button>
+  <button type="button" class="bottom-nav-btn" id="navBtnCaja" onclick="switchView('caja')" aria-label="Cierre de caja">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    <span>Caja</span>
+  </button>
   <button type="button" class="bottom-nav-btn nav-btn-cuenta" id="navBtnCuenta" onclick="switchView('cuenta')" aria-label="Cuenta">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/></svg>
     <span>Cuenta</span>
@@ -1344,36 +1439,6 @@
     <div class="ticket-modal-actions">
       <button type="button" id="ticketCloseBtn" class="settings-btn">Cerrar</button>
       <button type="button" id="ticketPrintBtn" class="settings-btn primary">Imprimir</button>
-    </div>
-  </div>
-</div>
-
-<div id="cierreCajaModal" class="ticket-modal-overlay" style="display:none;" role="dialog" aria-label="Cierre de caja">
-  <div class="ticket-modal" style="max-width:400px;">
-    <h2 style="margin:0 0 4px;font-family:'Space Grotesk',sans-serif;font-size:17px;">Cierre de caja</h2>
-    <div id="cierreCajaFecha" style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;"></div>
-
-    <div class="payment-block" style="margin:0 0 14px;">
-      <div class="payment-block-label">Efectivo esperado</div>
-      <div class="metric-value" id="cierreEsperadoValue" style="font-size:19px;">$0,00</div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Ventas en efectivo menos gastos en efectivo de hoy.</div>
-    </div>
-
-    <label for="cierreContado" style="margin-top:0;">Efectivo contado en la caja</label>
-    <input type="text" id="cierreContado" placeholder="0.00" inputmode="decimal" autocomplete="off">
-
-    <div class="payment-block" style="margin:12px 0 0;">
-      <div class="payment-block-label">Diferencia</div>
-      <div class="metric-value" id="cierreDiferenciaValue" style="font-size:19px;">$0,00</div>
-    </div>
-
-    <label for="cierreNotas">Notas <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
-    <input type="text" id="cierreNotas" placeholder="Ej: faltaron $200 de vuelto" autocomplete="off">
-
-    <div class="error-msg" id="cierreCajaErrorMsg" role="alert" aria-live="polite"></div>
-    <button class="submit-btn" id="cierreCajaSubmitBtn" type="button">Guardar cierre</button>
-    <div class="ticket-modal-actions">
-      <button type="button" id="cierreCajaCloseBtn" class="settings-btn">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1844,20 +1909,23 @@ function switchView(view){
   document.getElementById('viewInicio').style.display = view==='inicio' ? 'block' : 'none';
   document.getElementById('viewHistorial').style.display = view==='historial' ? 'block' : 'none';
   document.getElementById('viewCatalogo').style.display = view==='catalogo' ? 'block' : 'none';
+  document.getElementById('viewCaja').style.display = view==='caja' ? 'block' : 'none';
   document.getElementById('viewCuenta').style.display = view==='cuenta' ? 'block' : 'none';
   document.getElementById('viewAjustes').style.display = view==='ajustes' ? 'block' : 'none';
   document.getElementById('navBtnCargar').classList.toggle('active', view==='cargar');
   document.getElementById('navBtnInicio').classList.toggle('active', view==='inicio');
   document.getElementById('navBtnHistorial').classList.toggle('active', view==='historial');
   document.getElementById('navBtnCatalogo').classList.toggle('active', view==='catalogo');
+  document.getElementById('navBtnCaja').classList.toggle('active', view==='caja');
   document.getElementById('navBtnCuenta').classList.toggle('active', view==='cuenta');
   document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
   if(view==='catalogo'){ renderCatalog(); if(catalogoTab === 'proveedores') renderProveedores(); }
+  if(view==='caja') openCajaView();
   if(view==='cuenta') loadPerfilView();
   if(view==='ajustes') loadAjustesView();
   window.scrollTo({top:0, behavior:'instant'});
 
-  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', historial:'viewHistorial', catalogo:'viewCatalogo', cuenta:'viewCuenta', ajustes:'viewAjustes'};
+  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', historial:'viewHistorial', catalogo:'viewCatalogo', caja:'viewCaja', cuenta:'viewCuenta', ajustes:'viewAjustes'};
   const activeEl = document.getElementById(viewIds[view]);
   if(activeEl){
     activeEl.classList.remove('view-fade-in');
@@ -3398,7 +3466,6 @@ function render(){
   renderHistory();
   renderStockWheel();
   renderRestockPrediction();
-  renderCierreCajaCard();
 }
 
 // Rueda de stock: cuantos productos del catalogo estan en o por debajo del
@@ -3696,8 +3763,12 @@ function fmtMoneyCompact(n){
 // ============================================
 // Cierre de caja: cuanto efectivo deberia haber segun lo cargado (ventas
 // menos gastos en efectivo de ese dia) contra lo que el kiosquero cuenta
-// a mano, para detectar diferencias de caja el mismo dia que pasan.
+// a mano, para detectar diferencias de caja el mismo dia que pasan. Vive
+// en su propia vista (viewCaja) en vez de adentro de Inicio o Historial,
+// para que tenga lugar para crecer sin volverse un cajon de sastre.
 // ============================================
+let cierreCajaFechaActiva = null;
+
 function efectivoEsperadoDe(fecha){
   return entries
     .filter(e => e.fecha === fecha && e.metodoPago === 'Efectivo')
@@ -3707,46 +3778,29 @@ function cierreDeFecha(fecha){
   return cierresCaja.find(c => c.fecha === fecha) || null;
 }
 
-function renderCierreCajaCard(){
-  const btn = document.getElementById('cierreCajaBtn');
-  const status = document.getElementById('cierreCajaStatus');
-  if(!btn || !status) return;
-  const hoy = todayStr();
-  const cierreHoy = cierreDeFecha(hoy);
-  btn.textContent = cierreHoy ? 'Editar cierre de hoy' : 'Cerrar caja de hoy';
-  if(!cierreHoy){
-    status.innerHTML = `<div style="font-size:12.5px;color:var(--ink-soft);">Todavía no cerraste la caja hoy.</div>`;
-  }else{
-    const dif = Number(cierreHoy.diferencia) || 0;
-    status.innerHTML = `
-      <div class="plan-badge ${dif === 0 ? 'pagado' : 'expired'}">
-        <span class="dot"></span>Caja cerrada hoy · diferencia ${fmtMoney(dif)}
-      </div>
-    `;
-  }
+// Punto de entrada al abrir la vista: carga el formulario en la fecha de
+// hoy (o la que haya quedado seleccionada) y refresca todo lo demas.
+function openCajaView(){
+  loadCierreFormForFecha(cierreCajaFechaActiva || todayStr());
+  renderCajaMetrics();
+  renderCajaDiffChart();
+  renderCierresCajaList();
+  fetchDolar();
+}
 
-  const list = document.getElementById('cierresCajaList');
-  if(!list) return;
-  const historial = cierresCaja.filter(c => c.fecha !== hoy).slice(0, 7);
-  if(historial.length === 0){
-    list.innerHTML = '';
-    return;
-  }
-  list.innerHTML = `<div style="font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;font-weight:600;margin:10px 0 4px;">Cierres anteriores</div>` +
-    historial.map(c => {
-      const dif = Number(c.diferencia) || 0;
-      return `
-        <div class="ticket-item">
-          <div class="ti-left">
-            <div class="ti-desc">${fmtFecha(c.fecha)}</div>
-            <div class="ti-meta">Esperado ${fmtMoney(c.efectivo_esperado)} · Contado ${fmtMoney(c.efectivo_contado)}${c.notas ? ' · ' + escapeHtml(c.notas) : ''}</div>
-          </div>
-          <div class="ti-right">
-            <span style="font-family:'IBM Plex Mono';font-size:13px;font-weight:600;color:${dif === 0 ? 'var(--venta)' : 'var(--gasto)'};">${fmtMoney(dif)}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
+function loadCierreFormForFecha(fecha){
+  cierreCajaFechaActiva = fecha;
+  const existente = cierreDeFecha(fecha);
+  const esperado = efectivoEsperadoDe(fecha);
+  document.getElementById('cierreCajaFechaInput').value = fecha;
+  const esperadoEl = document.getElementById('cierreEsperadoValue');
+  esperadoEl.textContent = fmtMoney(esperado);
+  esperadoEl.dataset.raw = String(esperado);
+  document.getElementById('cierreContado').value = existente ? existente.efectivo_contado : '';
+  document.getElementById('cierreNotas').value = existente ? (existente.notas || '') : '';
+  document.getElementById('cierreCajaErrorMsg').textContent = '';
+  document.getElementById('cierreCajaSubmitBtn').textContent = existente ? 'Guardar cambios' : 'Guardar cierre';
+  updateCierreDiferenciaLive();
 }
 
 function updateCierreDiferenciaLive(){
@@ -3759,27 +3813,11 @@ function updateCierreDiferenciaLive(){
   el.style.color = dif === 0 ? 'var(--venta)' : 'var(--gasto)';
 }
 
-function openCierreCajaModal(){
-  const hoy = todayStr();
-  const cierreHoy = cierreDeFecha(hoy);
-  const esperado = efectivoEsperadoDe(hoy);
-  document.getElementById('cierreCajaFecha').textContent = fmtFecha(hoy);
-  const esperadoEl = document.getElementById('cierreEsperadoValue');
-  esperadoEl.textContent = fmtMoney(esperado);
-  esperadoEl.dataset.raw = String(esperado);
-  document.getElementById('cierreContado').value = cierreHoy ? cierreHoy.efectivo_contado : '';
-  document.getElementById('cierreNotas').value = cierreHoy ? (cierreHoy.notas || '') : '';
-  document.getElementById('cierreCajaErrorMsg').textContent = '';
-  updateCierreDiferenciaLive();
-  document.getElementById('cierreCajaModal').style.display = 'flex';
-}
-function closeCierreCajaModal(){
-  document.getElementById('cierreCajaModal').style.display = 'none';
-}
-document.getElementById('cierreCajaBtn').addEventListener('click', openCierreCajaModal);
-document.getElementById('cierreCajaCloseBtn').addEventListener('click', closeCierreCajaModal);
-document.getElementById('cierreCajaModal').addEventListener('click', (e)=>{
-  if(e.target.id === 'cierreCajaModal') closeCierreCajaModal();
+document.getElementById('cierreCajaFechaInput').addEventListener('change', (e)=>{
+  loadCierreFormForFecha(e.target.value || todayStr());
+});
+document.getElementById('cierreCajaLimpiarBtn').addEventListener('click', ()=>{
+  loadCierreFormForFecha(todayStr());
 });
 document.getElementById('cierreContado').addEventListener('input', updateCierreDiferenciaLive);
 
@@ -3789,10 +3827,10 @@ document.getElementById('cierreCajaSubmitBtn').addEventListener('click', async (
   if(isNaN(contado) || contado < 0){ errEl.textContent = 'Ingresá cuánto efectivo contaste.'; return; }
   errEl.textContent = '';
 
-  const hoy = todayStr();
-  const esperado = efectivoEsperadoDe(hoy);
+  const fecha = cierreCajaFechaActiva || todayStr();
+  const esperado = efectivoEsperadoDe(fecha);
   const fields = {
-    fecha: hoy,
+    fecha,
     efectivo_esperado: esperado,
     efectivo_contado: contado,
     diferencia: contado - esperado,
@@ -3801,15 +3839,139 @@ document.getElementById('cierreCajaSubmitBtn').addEventListener('click', async (
 
   const btn = document.getElementById('cierreCajaSubmitBtn');
   btn.disabled = true;
-  const existing = cierreDeFecha(hoy);
+  const existing = cierreDeFecha(fecha);
   const ok = existing ? await updateCierreCaja(existing.id, fields) : await addCierreCaja(fields);
   btn.disabled = false;
   if(ok){
     showToast('Cierre de caja guardado');
-    closeCierreCajaModal();
-    renderCierreCajaCard();
+    loadCierreFormForFecha(fecha);
+    renderCajaMetrics();
+    renderCajaDiffChart();
+    renderCierresCajaList();
   }
 });
+
+// Metricas profesionales: total de cierres, diferencia promedio y cuantos
+// dias no dieron exacto, sobre los ultimos 30 cierres cargados.
+function renderCajaMetrics(){
+  const wrap = document.getElementById('cajaMetrics');
+  if(!wrap) return;
+  const ultimos30 = [...cierresCaja].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,30);
+  const total = cierresCaja.length;
+  const promedioDif = ultimos30.length ? ultimos30.reduce((s,c)=>s+(Number(c.diferencia)||0),0)/ultimos30.length : 0;
+  const conDiferencia = ultimos30.filter(c => Number(c.diferencia) !== 0).length;
+  wrap.innerHTML = `
+    <div class="metric" style="border-left-color:var(--caja);"><div class="metric-label">Cierres registrados</div><div class="metric-value" style="color:var(--caja);">${total}</div></div>
+    <div class="metric" style="border-left-color:${promedioDif === 0 ? 'var(--venta)' : 'var(--gasto)'};"><div class="metric-label">Diferencia promedio (30 últimos)</div><div class="metric-value" style="color:${promedioDif === 0 ? 'var(--venta)' : 'var(--gasto)'};">${fmtMoney(promedioDif)}</div></div>
+    <div class="metric" style="border-left-color:${conDiferencia === 0 ? 'var(--venta)' : 'var(--gasto)'};"><div class="metric-label">Días con diferencia (30 últimos)</div><div class="metric-value" style="color:${conDiferencia === 0 ? 'var(--venta)' : 'var(--gasto)'};">${conDiferencia} de ${ultimos30.length}</div></div>
+  `;
+}
+
+// Grafico de barras reutilizando el mismo look que "Ventas de los ultimos
+// 7 dias": una barra por cierre (los ultimos 14, mas viejo a mas nuevo),
+// altura segun el tamaño de la diferencia (en valor absoluto), verde si
+// dio justo y roja si falto o sobro plata.
+function renderCajaDiffChart(){
+  const wrap = document.getElementById('cajaDiffChart');
+  if(!wrap) return;
+  const ultimos14 = [...cierresCaja].sort((a,b)=>a.fecha.localeCompare(b.fecha)).slice(-14);
+  if(ultimos14.length === 0){
+    wrap.innerHTML = `<div class="sales-chart-empty">Todavía no hay cierres para graficar.</div>`;
+    return;
+  }
+  const max = Math.max(...ultimos14.map(c => Math.abs(Number(c.diferencia)||0)), 1);
+  wrap.innerHTML = ultimos14.map(c => {
+    const dif = Number(c.diferencia) || 0;
+    const abs = Math.abs(dif);
+    const [y,m,d] = c.fecha.split('-');
+    return `
+      <div class="sales-chart-col">
+        <div class="sales-chart-bar-wrap">
+          <div class="sales-chart-bar${dif !== 0 ? ' is-negative' : ''}" style="height:${abs ? Math.max(6, abs/max*100) : 4}%;" title="${fmtFecha(c.fecha)}: ${fmtMoney(dif)}">${abs ? `<span class="sales-chart-val">${fmtMoneyCompact(abs)}</span>` : ''}</div>
+        </div>
+        <div class="sales-chart-day">${d}/${m}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Historial completo (no solo los ultimos dias): cada fila se puede tocar
+// para cargarla en el formulario de arriba y editarla, o borrarla.
+function renderCierresCajaList(){
+  const list = document.getElementById('cierresCajaList');
+  const empty = document.getElementById('cierresCajaEmpty');
+  if(!list || !empty) return;
+  if(cierresCaja.length === 0){
+    empty.style.display = 'block';
+    list.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  const ordenados = [...cierresCaja].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  list.innerHTML = ordenados.map(c => {
+    const dif = Number(c.diferencia) || 0;
+    return `
+      <div class="ticket-item" style="cursor:pointer;" onclick="loadCierreFormForFecha('${c.fecha}')">
+        <div class="ti-left">
+          <div class="ti-desc">${fmtFecha(c.fecha)}</div>
+          <div class="ti-meta">Esperado ${fmtMoney(c.efectivo_esperado)} · Contado ${fmtMoney(c.efectivo_contado)}${c.notas ? ' · ' + escapeHtml(c.notas) : ''}</div>
+        </div>
+        <div class="ti-right">
+          <span style="font-family:'IBM Plex Mono';font-size:13px;font-weight:600;color:${dif === 0 ? 'var(--venta)' : 'var(--gasto)'};">${fmtMoney(dif)}</span>
+          <button class="ti-del" aria-label="Eliminar cierre" onclick="event.stopPropagation();deleteCierreCaja('${c.id}')">&times;</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function deleteCierreCaja(id){
+  if(!confirm('¿Seguro que querés borrar este cierre? Esta acción no se puede deshacer.')) return;
+  try{
+    const { error } = await sb.from('cierres_caja').delete().eq('id', id).eq('user_id', currentUserId);
+    if(error){ console.error(error); showToast('No se pudo eliminar'); return; }
+    cierresCaja = cierresCaja.filter(c => String(c.id) !== String(id));
+    if(cierreCajaFechaActiva && !cierreDeFecha(cierreCajaFechaActiva)) loadCierreFormForFecha(cierreCajaFechaActiva);
+    renderCajaMetrics();
+    renderCajaDiffChart();
+    renderCierresCajaList();
+    showToast('Cierre eliminado');
+  }catch(err){ console.error(err); showToast('No se pudo eliminar'); }
+}
+
+// Cotizacion del dolar (dolarapi.com, publica y sin API key) como referencia
+// para poner precios de mercaderia importada -- si falla (sin internet,
+// servicio caido), se muestra un aviso en vez de romper el resto de la vista.
+async function fetchDolar(){
+  const content = document.getElementById('dolarContent');
+  const updated = document.getElementById('dolarUpdated');
+  if(!content) return;
+  try{
+    const res = await fetch('https://dolarapi.com/v1/dolares');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const oficial = data.find(d => d.casa === 'oficial');
+    const blue = data.find(d => d.casa === 'blue');
+    const filas = [oficial, blue].filter(Boolean);
+    if(filas.length === 0) throw new Error('sin datos');
+    content.innerHTML = `
+      <div class="payment-row">
+        ${filas.map(d => `
+          <div class="payment-item">
+            <div class="payment-item-label">${d.nombre}</div>
+            <div class="payment-item-value">${fmtMoney(d.compra)} / ${fmtMoney(d.venta)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--ink-soft);margin-top:8px;">Compra / venta</div>
+    `;
+    if(updated && oficial) updated.textContent = 'Actualizado ' + new Date(oficial.fechaActualizacion).toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+  }catch(err){
+    console.error(err);
+    content.innerHTML = `<div style="font-size:12.5px;color:var(--ink-soft);">No se pudo cargar la cotización. Revisá tu conexión.</div>`;
+    if(updated) updated.textContent = '';
+  }
+}
 
 async function addCierreCaja(fields){
   try{
