@@ -317,9 +317,10 @@
   .dolar-blue-sub{font-family:'IBM Plex Mono';font-size:13px;color:var(--ink-soft);}
   .dolar-blue-brecha{display:inline-flex;align-items:center;gap:6px;margin-top:12px;background:var(--card);border:1px solid var(--noticias);color:var(--noticias);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;}
   .dolar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;}
-  .dolar-tile{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:11px 13px;}
-  .dolar-tile-label{font-size:11px;color:var(--ink-soft);margin-bottom:4px;}
-  .dolar-tile-value{font-family:'IBM Plex Mono';font-size:14px;font-weight:600;}
+  .dolar-tile{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 15px;}
+  .dolar-tile-label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;font-weight:600;margin-bottom:6px;}
+  .dolar-tile-value{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;color:var(--ink);line-height:1.1;margin-bottom:4px;}
+  .dolar-tile-sub{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-soft);}
   .inflacion-value{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:30px;color:var(--ink);margin-bottom:2px;}
   .inflacion-sub{font-size:12.5px;color:var(--ink-soft);}
 
@@ -4022,11 +4023,12 @@ async function fetchDolar(){
         ${filas.map(d => `
           <div class="dolar-tile">
             <div class="dolar-tile-label">${d.nombre}</div>
-            <div class="dolar-tile-value">${fmtMoney(d.compra)} <span style="color:var(--ink-soft);font-weight:400;">/</span> ${fmtMoney(d.venta)}</div>
+            <div class="dolar-tile-value">${fmtMoney(d.venta)}</div>
+            <div class="dolar-tile-sub">Compra ${fmtMoney(d.compra)}</div>
           </div>
         `).join('')}
       </div>
-      <div style="font-size:11px;color:var(--ink-soft);margin-top:10px;">Compra / venta · fuente: dolarapi.com</div>
+      <div style="font-size:11px;color:var(--ink-soft);margin-top:10px;">Fuente: dolarapi.com</div>
     ` : '';
   }catch(err){
     console.error(err);
