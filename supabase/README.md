@@ -15,10 +15,11 @@ New query). En el proyecto real de Tikera ya están todas aplicadas.
 | 7 | `007_frequent_items.sql` | Tabla `frequent_items`: chips de "producto/gasto frecuente" en la pantalla Cargar |
 | 8 | `008_proveedores.sql` | Tablas `proveedores` y `pedidos_proveedor`: a quién le comprás y qué le debés |
 | 9 | `009_cierres_caja.sql` | Tabla `cierres_caja`: efectivo esperado vs. contado por día, para detectar diferencias de caja |
+| 10 | `010_agent_messages.sql` | Tabla `agent_messages`: historial de la conversación con el asistente de IA |
 
-Hay además una Edge Function (`functions/delete-account`) para el borrado real
-de cuenta — ver `functions/README.md` para el deploy, que necesita la
-Supabase CLI y no se puede hacer desde acá.
+Hay además dos Edge Functions — `functions/delete-account` (borrado real de
+cuenta) y `functions/ai-agent` (el asistente de IA) — ver `functions/README.md`
+para el deploy, que necesita la Supabase CLI y no se puede hacer desde acá.
 
 Todas las tablas tienen Row Level Security activado: cada cuenta solo puede
 leer y modificar sus propios datos (`auth.uid() = user_id`, o `= id` en
