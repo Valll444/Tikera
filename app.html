@@ -296,6 +296,10 @@
     border:1px solid var(--line);
   }
   .payment-block-label{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px;font-weight:600;}
+  /* Etiqueta de grupo generica (ej. "Cotizaciones", "Indicadores" en
+     Noticias): separa tarjetas relacionadas sin meter otro nivel de
+     tarjeta o titulo grande -- mismo tratamiento que payment-block-label. */
+  .section-label{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin:22px 0 10px;}
   .payment-row{display:flex;flex-wrap:wrap;gap:18px;}
   .payment-item{min-width:100px;}
   .payment-item-label{font-size:11.5px;color:var(--ink-soft);margin-bottom:2px;}
@@ -1175,8 +1179,9 @@
     <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V4z"/><path d="M15 8h4v10a2 2 0 0 1-2 2h-2"/><path d="M8 8h4M8 11h4M8 14h4"/></svg></span>
     <h2 class="section-title">Noticias</h2>
   </div>
-  <p style="font-size:12.5px;color:var(--ink-soft);margin:-10px 0 16px;">Datos económicos que le pueden importar a tu negocio, actualizados solos.</p>
+  <p style="font-size:12.5px;color:var(--ink-soft);margin:-10px 0 20px;">Datos económicos que le pueden importar a tu negocio, actualizados solos.</p>
 
+  <div class="section-label" style="margin-top:0;">Cotizaciones</div>
   <div class="card dolar-blue-hero" style="margin-bottom:16px;">
     <div class="title-row" style="justify-content:space-between;margin-bottom:0;">
       <div style="display:flex;align-items:center;gap:9px;">
@@ -1190,7 +1195,7 @@
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:16px;">
+  <div class="card">
     <div class="title-row">
       <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1.4 1.1-2.5 2.5-2.5s2.5 1 2.5 2.2c0 2.8-5 1.8-5 4.6 0 1.2 1.1 2.2 2.5 2.2s2.5-1.1 2.5-2.5"/></svg></span>
       <h2 class="section-title" style="margin:0;">Otras cotizaciones</h2>
@@ -1198,6 +1203,7 @@
     <div id="dolarContent"></div>
   </div>
 
+  <div class="section-label">Indicadores</div>
   <div class="card">
     <div class="title-row" style="justify-content:space-between;margin-bottom:8px;">
       <div style="display:flex;align-items:center;gap:9px;">
@@ -1207,6 +1213,42 @@
     </div>
     <div id="inflacionContent">
       <div style="font-size:12.5px;color:var(--ink-soft);">Cargando...</div>
+    </div>
+  </div>
+
+  <div class="section-label">Herramientas</div>
+  <div class="card">
+    <div class="title-row" style="margin-bottom:12px;">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8.01" y2="10"/><line x1="12" y1="10" x2="12.01" y2="10"/><line x1="16" y1="10" x2="16.01" y2="10"/><line x1="8" y1="14" x2="8.01" y2="14"/><line x1="12" y1="14" x2="12.01" y2="14"/><line x1="16" y1="14" x2="16.01" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg></span>
+      <h2 class="section-title" style="margin:0;">Calculadora de IVA</h2>
+    </div>
+
+    <div class="type-toggle" id="ivaModoToggle" style="margin-bottom:14px;">
+      <button type="button" class="type-btn active-accent" id="ivaModoAgregar">Agregar IVA</button>
+      <button type="button" class="type-btn" id="ivaModoQuitar">Descontar IVA</button>
+    </div>
+
+    <label for="ivaMonto" style="margin-top:0;" id="ivaMontoLabel">Monto sin IVA</label>
+    <input type="text" id="ivaMonto" placeholder="0.00" inputmode="decimal" autocomplete="off">
+
+    <label style="margin-top:14px;">Alícuota</label>
+    <div class="type-toggle" id="ivaAlicuotaToggle">
+      <button type="button" class="type-btn active-accent" data-alicuota="21" style="font-size:12.5px;">21%</button>
+      <button type="button" class="type-btn" data-alicuota="10.5" style="font-size:12.5px;">10,5%</button>
+      <button type="button" class="type-btn" data-alicuota="27" style="font-size:12.5px;">27%</button>
+    </div>
+
+    <div class="payment-block" style="margin:16px 0 0;">
+      <div class="payment-row">
+        <div class="payment-item">
+          <div class="payment-item-label" id="ivaResultLabel1">IVA (21%)</div>
+          <div class="payment-item-value" id="ivaResultValue1">$0,00</div>
+        </div>
+        <div class="payment-item">
+          <div class="payment-item-label" id="ivaResultLabel2">Total con IVA</div>
+          <div class="payment-item-value" id="ivaResultValue2">$0,00</div>
+        </div>
+      </div>
     </div>
   </div>
   </div>
@@ -2085,7 +2127,10 @@ function revealApp(){
     document.body.classList.add('app-active');
     setTimeout(()=> app.classList.remove('entering'), 350);
     document.getElementById('bottomNav').style.display = 'flex';
-    document.getElementById('agentBubbleBtn').style.display = 'flex';
+    // El asistente de IA todavia no esta activado (falta deployar la
+    // funcion y cargar la API key de Anthropic, que tiene costo por uso) --
+    // la burbuja se queda oculta a proposito hasta que se decida sumarla.
+    // document.getElementById('agentBubbleBtn').style.display = 'flex';
     switchView('inicio');
   }, 180);
 }
@@ -2413,7 +2458,7 @@ document.getElementById('settDeleteBtn').addEventListener('click', async ()=>{
       document.getElementById('app').style.display = 'block';
       document.body.classList.add('app-active');
       document.getElementById('bottomNav').style.display = 'flex';
-      document.getElementById('agentBubbleBtn').style.display = 'flex';
+      // document.getElementById('agentBubbleBtn').style.display = 'flex'; // ver revealApp()
       switchView('inicio');
     }
   }catch(e){ console.error(e); }
@@ -4111,6 +4156,51 @@ async function fetchInflacion(){
   }catch(err){
     console.error(err);
     content.innerHTML = `<div style="font-size:12.5px;color:var(--ink-soft);">No se pudo cargar la inflación. Revisá tu conexión.</div>`;
+  }
+}
+
+// ============================================
+// Calculadora de IVA: no depende de ningun servicio externo, es solo
+// matematica -- por eso no necesita fetch ni manejo de errores de red.
+// ============================================
+let ivaModo = 'agregar';
+let ivaAlicuota = 21;
+
+function setIvaModo(modo){
+  ivaModo = modo;
+  document.getElementById('ivaModoAgregar').className = 'type-btn' + (modo === 'agregar' ? ' active-accent' : '');
+  document.getElementById('ivaModoQuitar').className = 'type-btn' + (modo === 'quitar' ? ' active-accent' : '');
+  document.getElementById('ivaMontoLabel').textContent = modo === 'agregar' ? 'Monto sin IVA' : 'Monto con IVA';
+  calcularIva();
+}
+document.getElementById('ivaModoAgregar').addEventListener('click', ()=>setIvaModo('agregar'));
+document.getElementById('ivaModoQuitar').addEventListener('click', ()=>setIvaModo('quitar'));
+
+document.querySelectorAll('#ivaAlicuotaToggle .type-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    ivaAlicuota = parseFloat(btn.dataset.alicuota);
+    document.querySelectorAll('#ivaAlicuotaToggle .type-btn').forEach(b => b.classList.toggle('active-accent', b === btn));
+    calcularIva();
+  });
+});
+document.getElementById('ivaMonto').addEventListener('input', calcularIva);
+
+function calcularIva(){
+  const monto = parseFloat(document.getElementById('ivaMonto').value) || 0;
+  const factor = ivaAlicuota / 100;
+  const alicuotaLabel = String(ivaAlicuota).replace('.', ',') + '%';
+  if(ivaModo === 'agregar'){
+    const iva = monto * factor;
+    document.getElementById('ivaResultLabel1').textContent = `IVA (${alicuotaLabel})`;
+    document.getElementById('ivaResultValue1').textContent = fmtMoney(iva);
+    document.getElementById('ivaResultLabel2').textContent = 'Total con IVA';
+    document.getElementById('ivaResultValue2').textContent = fmtMoney(monto + iva);
+  }else{
+    const neto = monto / (1 + factor);
+    document.getElementById('ivaResultLabel1').textContent = `IVA (${alicuotaLabel})`;
+    document.getElementById('ivaResultValue1').textContent = fmtMoney(monto - neto);
+    document.getElementById('ivaResultLabel2').textContent = 'Monto sin IVA';
+    document.getElementById('ivaResultValue2').textContent = fmtMoney(neto);
   }
 }
 
