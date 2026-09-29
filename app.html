@@ -1204,14 +1204,25 @@
   </div>
 
   <div class="section-label">Indicadores</div>
-  <div class="card">
-    <div class="title-row" style="justify-content:space-between;margin-bottom:8px;">
+  <div class="card" style="margin-bottom:16px;">
+    <div class="title-row" style="justify-content:space-between;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:9px;">
         <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>
-        <h2 class="section-title" style="margin:0;">Inflación mensual (INDEC)</h2>
+        <h2 class="section-title" style="margin:0;">Indicadores del mes</h2>
       </div>
     </div>
     <div id="inflacionContent">
+      <div style="font-size:12.5px;color:var(--ink-soft);">Cargando...</div>
+    </div>
+  </div>
+
+  <div class="section-label">Calendario</div>
+  <div class="card">
+    <div class="title-row" style="margin-bottom:8px;">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+      <h2 class="section-title" style="margin:0;">Próximo feriado</h2>
+    </div>
+    <div id="feriadoContent">
       <div style="font-size:12.5px;color:var(--ink-soft);">Cargando...</div>
     </div>
   </div>
@@ -2068,7 +2079,7 @@ function switchView(view){
   document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
   if(view==='catalogo'){ renderCatalog(); if(catalogoTab === 'proveedores') renderProveedores(); }
   if(view==='caja') openCajaView();
-  if(view==='noticias'){ fetchDolar(); fetchInflacion(); }
+  if(view==='noticias'){ fetchDolar(); fetchInflacion(); fetchFeriados(); }
   if(view==='cuenta') loadPerfilView();
   if(view==='ajustes') loadAjustesView();
   window.scrollTo({top:0, behavior:'instant'});
@@ -4136,10 +4147,14 @@ async function fetchDolar(){
 // Ultimo dato de inflacion mensual publicado por el INDEC (ArgentinaDatos,
 // API publica sin key). Le importa a un comerciante porque le dice si le
 // conviene ajustar precios pronto, no solo mirar el dolar.
+// Tres indicadores en una sola grilla (inflacion, riesgo pais, tasa
+// promedio de plazo fijo) en vez de una tarjeta por dato -- cada fuente se
+// pide por separado y si una falla, las otras dos igual se muestran.
 async function fetchInflacion(){
   const content = document.getElementById('inflacionContent');
   if(!content) return;
-  try{
+
+  async function tileInflacion(){
     const res = await fetch('https://api.argentinadatos.com/v1/finanzas/indices/inflacion');
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
@@ -4147,15 +4162,84 @@ async function fetchInflacion(){
     const ultimo = data[data.length - 1];
     const anterior = data[data.length - 2];
     const [y, m] = ultimo.fecha.split('-');
-    const mesLabel = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('es-AR', {month:'long', year:'numeric'});
+    const mesLabel = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('es-AR', {month:'short', year:'numeric'});
     const dif = anterior ? (ultimo.valor - anterior.valor) : null;
+    return {
+      label: `Inflación · ${mesLabel}`,
+      value: ultimo.valor.toFixed(1).replace('.', ',') + '%',
+      sub: dif !== null ? `${dif >= 0 ? '↑' : '↓'} ${Math.abs(dif).toFixed(1)} pts vs. mes anterior` : ''
+    };
+  }
+
+  async function tileRiesgoPais(){
+    const res = await fetch('https://api.argentinadatos.com/v1/finanzas/indices/riesgo-pais');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(!Array.isArray(data) || data.length === 0) throw new Error('sin datos');
+    const ultimo = data[data.length - 1];
+    return { label: 'Riesgo país', value: Math.round(ultimo.valor) + ' pb', sub: fmtFecha(ultimo.fecha) };
+  }
+
+  async function tilePlazoFijo(){
+    const res = await fetch('https://api.argentinadatos.com/v1/finanzas/tasas/plazoFijo');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(!Array.isArray(data) || data.length === 0) throw new Error('sin datos');
+    const tasas = data.map(b => Number(b.tnaClientes)).filter(t => t > 0);
+    if(tasas.length === 0) throw new Error('sin tasas');
+    const promedio = tasas.reduce((s, t) => s + t, 0) / tasas.length;
+    return { label: 'Plazo fijo (TNA prom.)', value: (promedio * 100).toFixed(1).replace('.', ',') + '%', sub: `${tasas.length} bancos` };
+  }
+
+  const resultados = await Promise.allSettled([tileInflacion(), tileRiesgoPais(), tilePlazoFijo()]);
+  const errores = ['Inflación', 'Riesgo país', 'Plazo fijo'];
+  const tiles = resultados.map((r, i) => {
+    if(r.status === 'fulfilled') return r.value;
+    console.error(errores[i], r.reason);
+    return { label: errores[i], value: '—', sub: 'No se pudo cargar' };
+  });
+
+  content.innerHTML = `
+    <div class="dolar-grid">
+      ${tiles.map(t => `
+        <div class="dolar-tile">
+          <div class="dolar-tile-label">${t.label}</div>
+          <div class="dolar-tile-value" style="font-size:19px;">${t.value}</div>
+          ${t.sub ? `<div class="dolar-tile-sub">${t.sub}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// Proximo feriado (nacional o puente) desde hoy -- si ya paso el ultimo
+// del año en curso, busca el primero del año siguiente.
+async function fetchFeriados(){
+  const content = document.getElementById('feriadoContent');
+  if(!content) return;
+  try{
+    const hoy = todayStr();
+    const anio = Number(hoy.slice(0, 4));
+    const res = await fetch(`https://api.argentinadatos.com/v1/feriados/${anio}`);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(!Array.isArray(data)) throw new Error('sin datos');
+    let proximo = data.find(f => f.fecha >= hoy);
+    if(!proximo){
+      const resNext = await fetch(`https://api.argentinadatos.com/v1/feriados/${anio + 1}`);
+      const dataNext = resNext.ok ? await resNext.json() : [];
+      proximo = Array.isArray(dataNext) && dataNext.length ? dataNext[0] : null;
+    }
+    if(!proximo) throw new Error('sin feriados');
+    const dias = Math.round((new Date(proximo.fecha) - new Date(hoy)) / 86400000);
+    const diasLabel = dias === 0 ? 'es hoy' : dias === 1 ? 'falta 1 día' : `faltan ${dias} días`;
     content.innerHTML = `
-      <div class="inflacion-value">${ultimo.valor.toFixed(1).replace('.',',')}%</div>
-      <div class="inflacion-sub">Variación de precios en ${mesLabel}${dif !== null ? ` · ${dif >= 0 ? '↑' : '↓'} ${Math.abs(dif).toFixed(1)} puntos vs. el mes anterior` : ''}</div>
+      <div class="dolar-blue-value" style="font-size:24px;color:var(--ink);margin:2px 0 3px;">${escapeHtml(proximo.nombre)}</div>
+      <div class="dolar-blue-sub">${fmtFecha(proximo.fecha)} · ${diasLabel}</div>
     `;
   }catch(err){
     console.error(err);
-    content.innerHTML = `<div style="font-size:12.5px;color:var(--ink-soft);">No se pudo cargar la inflación. Revisá tu conexión.</div>`;
+    content.innerHTML = `<div style="font-size:12.5px;color:var(--ink-soft);">No se pudo cargar el calendario de feriados.</div>`;
   }
 }
 
