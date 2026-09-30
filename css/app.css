@@ -582,17 +582,13 @@
   }
   @keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
   .login-logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:18px;}
-  .login-badge{
-    width:38px;height:38px;border-radius:9px;background:var(--accent);color:#fff;
-    display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';
-    font-weight:700;font-size:17px;flex-shrink:0;
-  }
+  /* Icono solo (mismo archivo que el badge del sidebar), sin fondo de color
+     agregado -- el "Tikera" al lado queda como texto real (tipografia del
+     sitio, Space Grotesk) en vez de venir horneado en una imagen: asi se
+     lee igual de bien en los dos temas. */
+  .login-icon-img{width:40px;height:40px;object-fit:contain;flex-shrink:0;}
   .login-brand{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--ink);line-height:1.1;}
   .login-sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
-  /* Variante en prueba: logo + wordmark como una sola imagen combinada,
-     en vez del badge de color + texto por separado. */
-  .login-logo-full{flex-direction:column;gap:6px;}
-  .login-logo-img{height:46px;width:auto;display:block;}
   #trialBlocked{display:none;}
   #trialBlocked.show{display:flex;}
   #trialBlocked .price-box{
