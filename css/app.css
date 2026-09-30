@@ -589,6 +589,10 @@
   }
   .login-brand{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--ink);line-height:1.1;}
   .login-sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  /* Variante en prueba: logo + wordmark como una sola imagen combinada,
+     en vez del badge de color + texto por separado. */
+  .login-logo-full{flex-direction:column;gap:6px;}
+  .login-logo-img{height:46px;width:auto;display:block;}
   #trialBlocked{display:none;}
   #trialBlocked.show{display:flex;}
   #trialBlocked .price-box{
