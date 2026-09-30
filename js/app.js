@@ -41,7 +41,6 @@ let cierresCaja = [];
 const PAYMENT_LINK_URL = '';
 let currentPlan = 'trial';
 let currentTrialStartedAt = null;
-let currentAvatarUrl = null;
 const TRIAL_DAYS = 14;
 
 function trialDiasRestantes(){
@@ -674,7 +673,6 @@ document.getElementById('settPerfilBtn').addEventListener('click', async ()=>{
     const { error } = await sb.from('profiles').update({ business_name: val }).eq('id', currentUserId);
     if(error) throw error;
     document.getElementById('bizName').value = val;
-    updateNavLogoBadge();
     msg.className = 'settings-msg ok'; msg.textContent = 'Guardado.';
     showToast('Perfil actualizado');
   }catch(err){
@@ -934,16 +932,6 @@ async function loadData(){
     document.getElementById('bizName').value = (profile && profile.business_name) || 'Mi negocio';
     currentPlan = (profile && profile.plan) || 'trial';
     currentTrialStartedAt = profile && profile.trial_started_at ? new Date(profile.trial_started_at) : null;
-
-    // Select aparte y con su propio try/catch: si todavia no corriste la
-    // migracion que agrega avatar_url, esto falla solo (sin foto, iniciales
-    // como respaldo) en vez de tirar abajo el resto del perfil/plan.
-    try{
-      const { data: avatarRow } = await sb.from('profiles').select('avatar_url').eq('id', user.id).single();
-      currentAvatarUrl = (avatarRow && avatarRow.avatar_url) || null;
-    }catch(e){ currentAvatarUrl = null; }
-
-    updateNavLogoBadge();
 
     const { data: movRows, error: movErr } = await sb.from('movements').select('*').eq('user_id', user.id).order('created_at', {ascending:true});
     entries = movErr ? [] : (movRows || []).map(mapRowToEntry);
@@ -1648,30 +1636,6 @@ async function deleteMovement(id){
     if(looksLikeNetworkError(err)){ showToast('Sin conexión: no se pudo eliminar. Probá de nuevo cuando vuelva internet.'); return false; }
     console.error(err); showToast('No se pudo eliminar'); return false;
   }
-}
-
-// Badge de arriba del dock: mientras no haya foto de perfil subida, muestra
-// las iniciales del negocio (hasta 2 letras) en vez del logo generico de Tikera.
-function businessInitials(){
-  const name = (document.getElementById('bizName').value || '').trim();
-  if(!name) return 'T';
-  const words = name.split(/\s+/).filter(Boolean);
-  return (words.length >= 2 ? (words[0][0] + words[1][0]) : name.slice(0,2)).toUpperCase();
-}
-
-// Usado por el badge del dock y por la vista previa en Cuenta: si hay foto
-// de perfil subida se muestra esa, si no, las iniciales del negocio.
-function renderAvatarInto(el){
-  if(!el) return;
-  if(currentAvatarUrl){
-    el.innerHTML = `<img src="${escapeHtml(currentAvatarUrl)}" alt="">`;
-  }else{
-    el.textContent = businessInitials();
-  }
-}
-
-function updateNavLogoBadge(){
-  renderAvatarInto(document.getElementById('navLogoBadge'));
 }
 
 document.getElementById('fecha').value = todayStr();
