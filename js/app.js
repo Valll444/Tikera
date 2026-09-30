@@ -594,16 +594,13 @@ function renderFontToggle(){
   });
 }
 
-// Perfil = quién sos vos: foto, correo, contraseña, plan, cerrar/eliminar cuenta.
+// Perfil = quién sos vos: correo, contraseña, plan, cerrar/eliminar cuenta.
 async function loadPerfilView(){
   document.getElementById('settEmailMsg').textContent = '';
   document.getElementById('settPassMsg').textContent = '';
   document.getElementById('settEmailNuevo').value = '';
   document.getElementById('settPass1').value = '';
   document.getElementById('settPass2').value = '';
-  document.getElementById('settAvatarMsg').textContent = '';
-  renderAvatarInto(document.getElementById('settAvatarPreview'));
-  document.getElementById('settAvatarRemoveBtn').style.display = currentAvatarUrl ? 'inline-block' : 'none';
 
   const planCard = document.getElementById('planCard');
   planCard.innerHTML = 'Cargando...';
@@ -684,60 +681,6 @@ document.getElementById('settPerfilBtn').addEventListener('click', async ()=>{
     console.error(err);
     msg.className = 'settings-msg err'; msg.textContent = 'No se pudo guardar. Probá de nuevo.';
   }
-});
-
-document.getElementById('settAvatarBtn').addEventListener('click', ()=>{
-  document.getElementById('settAvatarFile').click();
-});
-
-document.getElementById('settAvatarFile').addEventListener('change', async (e)=>{
-  const file = e.target.files && e.target.files[0];
-  e.target.value = '';
-  if(!file) return;
-  const msg = document.getElementById('settAvatarMsg');
-  if(!file.type.startsWith('image/')){ msg.className = 'settings-msg err'; msg.textContent = 'Elegí un archivo de imagen.'; return; }
-  if(file.size > 4*1024*1024){ msg.className = 'settings-msg err'; msg.textContent = 'La imagen no puede pesar más de 4MB.'; return; }
-  msg.className = 'settings-msg'; msg.textContent = 'Subiendo...';
-  document.getElementById('settAvatarBtn').disabled = true;
-  try{
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const path = `${currentUserId}/profile/avatar.${ext}`;
-    const { error: upErr } = await sb.storage.from('uploads').upload(path, file, { upsert: true, cacheControl: '3600' });
-    if(upErr) throw upErr;
-    const { data: pub } = sb.storage.from('uploads').getPublicUrl(path);
-    const url = pub.publicUrl + '?t=' + Date.now();
-    const { error: updErr } = await sb.from('profiles').update({ avatar_url: url }).eq('id', currentUserId);
-    if(updErr) throw updErr;
-    currentAvatarUrl = url;
-    renderAvatarInto(document.getElementById('settAvatarPreview'));
-    updateNavLogoBadge();
-    document.getElementById('settAvatarRemoveBtn').style.display = 'inline-block';
-    msg.className = 'settings-msg ok'; msg.textContent = 'Foto actualizada.';
-    showToast('Foto de perfil actualizada');
-  }catch(err){
-    console.error(err);
-    msg.className = 'settings-msg err'; msg.textContent = 'No se pudo subir la foto. Revisá que hayas corrido la migración de Storage y probá de nuevo.';
-  }
-  document.getElementById('settAvatarBtn').disabled = false;
-});
-
-document.getElementById('settAvatarRemoveBtn').addEventListener('click', async ()=>{
-  const msg = document.getElementById('settAvatarMsg');
-  msg.className = 'settings-msg'; msg.textContent = '';
-  document.getElementById('settAvatarRemoveBtn').disabled = true;
-  try{
-    const { error } = await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUserId);
-    if(error) throw error;
-    currentAvatarUrl = null;
-    renderAvatarInto(document.getElementById('settAvatarPreview'));
-    updateNavLogoBadge();
-    document.getElementById('settAvatarRemoveBtn').style.display = 'none';
-    showToast('Foto de perfil eliminada');
-  }catch(err){
-    console.error(err);
-    msg.className = 'settings-msg err'; msg.textContent = 'No se pudo quitar la foto. Probá de nuevo.';
-  }
-  document.getElementById('settAvatarRemoveBtn').disabled = false;
 });
 
 document.getElementById('settEmailBtn').addEventListener('click', async ()=>{
