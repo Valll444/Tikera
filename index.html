@@ -296,20 +296,33 @@
   .counter-num{font-variant-numeric:tabular-nums;}
 
   /* FAQ accordion */
-  .faq-item{background:var(--bg-card);border:1px solid var(--hairline);border-radius:14px;padding:4px 20px;transition:border-color .2s ease, background-color .35s ease;}
-  .faq-item:hover{border-color:var(--hairline-strong);}
-  .faq-item[open]{border-color:rgba(62,86,112,0.35);}
+  .faq-item{background:var(--bg-card);border:1px solid var(--hairline);border-radius:14px;padding:6px 26px;transition:border-color .2s ease, background-color .35s ease;position:relative;z-index:1;}
+  .faq-item:hover{border-color:rgba(76,175,128,0.3);}
+  .faq-item[open]{border-color:rgba(76,175,128,0.4);}
   .faq-item summary{
-    list-style:none;cursor:pointer;padding:16px 28px 16px 0;position:relative;
-    font-family:'Manrope';font-weight:700;font-size:15px;color:var(--text);
+    list-style:none;cursor:pointer;padding:21px 34px 21px 0;position:relative;
+    font-family:'Manrope';font-weight:700;font-size:16.5px;color:var(--text);
   }
   .faq-item summary::-webkit-details-marker{display:none;}
   .faq-item summary::after{
     content:'+';position:absolute;right:0;top:50%;transform:translateY(-50%);
-    font-size:20px;font-weight:400;color:var(--text-dim);transition:transform .25s ease;
+    font-size:23px;font-weight:400;color:var(--text-dim);transition:transform .25s ease, color .25s ease;
   }
-  .faq-item[open] summary::after{transform:translateY(-50%) rotate(45deg);color:var(--slate-bright);}
-  .faq-item p{font-size:14px;color:var(--text-dim);line-height:1.6;margin:0 0 18px;max-width:640px;}
+  .faq-item[open] summary::after{transform:translateY(-50%) rotate(45deg);color:var(--green);}
+  .faq-item p{font-size:14.5px;color:var(--text-dim);line-height:1.65;margin:0 0 20px;max-width:640px;}
+  /* Mismo resplandor que respira detras del mockup del hero
+     (.dash-replica-glow): ahi tambien es verde + azul pizarra, no los dos
+     verdes -- se reusa la misma combinacion aca para que la seccion de
+     FAQ no quede un bloque de cards vacio sobre fondo plano. En tema
+     claro un blur transparente se nota mucho menos sobre blanco que sobre
+     negro, asi que sube de intensidad ahi para seguir siendo visible. */
+  #faqs{position:relative;}
+  .faqs-glow{position:absolute;border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none;animation:glowBreathe 9s ease-in-out infinite;}
+  .faqs-glow-a{top:-8%;left:-12%;width:46%;height:42%;background:radial-gradient(circle, rgba(76,175,128,0.38), transparent 70%);}
+  .faqs-glow-b{bottom:-10%;right:-10%;width:42%;height:38%;background:radial-gradient(circle, rgba(62,86,112,0.48), transparent 70%);animation-delay:-4.5s;}
+  :root[data-theme="light"] .faqs-glow-a{background:radial-gradient(circle, rgba(46,143,99,0.55), transparent 72%);}
+  :root[data-theme="light"] .faqs-glow-b{background:radial-gradient(circle, rgba(62,86,112,0.55), transparent 72%);}
+  @media(prefers-reduced-motion:reduce){.faqs-glow-a,.faqs-glow-b{animation:none;}}
 
   /* Aviso de cookies */
   .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:none;background:var(--bg-card);border:1px solid var(--hairline);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:18px 20px;}
@@ -847,12 +860,14 @@
 
 <!-- FAQ -->
 <section id="faqs" class="py-16 md:py-24 border-t border-[var(--hairline)]">
-  <div class="container-w max-w-[760px]">
+  <div class="faqs-glow faqs-glow-a"></div>
+  <div class="faqs-glow faqs-glow-b"></div>
+  <div class="container-w max-w-[760px]" style="position:relative;z-index:1;">
     <h2 class="reveal font-display font-extrabold text-[30px] sm:text-[36px] leading-tight mb-10">
       Preguntas antes de probarlo
     </h2>
 
-    <div class="reveal space-y-3">
+    <div class="reveal space-y-4">
       <details class="faq-item">
         <summary>¿Necesito instalar algo?</summary>
         <p>No. Tikera funciona directo desde el navegador, en el celular o la computadora. Si querés, podés agregarla a la pantalla de inicio de tu celular como acceso directo, pero no hace falta bajar nada de ninguna tienda de aplicaciones.</p>
