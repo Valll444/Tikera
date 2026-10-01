@@ -25,16 +25,17 @@
 <meta name="description" content="La gestión de caja y rentabilidad para kioscos, almacenes y pequeños comercios. Conocé cuánto vendés, cuánto gastás y cuánto te queda realmente.">
 <link rel="canonical" href="https://valll444.github.io/Tikera/">
 <meta property="og:title" content="Tikera — Sabé cuánto ganás realmente con tu negocio">
-<meta property="og:description" content="Facturar no es ganar. Descubrí cuánto te queda realmente.">
+<meta property="og:description" content="Cargá tus ventas y gastos, y mirá cuánto ganás de verdad. Hecho para kioscos, almacenes y comercios chicos.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://valll444.github.io/Tikera/">
 <meta property="og:image" content="https://valll444.github.io/Tikera/og-image.png">
 <meta property="og:locale" content="es_AR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Tikera — Sabé cuánto ganás realmente con tu negocio">
-<meta name="twitter:description" content="Facturar no es ganar. Descubrí cuánto te queda realmente.">
+<meta name="twitter:description" content="Cargá tus ventas y gastos, y mirá cuánto ganás de verdad. Hecho para kioscos, almacenes y comercios chicos.">
 <meta name="twitter:image" content="https://valll444.github.io/Tikera/og-image.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -202,7 +203,8 @@
     background:#0A0D10;border-right:1px solid rgba(244,242,237,0.06);
     display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:8px;
   }
-  .dash-replica-badge{width:26px;height:26px;border-radius:7px;background:var(--slate);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Manrope';font-weight:800;font-size:12px;flex-shrink:0;margin-bottom:8px;}
+  .dash-replica-badge{width:26px;height:26px;flex-shrink:0;margin-bottom:10px;display:flex;align-items:center;justify-content:center;}
+  .dash-replica-badge img{width:100%;height:100%;object-fit:contain;}
   .dash-replica-navicon{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
   .dash-replica-navicon svg{width:14px;height:14px;}
   .dash-replica-navicon.active{background:rgba(76,175,128,0.16);color:var(--green);}
@@ -239,13 +241,19 @@
     background:var(--bg-card);
     border:1px solid var(--hairline);
     border-radius:16px;
-    transition:border-color .25s ease, transform .25s ease, background-color .35s ease;
+    transition:border-color .25s ease, transform .25s ease, background-color .35s ease, box-shadow .25s ease;
   }
-  .bento-card:hover{border-color:var(--hairline-strong);}
+  .bento-card:hover{
+    border-color:var(--hairline-strong);
+    transform:translateY(-4px);
+    box-shadow:0 16px 32px -20px rgba(0,0,0,0.45);
+  }
+  @media(prefers-reduced-motion:reduce){ .bento-card:hover{transform:none;} }
   .bento-hero-card{
     background:linear-gradient(155deg,#173226 0%, #0F1C17 55%, #0D1113 100%);
     border:1px solid rgba(76,175,128,0.25);
   }
+  .bento-hero-card:hover{border-color:rgba(76,175,128,0.4);}
 
   /* Before/After */
   .baf-panel{border-radius:16px;padding:28px;}
@@ -263,7 +271,9 @@
   .demo-tab:not(.active):hover{color:var(--text);}
 
   .demo-pane{display:none;}
-  .demo-pane.active{display:block;}
+  .demo-pane.active{display:block;animation:paneFadeIn .35s ease both;}
+  @keyframes paneFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  @media(prefers-reduced-motion:reduce){ .demo-pane.active{animation:none;} }
 
   .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text);transition:background-color .35s ease, color .3s ease, border-color .3s ease;}
 
@@ -322,10 +332,7 @@
 <header id="site-header">
   <div class="container-w flex items-center justify-between h-16">
     <a href="#top" class="flex items-center gap-2.5 shrink-0">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-        <rect x="1" y="1" width="24" height="24" rx="7" stroke="#3E5670" stroke-width="1.4"/>
-        <path d="M8 13.5L11.3 17L18.2 9" stroke="#3E5670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <img src="icons/logo.png" alt="" width="26" height="26">
       <span class="font-display font-extrabold text-[17px] tracking-tight">Tikera</span>
     </a>
 
@@ -382,8 +389,8 @@
       </div>
 
       <h1 class="reveal font-display font-extrabold leading-[1.04] tracking-tight text-[42px] sm:text-[52px] lg:text-[58px]">
-        Facturar no es ganar.
-        <span class="block text-[var(--green)] mt-1">Descubrí cuánto te queda realmente.</span>
+        Cargá tus ventas y gastos,
+        <span class="block text-[var(--green)] mt-1">mirá cuánto ganás de verdad.</span>
       </h1>
 
       <p class="reveal mt-6 text-[17px] leading-relaxed text-[var(--text-dim)] max-w-[480px]">
@@ -419,12 +426,14 @@
              en app.html), para que se lea como una captura genuina de
              Tikera funcionando y no como un panel de metricas suelto. -->
         <div class="dash-replica-sidebar">
-          <div class="dash-replica-badge">T</div>
+          <div class="dash-replica-badge"><img src="icons/logo.png" alt=""></div>
           <div class="dash-replica-navicon active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></div>
           <div class="dash-replica-navicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
           <div class="dash-replica-navicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
           <div class="dash-replica-navicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
           <div class="dash-replica-navicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <div class="dash-replica-navicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V4z"/><path d="M15 8h4v10a2 2 0 0 1-2 2h-2"/><path d="M8 8h4M8 11h4M8 14h4"/></svg></div>
+          <div class="dash-replica-navicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15l2 2 4-4"/></svg></div>
         </div>
         <div class="dash-replica-inner">
           <div class="dash-replica-top">
@@ -607,7 +616,7 @@
           <p class="text-[14px] text-[var(--text-dim)] leading-relaxed">Facturar mucho no significa ganar mucho. Tikera separa ventas, costos y gastos para mostrarte lo que realmente te queda.</p>
         </div>
         <div class="mt-8">
-          <div class="font-display font-extrabold text-[34px] text-[var(--green)] leading-none">$842.500</div>
+          <div id="bento-ganancia-num" class="counter-num font-display font-extrabold text-[34px] text-[var(--green)] leading-none" data-count-to="842500">$842.500</div>
           <div class="text-[13px] text-[var(--text-faint)] mt-1.5">Ganancia real de este mes</div>
         </div>
       </div>
@@ -639,6 +648,49 @@
         <div>
           <h3 class="font-display font-bold text-[16px] mb-2">Funciona aunque se corte internet</h3>
           <p class="text-[14px] text-[var(--text-dim)] leading-relaxed max-w-[420px]">Un kiosco no puede parar de cobrar porque se cortó el wifi. Tikera guarda la venta en el dispositivo y la sube sola apenas vuelve la señal.</p>
+        </div>
+      </div>
+
+      <div class="reveal bento-card p-6 flex flex-col justify-between">
+        <div class="w-9 h-9 rounded-lg bg-[var(--slate-soft)] flex items-center justify-center mb-4">
+          <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M2 11.5V4.5H9.5V11.5" stroke="#7C93A8" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 7H12.5L15 9.5V11.5H9.5" stroke="#7C93A8" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="13" r="1.5" stroke="#7C93A8" stroke-width="1.3"/><circle cx="12" cy="13" r="1.5" stroke="#7C93A8" stroke-width="1.3"/></svg>
+        </div>
+        <div>
+          <h3 class="font-display font-bold text-[16px] mb-2">Proveedores y pedidos</h3>
+          <p class="text-[14px] text-[var(--text-dim)] leading-relaxed">Anotá a quién le comprás, qué te trajo y cuánto le debés. Nunca más perder la cuenta de un pago pendiente.</p>
+        </div>
+      </div>
+
+      <div class="reveal bento-card p-6 flex flex-col justify-between" style="background:linear-gradient(155deg,rgba(62,86,112,0.14) 0%, var(--bg-card) 55%);">
+        <div class="w-9 h-9 rounded-lg bg-[var(--slate-soft)] flex items-center justify-center mb-4">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--slate-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15l2 2 4-4"/></svg>
+        </div>
+        <div>
+          <h3 class="font-display font-bold text-[16px] mb-2">Facturación electrónica</h3>
+          <p class="text-[14px] text-[var(--text-dim)] leading-relaxed">Convertí tus ventas en comprobantes fiscales reales, con CAE de ARCA, sin salir de la app.</p>
+        </div>
+      </div>
+
+      <div class="reveal bento-card p-6 flex flex-col justify-between">
+        <div class="w-9 h-9 rounded-lg bg-[var(--slate-soft)] flex items-center justify-center mb-4">
+          <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="6.5" stroke="#7C93A8" stroke-width="1.3"/><path d="M8.5 4.5V12.5M10.5 6.2C10.5 5.2 9.6 4.5 8.5 4.5C7.2 4.5 6.3 5.3 6.3 6.3C6.3 8.3 10.5 7.5 10.5 9.8C10.5 10.9 9.5 11.6 8.3 11.6C7.1 11.6 6.3 10.9 6.3 9.8" stroke="#7C93A8" stroke-width="1.1" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <h3 class="font-display font-bold text-[16px] mb-2">Dólar e indicadores al día</h3>
+          <p class="text-[14px] text-[var(--text-dim)] leading-relaxed">Dólar blue, inflación, riesgo país y tasas, para poner precios con información real.</p>
+        </div>
+      </div>
+
+      <div class="reveal bento-card p-6 flex flex-col justify-between" style="border-style:dashed;border-color:var(--hairline-strong);">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-9 h-9 rounded-lg bg-[rgba(245,243,239,0.05)] flex items-center justify-center">
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 2L9.8 6.2L14 7.5L9.8 8.8L8.5 13L7.2 8.8L3 7.5L7.2 6.2L8.5 2Z" stroke="var(--text-faint)" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="text-[10.5px] font-semibold text-[var(--text-faint)] uppercase tracking-wide border border-[var(--hairline-strong)] rounded-full px-2.5 py-1">Próximamente</span>
+        </div>
+        <div>
+          <h3 class="font-display font-bold text-[16px] mb-2 text-[var(--text-dim)]">Asistente de IA para tu negocio</h3>
+          <p class="text-[14px] text-[var(--text-faint)] leading-relaxed">Estamos sumando un asistente que conoce los números de tu negocio y te ayuda con dudas de plata y gestión, en criollo.</p>
         </div>
       </div>
     </div>
@@ -725,7 +777,7 @@
 
       <div id="pane-ganancia" class="demo-pane">
         <div class="text-[13px] text-[var(--text-dim)] mb-2">Ganancia neta del mes</div>
-        <div class="font-display font-extrabold text-[36px] text-[var(--green)] mb-6">$842.500</div>
+        <div id="demo-ganancia-num" class="counter-num font-display font-extrabold text-[36px] text-[var(--green)] mb-6" data-count-to="842500">$842.500</div>
         <div class="grid sm:grid-cols-3 gap-3">
           <div class="bg-[rgba(245,243,239,0.03)] rounded-lg p-4 border border-[var(--hairline)]">
             <div class="text-[11px] text-[var(--text-faint)] mb-1.5">Facturación</div>
@@ -785,11 +837,11 @@
 <section class="py-20 md:py-28 border-t border-[var(--hairline)]">
   <div class="container-w text-center">
     <h2 class="reveal font-display font-extrabold text-[32px] sm:text-[44px] leading-[1.08] tracking-tight">
-      Dejá de mirar cuánto entra.
-      <span class="block text-[var(--green)] mt-1">Empezá a saber cuánto te queda.</span>
+      Tu negocio, ordenado en números reales.
+      <span class="block text-[var(--green)] mt-1">Probalo gratis durante 14 días.</span>
     </h2>
     <p class="reveal text-[15px] text-[var(--text-dim)] max-w-[440px] mx-auto mt-5">
-      Tikera te ayuda a entender tu negocio en números simples, para que tomes decisiones con información real.
+      Cargá tu primera venta en menos de un minuto y mirá cómo queda tu caja, tu stock y tu ganancia, todo junto.
     </p>
     <a href="precios.html" class="reveal btn-primary rounded-lg px-8 py-4 text-[15px] inline-block mt-8">Probar Tikera gratis</a>
     <p class="reveal text-[13px] text-[var(--text-faint)] mt-4">14 días gratis · Acceso completo desde el primer minuto</p>
@@ -803,10 +855,7 @@
   <div class="container-w">
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-10">
       <div class="flex items-center gap-2.5">
-        <svg width="24" height="24" viewBox="0 0 26 26" fill="none">
-          <rect x="1" y="1" width="24" height="24" rx="7" stroke="#3E5670" stroke-width="1.4"/>
-          <path d="M8 13.5L11.3 17L18.2 9" stroke="#3E5670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <img src="icons/logo.png" alt="" width="24" height="24">
         <span class="font-display font-extrabold text-[16px]">Tikera</span>
       </div>
 
@@ -1012,8 +1061,39 @@
       panes.forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById('pane-' + tab.dataset.tab).classList.add('active');
+      if (tab.dataset.tab === 'ganancia') countUpEl(document.getElementById('demo-ganancia-num'));
     });
   });
+
+  // Contador: anima un numero de $0 hasta su valor real (data-count-to),
+  // una sola vez. Si prefiere menos movimiento, muestra el valor final
+  // directo -- nunca deja el elemento en $0.
+  const countedEls = new WeakSet();
+  function countUpEl(el){
+    if (!el || countedEls.has(el)) return;
+    countedEls.add(el);
+    const target = Number(el.dataset.countTo || 0);
+    if (reduceMotion || !target) { el.textContent = formatARS(target); return; }
+    const start = performance.now();
+    const duration = 900;
+    function tick(now){
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = formatARS(target * eased);
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    el.textContent = formatARS(0);
+    requestAnimationFrame(tick);
+  }
+  const bentoGanancia = document.getElementById('bento-ganancia-num');
+  if (bentoGanancia && 'IntersectionObserver' in window) {
+    const countIo = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { countUpEl(entry.target); countIo.unobserve(entry.target); }
+      });
+    }, { threshold: 0.6 });
+    countIo.observe(bentoGanancia);
+  }
 </script>
 
 </body>
