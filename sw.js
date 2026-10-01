@@ -2,9 +2,11 @@
 // para que abra rapido y funcione si se pierde la conexion un instante.
 // Todo lo demas (Supabase, CDNs de librerias) pasa directo a la red: los datos
 // de caja tienen que ser siempre los reales, nunca una copia vieja cacheada.
-const CACHE_NAME = 'tikera-shell-v2';
+const CACHE_NAME = 'tikera-shell-v3';
 const SHELL_FILES = [
   './app.html',
+  './css/app.css',
+  './js/app.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
