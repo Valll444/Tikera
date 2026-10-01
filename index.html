@@ -25,14 +25,14 @@
 <meta name="description" content="La gestión de caja y rentabilidad para kioscos, almacenes y pequeños comercios. Conocé cuánto vendés, cuánto gastás y cuánto te queda realmente.">
 <link rel="canonical" href="https://valll444.github.io/Tikera/">
 <meta property="og:title" content="Tikera — Sabé cuánto ganás realmente con tu negocio">
-<meta property="og:description" content="Cargá tus ventas y gastos, y mirá cuánto ganás de verdad. Hecho para kioscos, almacenes y comercios chicos.">
+<meta property="og:description" content="Controlá la caja de tu negocio y sabé cuánto ganás de verdad. Hecho para kioscos, almacenes y comercios chicos.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://valll444.github.io/Tikera/">
 <meta property="og:image" content="https://valll444.github.io/Tikera/og-image.png">
 <meta property="og:locale" content="es_AR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Tikera — Sabé cuánto ganás realmente con tu negocio">
-<meta name="twitter:description" content="Cargá tus ventas y gastos, y mirá cuánto ganás de verdad. Hecho para kioscos, almacenes y comercios chicos.">
+<meta name="twitter:description" content="Controlá la caja de tu negocio y sabé cuánto ganás de verdad. Hecho para kioscos, almacenes y comercios chicos.">
 <meta name="twitter:image" content="https://valll444.github.io/Tikera/og-image.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -177,6 +177,8 @@
     --green:#4CAF80;
     --green-deep:#3F7A5E;
     --red:#B85B5D;
+    --slate:#3E5670;
+    --slate-bright:#6089B4;
     color:var(--text);
     background:linear-gradient(180deg,#151A1D 0%, #10151A 100%);
     border:1px solid var(--hairline);
@@ -389,8 +391,8 @@
       </div>
 
       <h1 class="reveal font-display font-extrabold leading-[1.04] tracking-tight text-[42px] sm:text-[52px] lg:text-[58px]">
-        Cargá tus ventas y gastos,
-        <span class="block text-[var(--green)] mt-1">mirá cuánto ganás de verdad.</span>
+        Controlá la caja de tu negocio
+        <span class="block text-[var(--green)] mt-1">y sabé cuánto ganás de verdad.</span>
       </h1>
 
       <p class="reveal mt-6 text-[17px] leading-relaxed text-[var(--text-dim)] max-w-[480px]">
@@ -690,7 +692,7 @@
         </div>
         <div>
           <h3 class="font-display font-bold text-[16px] mb-2 text-[var(--text-dim)]">Asistente de IA para tu negocio</h3>
-          <p class="text-[14px] text-[var(--text-faint)] leading-relaxed">Estamos sumando un asistente que conoce los números de tu negocio y te ayuda con dudas de plata y gestión, en criollo.</p>
+          <p class="text-[14px] text-[var(--text-faint)] leading-relaxed">Estamos sumando un asistente que conoce los números de tu negocio y te ayuda con dudas de plata y gestión.</p>
         </div>
       </div>
     </div>
@@ -705,6 +707,12 @@
     </h2>
 
     <div class="reveal mockup-shell p-5 sm:p-7">
+      <div class="flex items-center gap-2 mb-5 px-1">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#4B5559]"></span>
+        <span class="w-2.5 h-2.5 rounded-full bg-[#4B5559]"></span>
+        <span class="w-2.5 h-2.5 rounded-full bg-[#4B5559]"></span>
+        <span class="ml-2 text-[11px] text-[var(--text-faint)] bg-[rgba(245,243,239,0.04)] rounded-full px-3 py-1 truncate">valll444.github.io/Tikera</span>
+      </div>
       <div class="flex flex-wrap gap-2 mb-6" role="tablist">
         <button class="demo-tab active" data-tab="resumen" role="tab">Resumen</button>
         <button class="demo-tab" data-tab="ventas" role="tab">Ventas</button>
@@ -750,45 +758,75 @@
       </div>
 
       <div id="pane-ventas" class="demo-pane">
-        <div class="flex items-end gap-2 h-32 mb-4">
-          <div class="flex-1 bg-[#243038] rounded-t" style="height:45%"></div>
-          <div class="flex-1 bg-[#243038] rounded-t" style="height:60%"></div>
-          <div class="flex-1 bg-[var(--green-deep)] rounded-t" style="height:78%"></div>
-          <div class="flex-1 bg-[#243038] rounded-t" style="height:52%"></div>
-          <div class="flex-1 bg-[var(--green)] rounded-t" style="height:92%"></div>
-          <div class="flex-1 bg-[#243038] rounded-t" style="height:66%"></div>
-          <div class="flex-1 bg-[var(--green-deep)] rounded-t" style="height:80%"></div>
+        <div class="flex items-end gap-2.5 h-36 mb-2 px-1">
+          <div class="flex-1 bar-grow rounded-t-md" style="height:45%;animation-delay:0ms;background:linear-gradient(180deg,#3a4d58 0%,#1c262c 100%);"></div>
+          <div class="flex-1 bar-grow rounded-t-md" style="height:60%;animation-delay:60ms;background:linear-gradient(180deg,#3a4d58 0%,#1c262c 100%);"></div>
+          <div class="flex-1 bar-grow rounded-t-md" style="height:78%;animation-delay:120ms;background:linear-gradient(180deg,var(--slate-bright) 0%,var(--slate) 100%);"></div>
+          <div class="flex-1 bar-grow rounded-t-md relative" style="height:92%;animation-delay:180ms;background:linear-gradient(180deg,#6FE3A8 0%,var(--green) 55%,var(--green-deep) 100%);box-shadow:0 0 18px -4px rgba(76,175,128,0.55);">
+            <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[11px] font-bold text-[var(--green)] mono-figure whitespace-nowrap">$38.500</span>
+          </div>
+          <div class="flex-1 bar-grow rounded-t-md" style="height:66%;animation-delay:240ms;background:linear-gradient(180deg,var(--slate-bright) 0%,var(--slate) 100%);"></div>
+          <div class="flex-1 bar-grow rounded-t-md" style="height:52%;animation-delay:300ms;background:linear-gradient(180deg,#3a4d58 0%,#1c262c 100%);"></div>
+          <div class="flex-1 bar-grow rounded-t-md" style="height:80%;animation-delay:360ms;background:linear-gradient(180deg,var(--slate-bright) 0%,var(--slate) 100%);"></div>
+        </div>
+        <div class="flex gap-2.5 px-1 mb-4">
+          <div class="flex-1 text-center text-[10.5px] text-[var(--text-faint)]">Lun</div>
+          <div class="flex-1 text-center text-[10.5px] text-[var(--text-faint)]">Mar</div>
+          <div class="flex-1 text-center text-[10.5px] text-[var(--text-faint)]">Mié</div>
+          <div class="flex-1 text-center text-[10.5px] font-semibold text-[var(--green)]">Jue</div>
+          <div class="flex-1 text-center text-[10.5px] text-[var(--text-faint)]">Vie</div>
+          <div class="flex-1 text-center text-[10.5px] text-[var(--text-faint)]">Sáb</div>
+          <div class="flex-1 text-center text-[10.5px] text-[var(--text-faint)]">Dom</div>
         </div>
         <p class="text-[13px] text-[var(--text-dim)]">Ventas de la semana, con el jueves como pico de facturación.</p>
       </div>
 
       <div id="pane-productos" class="demo-pane">
-        <div class="space-y-3">
-          <div class="flex items-center justify-between text-[14px]"><span class="text-[var(--text-dim)]">Bebidas</span><span class="mono-figure">38%</span></div>
-          <div class="h-1.5 rounded-full bg-[rgba(245,243,239,0.06)]"><div class="h-full rounded-full bg-[var(--green)]" style="width:38%"></div></div>
-          <div class="flex items-center justify-between text-[14px]"><span class="text-[var(--text-dim)]">Almacén</span><span class="mono-figure">27%</span></div>
-          <div class="h-1.5 rounded-full bg-[rgba(245,243,239,0.06)]"><div class="h-full rounded-full bg-[var(--green-deep)]" style="width:27%"></div></div>
-          <div class="flex items-center justify-between text-[14px]"><span class="text-[var(--text-dim)]">Cigarrillos</span><span class="mono-figure">19%</span></div>
-          <div class="h-1.5 rounded-full bg-[rgba(245,243,239,0.06)]"><div class="h-full rounded-full bg-[#7C93A8]" style="width:19%"></div></div>
-          <div class="flex items-center justify-between text-[14px]"><span class="text-[var(--text-dim)]">Otros</span><span class="mono-figure">16%</span></div>
-          <div class="h-1.5 rounded-full bg-[rgba(245,243,239,0.06)]"><div class="h-full rounded-full bg-[#4B5559]" style="width:16%"></div></div>
+        <div class="space-y-4">
+          <div>
+            <div class="flex items-center gap-2 text-[14px] mb-1.5"><span class="w-2 h-2 rounded-full" style="background:var(--green);"></span><span class="text-[var(--text)] flex-1">Bebidas</span><span class="mono-figure font-semibold">38%</span></div>
+            <div class="h-2.5 rounded-full bg-[rgba(245,243,239,0.06)]"><div class="h-full rounded-full" style="width:38%;background:linear-gradient(90deg,var(--green-deep),var(--green));"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 text-[14px] mb-1.5"><span class="w-2 h-2 rounded-full" style="background:var(--slate-bright);"></span><span class="text-[var(--text)] flex-1">Almacén</span><span class="mono-figure font-semibold">27%</span></div>
+            <div class="h-2.5 rounded-full bg-[rgba(245,243,239,0.06)]"><div class="h-full rounded-full" style="width:27%;background:linear-gradient(90deg,var(--slate),var(--slate-bright));"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 text-[14px] mb-1.5"><span class="w-2 h-2 rounded-full" style="background:#C08A3E;"></span><span class="text-[var(--text)] flex-1">Cigarrillos</span><span class="mono-figure font-semibold">19%</span></div>
+            <div class="h-2.5 rounded-full bg-[rgba(245,243,239,0.06)]"><div class="h-full rounded-full" style="width:19%;background:linear-gradient(90deg,#8a622c,#C08A3E);"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 text-[14px] mb-1.5"><span class="w-2 h-2 rounded-full" style="background:var(--text-faint);"></span><span class="text-[var(--text)] flex-1">Otros</span><span class="mono-figure font-semibold">16%</span></div>
+            <div class="h-2.5 rounded-full bg-[rgba(245,243,239,0.06)]"><div class="h-full rounded-full" style="width:16%;background:linear-gradient(90deg,#4B5559,#6B7579);"></div></div>
+          </div>
         </div>
       </div>
 
       <div id="pane-ganancia" class="demo-pane">
         <div class="text-[13px] text-[var(--text-dim)] mb-2">Ganancia neta del mes</div>
-        <div id="demo-ganancia-num" class="counter-num font-display font-extrabold text-[36px] text-[var(--green)] mb-6" data-count-to="842500">$842.500</div>
+        <div id="demo-ganancia-num" class="counter-num font-display font-extrabold text-[36px] text-[var(--green)] mb-1" data-count-to="842500">$842.500</div>
+        <div class="text-[12px] text-[var(--text-faint)] mb-5">34% de lo facturado — el resto se fue en mercadería y gastos</div>
+
+        <!-- De donde sale la ganancia: facturacion menos CMV menos gastos,
+             mismo desglose que las 3 tarjetas de abajo pero en una sola
+             barra para que se entienda de un vistazo, no solo en numeros. -->
+        <div class="h-3.5 rounded-full overflow-hidden flex mb-6" style="background:rgba(245,243,239,0.06);">
+          <div style="width:34.4%;background:linear-gradient(90deg,var(--green-deep),var(--green));"></div>
+          <div style="width:17.4%;background:linear-gradient(90deg,#8a622c,#C08A3E);"></div>
+          <div style="width:48.2%;background:linear-gradient(90deg,var(--slate),var(--slate-bright));"></div>
+        </div>
+
         <div class="grid sm:grid-cols-3 gap-3">
-          <div class="bg-[rgba(245,243,239,0.03)] rounded-lg p-4 border border-[var(--hairline)]">
-            <div class="text-[11px] text-[var(--text-faint)] mb-1.5">Facturación</div>
+          <div class="rounded-lg p-4 border" style="background:linear-gradient(155deg,rgba(62,86,112,0.14),transparent 70%);border-color:rgba(96,137,180,0.25);">
+            <div class="flex items-center gap-1.5 text-[11px] text-[var(--text-faint)] mb-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:var(--slate-bright);"></span>Facturación</div>
             <div class="mono-figure text-[16px] font-semibold">$2.450.000</div>
           </div>
-          <div class="bg-[rgba(245,243,239,0.03)] rounded-lg p-4 border border-[var(--hairline)]">
-            <div class="text-[11px] text-[var(--text-faint)] mb-1.5">CMV</div>
+          <div class="rounded-lg p-4 border" style="background:linear-gradient(155deg,rgba(62,86,112,0.14),transparent 70%);border-color:rgba(96,137,180,0.25);">
+            <div class="flex items-center gap-1.5 text-[11px] text-[var(--text-faint)] mb-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:var(--slate);"></span>CMV</div>
             <div class="mono-figure text-[16px] font-semibold">$1.180.000</div>
           </div>
-          <div class="bg-[rgba(245,243,239,0.03)] rounded-lg p-4 border border-[var(--hairline)]">
-            <div class="text-[11px] text-[var(--text-faint)] mb-1.5">Gastos</div>
+          <div class="rounded-lg p-4 border" style="background:linear-gradient(155deg,rgba(192,138,62,0.10),transparent 70%);border-color:rgba(192,138,62,0.22);">
+            <div class="flex items-center gap-1.5 text-[11px] text-[var(--text-faint)] mb-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:#C08A3E;"></span>Gastos</div>
             <div class="mono-figure text-[16px] font-semibold">$427.500</div>
           </div>
         </div>
