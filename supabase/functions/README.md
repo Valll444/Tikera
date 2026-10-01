@@ -78,3 +78,55 @@ Esta es la única función del proyecto que genera costo por uso (se paga por
 consulta al modelo). La función ya limita a 20 consultas por día por
 usuario para que ese costo no se dispare solo; para cambiar ese número hay
 que editar `LIMITE_DIARIO` en `index.ts` y volver a deployar.
+
+## arca-config y arca-facturar
+
+Facturación electrónica (ARCA, ex-AFIP): cada negocio factura bajo su
+propio CUIT, con su propio certificado. `arca-config` guarda esa
+configuración (CUIT, punto de venta, certificado — cifrado antes de
+guardarse, nunca en texto plano) y prueba la conexión contra ARCA.
+`arca-facturar` pide el CAE de una venta puntual cuando el usuario aprieta
+"Facturar" en el ticket — nunca se dispara solo al guardar una venta.
+
+A diferencia de `ai-agent`, estas dos **sí** usan la service role key, por
+el mismo motivo que `delete-account`: el certificado/clave privada no puede
+tener ningún permiso hacia el rol `authenticated` (ver
+`013_facturacion_arca.sql`), así que un cliente autenticado-como-el-usuario
+no alcanza — hace falta poder escribir algo que el propio usuario no podría
+escribir directo. La lógica de hablar con ARCA (login WSAA, pedir el CAE)
+está compartida en `_shared/arca.ts`.
+
+No se usa la librería `afip.ts`/AfipSDK (depende de paquetes de Node sin
+garantía de andar en Deno, y el proyecto está sin mantenimiento activo) —
+en cambio, `fetch` nativo para los SOAP de ARCA y
+[`pkijs`](https://github.com/PeculiarVentures/PKI.js)/`asn1js` (pensados
+para Web Crypto, no para Node) para la firma CMS que pide WSAA. Verificado
+con un spike antes de construir la lógica real: ambas importan y firman
+limpio en Deno.
+
+### Deploy
+
+```bash
+supabase functions deploy arca-config
+supabase functions deploy arca-facturar
+```
+
+### Secretos que necesita
+
+Además de `SUPABASE_URL`/`SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY`
+(las dos últimas ya las necesita `delete-account`), hace falta una clave
+propia para cifrar certificado y clave privada antes de guardarlos — **no**
+reusar ninguna de las otras:
+
+```bash
+supabase secrets set ARCA_CERT_ENC_KEY=<una cadena larga y random, generada una sola vez>
+```
+
+Si se pierde o se cambia esta clave, todos los certificados ya guardados
+quedan ilegibles y cada negocio tiene que volver a subir el suyo.
+
+### Antes de usarlo con un negocio real
+
+Arrancar siempre contra homologación (ambiente de pruebas de ARCA) con tu
+propio CUIT, nunca contra producción directo — ver la sección de
+facturación electrónica en `supabase/README.md` para los pasos.

@@ -31,6 +31,30 @@ En `app.html` se suman `--gasto` (rojo), `--gold`, `--teal` — colores
 semánticos, no decorativos: cada uno significa algo puntual (gasto, alerta,
 catálogo) y no se reasignan a otro uso solo porque "queda lindo".
 
+### Colores de sección (nav)
+
+Cada sección principal del nav tiene su propio color fijo (ícono + estado
+activo), **independiente** del color de acento que el usuario elige en
+Apariencia — así el nav no cambia de identidad cuando alguien cambia su
+acento. Son 7 hasta ahora, cada uno reusado 1 a 1 de `ACCENT_PRESETS`
+(js/app.js) salvo el último:
+
+```
+pizarra  #3E5670  → Inicio / marca
+acero    #5B7FA6  → Caja
+turquesa #3D8683  → Catálogo
+dorado   #C08A3E  → Historial
+violeta  #6E63A6  → Ajustes
+coral    #A66358  → Noticias
+oliva    #5C7A42  → Facturación
+```
+
+`oliva` es el único color agregado específicamente para un ícono de nav sin
+que ya existiera en la paleta de acentos — se sumó porque los otros 6 ya
+estaban tomados 1 a 1 por otra sección cuando hizo falta un 7°. Verde
+apagado a propósito, bien separado en el círculo cromático de los otros 6 y
+del verde semántico de venta (`--green`), para que no se confundan.
+
 ## Paleta clara
 
 ```

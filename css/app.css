@@ -30,6 +30,14 @@
     --noticias:#C67E6E;
     --noticias-dark:#A66358;
     --noticias-bg:rgba(198,126,110,0.16);
+    /* Oliva -- a diferencia de los anteriores, este SI es un color nuevo:
+       los otros 6 presets del selector de acento ya estaban tomados 1 a 1
+       por otra seccion cuando hizo falta uno para Facturacion. Verde
+       apagado, separado del resto de la paleta y del verde semantico de
+       venta (--venta) para que no se confundan. Documentado en CLAUDE.md. */
+    --factura:#7C9A68;
+    --factura-dark:#5C7A42;
+    --factura-bg:rgba(124,154,104,0.16);
     /* Identidad fija del nav (logo, Inicio, Cuenta): a proposito NO usa
        --accent, para que elegir un color de acento en Apariencia no deje
        algunos iconos del dock cambiados y otros no -- o cambian todos o
@@ -76,6 +84,9 @@
     --noticias:#A66358;
     --noticias-dark:#8A4F42;
     --noticias-bg:rgba(166,99,88,0.10);
+    --factura:#5C7A42;
+    --factura-dark:#44592F;
+    --factura-bg:rgba(92,122,66,0.10);
     --nav-brand:#3E5670;
     --nav-brand-dark:#2C4256;
     --nav-brand-bg:rgba(62,86,112,0.10);
@@ -157,6 +168,7 @@
   #viewCatalogo .title-icon{background:var(--teal);}
   #viewCaja .title-icon{background:var(--caja);}
   #viewNoticias .title-icon{background:var(--noticias);}
+  #viewFacturacion .title-icon{background:var(--factura);}
   .type-toggle{display:flex;gap:8px;margin-bottom:16px;}
   .type-btn{
     flex:1;padding:10px 0;border-radius:8px;border:1.5px solid var(--line);
@@ -330,6 +342,8 @@
   #navBtnCaja.active{background:var(--caja-bg);}
   #navBtnNoticias{color:var(--noticias);}
   #navBtnNoticias.active{background:var(--noticias-bg);}
+  #navBtnFacturacion{color:var(--factura);}
+  #navBtnFacturacion.active{background:var(--factura-bg);}
   #navBtnCuenta{color:var(--nav-brand);}
   #navBtnCuenta.active{background:var(--nav-brand-bg);}
   #navBtnConfig{color:#8B7EC8;}
@@ -382,6 +396,7 @@
     #navBtnCatalogo.active{background:var(--teal);color:#fff;}
     #navBtnCaja.active{background:var(--caja);color:#fff;}
     #navBtnNoticias.active{background:var(--noticias);color:#fff;}
+    #navBtnFacturacion.active{background:var(--factura);color:#fff;}
     #navBtnCuenta.active{background:var(--nav-brand);color:#fff;}
     #navBtnConfig.active{background:#8B7EC8;color:#fff;}
     /* Cuenta y Ajustes ya no necesitan separador propio -- ahora quedan

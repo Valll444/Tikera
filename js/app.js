@@ -30,6 +30,8 @@ let editingProveedorId = null;
 let openProveedorId = null;
 let catalogoTab = 'productos';
 let cierresCaja = [];
+let facturacionConfig = null;
+let facturas = [];
 
 // ============================================
 // Plan y prueba gratuita.
@@ -64,7 +66,8 @@ const ACCENT_PRESETS = [
   { id: 'turquesa',label: 'Turquesa',              accent: '#3D8683', dark: '#4FA3A0', bg: 'rgba(79,163,160,0.16)' },
   { id: 'dorado',  label: 'Dorado',                accent: '#C08A3E', dark: '#D9A251', bg: 'rgba(217,162,81,0.16)' },
   { id: 'violeta', label: 'Violeta',                accent: '#6E63A6', dark: '#8B7EC8', bg: 'rgba(139,126,200,0.16)' },
-  { id: 'coral',   label: 'Coral',                  accent: '#A66358', dark: '#C67E6E', bg: 'rgba(198,126,110,0.16)' }
+  { id: 'coral',   label: 'Coral',                  accent: '#A66358', dark: '#C67E6E', bg: 'rgba(198,126,110,0.16)' },
+  { id: 'oliva',   label: 'Oliva',                  accent: '#5C7A42', dark: '#7C9A68', bg: 'rgba(124,154,104,0.16)' }
 ];
 const ACCENT_KEY = 'tikera_accent_color';
 function applyAccentColor(id){
@@ -426,6 +429,7 @@ function switchView(view){
   document.getElementById('viewCatalogo').style.display = view==='catalogo' ? 'block' : 'none';
   document.getElementById('viewCaja').style.display = view==='caja' ? 'block' : 'none';
   document.getElementById('viewNoticias').style.display = view==='noticias' ? 'block' : 'none';
+  document.getElementById('viewFacturacion').style.display = view==='facturacion' ? 'block' : 'none';
   document.getElementById('viewCuenta').style.display = view==='cuenta' ? 'block' : 'none';
   document.getElementById('viewAjustes').style.display = view==='ajustes' ? 'block' : 'none';
   document.getElementById('navBtnCargar').classList.toggle('active', view==='cargar');
@@ -434,16 +438,18 @@ function switchView(view){
   document.getElementById('navBtnCatalogo').classList.toggle('active', view==='catalogo');
   document.getElementById('navBtnCaja').classList.toggle('active', view==='caja');
   document.getElementById('navBtnNoticias').classList.toggle('active', view==='noticias');
+  document.getElementById('navBtnFacturacion').classList.toggle('active', view==='facturacion');
   document.getElementById('navBtnCuenta').classList.toggle('active', view==='cuenta');
   document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
   if(view==='catalogo'){ renderCatalog(); if(catalogoTab === 'proveedores') renderProveedores(); }
   if(view==='caja') openCajaView();
   if(view==='noticias'){ fetchDolar(); fetchInflacion(); fetchFeriados(); }
+  if(view==='facturacion') openFacturacionView();
   if(view==='cuenta') loadPerfilView();
   if(view==='ajustes') loadAjustesView();
   window.scrollTo({top:0, behavior:'instant'});
 
-  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', historial:'viewHistorial', catalogo:'viewCatalogo', caja:'viewCaja', noticias:'viewNoticias', cuenta:'viewCuenta', ajustes:'viewAjustes'};
+  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', historial:'viewHistorial', catalogo:'viewCatalogo', caja:'viewCaja', noticias:'viewNoticias', facturacion:'viewFacturacion', cuenta:'viewCuenta', ajustes:'viewAjustes'};
   const activeEl = document.getElementById(viewIds[view]);
   if(activeEl){
     activeEl.classList.remove('view-fade-in');
@@ -621,6 +627,7 @@ function loadAjustesView(){
   renderThemeToggle();
   document.getElementById('settNegocio').value = document.getElementById('bizName').value;
   document.getElementById('settPerfilMsg').textContent = '';
+  renderFacturacionAjustesForm();
 }
 
 function renderPlanCard(){
@@ -680,6 +687,277 @@ document.getElementById('settPerfilBtn').addEventListener('click', async ()=>{
     msg.className = 'settings-msg err'; msg.textContent = 'No se pudo guardar. Probá de nuevo.';
   }
 });
+
+// ============================================
+// Facturación electrónica (ARCA): configuración en Ajustes, vista propia
+// en el nav, y el botón "Facturar" del ticket. arca-config/arca-facturar
+// son Edge Functions (ver supabase/functions/README.md) -- acá solo se las
+// llama y se muestra el resultado.
+// ============================================
+let facTipoSeleccionado = 'C';
+let facAmbienteSeleccionado = 'homologacion';
+
+function renderFacturacionAjustesForm(){
+  document.getElementById('facCuit').value = (facturacionConfig && facturacionConfig.cuit) || '';
+  document.getElementById('facRazonSocial').value = (facturacionConfig && facturacionConfig.razon_social) || '';
+  document.getElementById('facPuntoVenta').value = (facturacionConfig && facturacionConfig.punto_venta) || '';
+  facTipoSeleccionado = (facturacionConfig && facturacionConfig.tipo_comprobante_default) || 'C';
+  facAmbienteSeleccionado = (facturacionConfig && facturacionConfig.ambiente) || 'homologacion';
+  document.querySelectorAll('#facTipoToggle .type-btn').forEach(b => b.classList.toggle('active-accent', b.dataset.tipo === facTipoSeleccionado));
+  document.querySelectorAll('#facAmbienteToggle .type-btn').forEach(b => b.classList.toggle('active-accent', b.dataset.ambiente === facAmbienteSeleccionado));
+  document.getElementById('facCertificado').value = '';
+  document.getElementById('facClavePrivada').value = '';
+  document.getElementById('facConfigMsg').className = 'settings-msg';
+  document.getElementById('facConfigMsg').textContent = '';
+}
+
+document.querySelectorAll('#facTipoToggle .type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if(btn.disabled) return;
+    facTipoSeleccionado = btn.dataset.tipo;
+    document.querySelectorAll('#facTipoToggle .type-btn').forEach(b => b.classList.toggle('active-accent', b === btn));
+  });
+});
+document.querySelectorAll('#facAmbienteToggle .type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    facAmbienteSeleccionado = btn.dataset.ambiente;
+    document.querySelectorAll('#facAmbienteToggle .type-btn').forEach(b => b.classList.toggle('active-accent', b === btn));
+  });
+});
+
+function readFileAsText(fileInput){
+  const file = fileInput.files[0];
+  if(!file) return Promise.resolve('');
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+// Helper comun para las tres llamadas a Edge Functions de facturacion
+// (guardar config, probar conexion, facturar una venta) -- mismo patron de
+// auth que ya usa sendAgentMessage() con ai-agent.
+async function llamarArca(funcionNombre, body){
+  const { data: sessionData } = await sb.auth.getSession();
+  const token = sessionData && sessionData.session && sessionData.session.access_token;
+  if(!token) throw new Error('Sin sesión activa.');
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/${funcionNombre}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const result = await res.json().catch(()=>({}));
+  if(!res.ok || result.error || result.ok === false) throw new Error(result.error || 'No se pudo completar la operación.');
+  return result;
+}
+
+async function recargarFacturacionConfig(){
+  const { data } = await sb.from('facturacion_config').select('*').eq('user_id', currentUserId).maybeSingle();
+  facturacionConfig = data || null;
+}
+
+document.getElementById('facGuardarBtn').addEventListener('click', async ()=>{
+  const msg = document.getElementById('facConfigMsg');
+  const btn = document.getElementById('facGuardarBtn');
+  const cuit = document.getElementById('facCuit').value.trim();
+  const puntoVenta = document.getElementById('facPuntoVenta').value;
+  if(!cuit || !puntoVenta){ msg.className = 'settings-msg err'; msg.textContent = 'Completá CUIT y punto de venta.'; return; }
+
+  btn.disabled = true; msg.className = 'settings-msg'; msg.textContent = 'Guardando...';
+  try{
+    const certificado_pem = await readFileAsText(document.getElementById('facCertificado'));
+    const clave_privada_pem = await readFileAsText(document.getElementById('facClavePrivada'));
+    await llamarArca('arca-config', {
+      accion: 'guardar',
+      cuit, punto_venta: puntoVenta,
+      razon_social: document.getElementById('facRazonSocial').value.trim(),
+      tipo_comprobante_default: facTipoSeleccionado,
+      ambiente: facAmbienteSeleccionado,
+      certificado_pem, clave_privada_pem,
+    });
+    await recargarFacturacionConfig();
+    renderFacturacionAjustesForm();
+    msg.className = 'settings-msg ok'; msg.textContent = 'Guardado.';
+    showToast('Configuración de facturación guardada');
+  }catch(err){
+    console.error(err);
+    msg.className = 'settings-msg err'; msg.textContent = err.message || 'No se pudo guardar.';
+  }
+  btn.disabled = false;
+});
+
+document.getElementById('facProbarBtn').addEventListener('click', async ()=>{
+  const msg = document.getElementById('facConfigMsg');
+  const btn = document.getElementById('facProbarBtn');
+  btn.disabled = true; msg.className = 'settings-msg'; msg.textContent = 'Probando conexión con ARCA...';
+  try{
+    await llamarArca('arca-config', { accion: 'probar_conexion' });
+    await recargarFacturacionConfig();
+    msg.className = 'settings-msg ok'; msg.textContent = 'Conexión exitosa. Ya podés facturar ventas.';
+    showToast('Conexión con ARCA verificada');
+  }catch(err){
+    console.error(err);
+    msg.className = 'settings-msg err'; msg.textContent = err.message || 'No se pudo conectar.';
+  }
+  btn.disabled = false;
+});
+
+// --- Vista "Facturación" del nav ---
+function openFacturacionView(){
+  renderFacturacionStatusCard();
+  renderFacturacionList();
+}
+
+function renderFacturacionStatusCard(){
+  const card = document.getElementById('facturacionStatusCard');
+  if(!facturacionConfig || !facturacionConfig.cuit){
+    card.innerHTML = `
+      <div style="font-size:14px;color:var(--ink);margin-bottom:10px;">Todavía no configuraste la facturación electrónica.</div>
+      <button type="button" class="settings-btn primary" onclick="switchView('ajustes')">Configurar en Ajustes</button>
+    `;
+    return;
+  }
+  const ambienteBadge = facturacionConfig.ambiente === 'produccion'
+    ? '<span class="plan-badge pagado"><span class="dot"></span>Producción</span>'
+    : '<span class="plan-badge cortesia"><span class="dot"></span>Homologación (pruebas)</span>';
+  const estadoBadge = facturacionConfig.activado
+    ? '<span class="plan-badge pagado"><span class="dot"></span>Conectado</span>'
+    : '<span class="plan-badge expired"><span class="dot"></span>Sin probar conexión</span>';
+
+  card.innerHTML = `
+    <div class="plan-card-top">
+      <div>
+        <div class="plan-name">CUIT ${escapeHtml(facturacionConfig.cuit)}</div>
+        <div class="plan-price">${facturacionConfig.razon_social ? escapeHtml(facturacionConfig.razon_social) + ' · ' : ''}Punto de venta ${facturacionConfig.punto_venta || '—'} · Factura ${facturacionConfig.tipo_comprobante_default}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">${ambienteBadge}${estadoBadge}</div>
+    </div>
+    <button type="button" class="settings-btn" id="facStatusProbarBtn" style="margin-top:10px;">Probar conexión</button>
+    <button type="button" class="settings-btn" onclick="switchView('ajustes')" style="margin-top:8px;">Editar configuración</button>
+  `;
+  document.getElementById('facStatusProbarBtn').addEventListener('click', async (e)=>{
+    const btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = 'Probando...';
+    try{
+      await llamarArca('arca-config', { accion: 'probar_conexion' });
+      await recargarFacturacionConfig();
+      showToast('Conexión con ARCA verificada');
+    }catch(err){
+      console.error(err);
+      showToast(err.message || 'No se pudo conectar con ARCA');
+    }
+    renderFacturacionStatusCard();
+  });
+}
+
+function renderFacturacionList(){
+  const list = document.getElementById('facturacionList');
+  const empty = document.getElementById('facturacionListEmpty');
+  if(facturas.length === 0){
+    empty.style.display = 'block';
+    list.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  const ordenadas = [...facturas].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  list.innerHTML = ordenadas.map(f => {
+    const estadoBadge = f.estado === 'emitida'
+      ? '<span class="plan-badge pagado"><span class="dot"></span>Emitida</span>'
+      : f.estado === 'error'
+        ? '<span class="plan-badge expired"><span class="dot"></span>Error</span>'
+        : '<span class="plan-badge trial"><span class="dot"></span>Pendiente</span>';
+    const numeroTxt = f.numero ? `Factura ${f.tipo_comprobante} ${String(f.punto_venta).padStart(4,'0')}-${String(f.numero).padStart(8,'0')}` : `Factura ${f.tipo_comprobante}`;
+    return `
+      <div class="ticket-item">
+        <div class="ti-left">
+          <div class="ti-desc">${escapeHtml(numeroTxt)}</div>
+          <div class="ti-meta">${fmtMoney(f.monto)}${f.ambiente === 'homologacion' ? ' · homologación' : ''}${f.estado === 'error' && f.error_mensaje ? ' · ' + escapeHtml(f.error_mensaje) : ''}</div>
+        </div>
+        <div class="ti-right">${estadoBadge}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// --- Botón "Facturar" en el ticket (ver verTicket() más abajo) ---
+function facturaDeMovimiento(movementId){
+  return facturas.find(f => String(f.movement_id) === String(movementId));
+}
+
+// Arma la URL del QR que exige la RG 4892/2020 -- se construye 100% del
+// lado del cliente con datos que ya tenemos, sin otro viaje al servidor.
+function armarQrArca(factura){
+  const payload = {
+    ver: 1,
+    fecha: factura.fechaEmision ? factura.fechaEmision.slice(0,10) : todayStr(),
+    cuit: Number(facturacionConfig.cuit),
+    ptoVta: factura.puntoVenta,
+    tipoCmp: { C: 11, B: 6, A: 1 }[factura.tipoComprobante] || 11,
+    nroCmp: factura.numero,
+    importe: Number(factura.monto || 0),
+    moneda: 'PES',
+    ctz: 1,
+    tipoDocRec: 99,
+    nroDocRec: 0,
+    tipoCodAut: 'E',
+    codAut: Number(factura.cae),
+  };
+  const b64 = btoa(JSON.stringify(payload));
+  return `https://www.afip.gob.ar/fe/qr/?p=${b64}`;
+}
+
+function renderFacturarActions(movement){
+  const wrap = document.getElementById('facturarActions');
+  if(!wrap) return;
+  if(movement.pending){
+    wrap.innerHTML = `<div style="font-size:12px;color:var(--ink-soft);margin-top:10px;text-align:center;">Facturá esta venta una vez que se sincronice.</div>`;
+    return;
+  }
+  const factura = facturaDeMovimiento(movement.id);
+  if(factura && factura.estado === 'emitida') { wrap.innerHTML = ''; return; } // el CAE ya se muestra en el ticket
+
+  if(!facturacionConfig || !facturacionConfig.activado){
+    wrap.innerHTML = `<button type="button" class="settings-btn" style="width:100%;margin-top:10px;" onclick="switchView('ajustes');document.getElementById('ticketModal').style.display='none';">Activar facturación electrónica</button>`;
+    return;
+  }
+
+  const errorPrevio = factura && factura.estado === 'error' ? factura.error_mensaje : null;
+  wrap.innerHTML = `
+    ${errorPrevio ? `<div style="font-size:12px;color:var(--gasto);margin:10px 0 2px;">${escapeHtml(errorPrevio)}</div>` : ''}
+    <button type="button" class="settings-btn primary" id="facturarBtn" style="width:100%;margin-top:${errorPrevio?'4px':'10px'};">${errorPrevio ? 'Reintentar' : 'Facturar'}</button>
+  `;
+  document.getElementById('facturarBtn').addEventListener('click', () => facturarVenta(movement.id));
+}
+
+async function facturarVenta(movementId){
+  const btn = document.getElementById('facturarBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Facturando...'; }
+  try{
+    const result = await llamarArca('arca-facturar', { movement_id: movementId });
+    const idx = facturas.findIndex(f => String(f.movement_id) === String(movementId));
+    const nueva = {
+      movement_id: movementId, user_id: currentUserId, monto: result.factura.monto,
+      tipo_comprobante: result.factura.tipoComprobante, punto_venta: result.factura.puntoVenta,
+      numero: result.factura.numero, cae: result.factura.cae, cae_vencimiento: result.factura.caeVencimiento,
+      estado: result.factura.estado, fecha_emision: result.factura.fechaEmision, ambiente: result.factura.ambiente,
+      error_mensaje: result.factura.errorMensaje, created_at: new Date().toISOString(),
+    };
+    if(idx === -1) facturas.unshift(nueva); else facturas[idx] = { ...facturas[idx], ...nueva };
+    showToast('Factura emitida');
+    verTicket(movementId);
+  }catch(err){
+    console.error(err);
+    showToast(err.message || 'No se pudo facturar');
+    const idx = facturas.findIndex(f => String(f.movement_id) === String(movementId));
+    const errorMensaje = err.message || 'No se pudo facturar';
+    if(idx === -1) facturas.unshift({ movement_id: movementId, user_id: currentUserId, monto: 0, estado: 'error', error_mensaje: errorMensaje, created_at: new Date().toISOString() });
+    else facturas[idx] = { ...facturas[idx], estado: 'error', error_mensaje: errorMensaje };
+    const movement = entries.find(e => String(e.id) === String(movementId));
+    if(movement) renderFacturarActions(movement);
+  }
+}
 
 document.getElementById('settEmailBtn').addEventListener('click', async ()=>{
   const msg = document.getElementById('settEmailMsg');
@@ -962,6 +1240,18 @@ async function loadData(){
     const { data: cierreRows, error: cierreErr } = await sb.from('cierres_caja').select('*').eq('user_id', user.id).order('fecha', {ascending:false});
     cierresCaja = cierreErr ? [] : (cierreRows || []);
     if(cierreErr) console.error(cierreErr);
+
+    // Igual que las anteriores: si todavía no corriste 013_facturacion_arca.sql,
+    // esta sección queda vacía/sin configurar en vez de romper el resto de la app.
+    // No tener fila en facturacion_config es un estado normal (nunca se configuró
+    // todavía), por eso maybeSingle() en vez de single().
+    const { data: facturacionRow, error: facturacionErr } = await sb.from('facturacion_config').select('*').eq('user_id', user.id).maybeSingle();
+    facturacionConfig = facturacionErr ? null : facturacionRow;
+    if(facturacionErr) console.error(facturacionErr);
+
+    const { data: facturaRows, error: facturaErr } = await sb.from('facturas').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
+    facturas = facturaErr ? [] : (facturaRows || []);
+    if(facturaErr) console.error(facturaErr);
 
     hydratePendingIntoEntries();
   }catch(e){
@@ -2041,9 +2331,19 @@ function verTicket(id){
   const cantidadLinea = (e.cantidad && e.precioUnitario)
     ? `<div class="tp-row"><span>${escapeHtml(String(e.cantidad))} x ${fmtMoney(e.precioUnitario)}</span><span></span></div>`
     : '';
+  const factura = facturaDeMovimiento(e.id);
+  const emitida = factura && factura.estado === 'emitida';
+  const numeroTxt = emitida ? `Factura ${factura.tipo_comprobante} ${String(factura.punto_venta).padStart(4,'0')}-${String(factura.numero).padStart(8,'0')}` : 'Comprobante no fiscal';
+  const fiscalBlock = emitida ? `
+    <div class="tp-line"></div>
+    <div class="tp-row"><span>CAE</span><span>${escapeHtml(factura.cae)}</span></div>
+    <div class="tp-row"><span>Vto. CAE</span><span>${fmtFecha(factura.cae_vencimiento)}</span></div>
+    ${factura.ambiente === 'homologacion' ? '<div class="tp-center" style="font-size:9.5px;color:#B85B5D;margin-top:4px;">AMBIENTE DE PRUEBAS — no es una factura real</div>' : ''}
+    <div class="tp-center" style="margin-top:8px;"><div id="ticketQr"></div></div>
+  ` : '';
   document.getElementById('ticketContent').innerHTML = `
     <div class="tp-center" style="font-weight:700;font-size:14px;">${escapeHtml(bizName)}</div>
-    <div class="tp-center" style="font-size:10px;color:#666;">Comprobante no fiscal</div>
+    <div class="tp-center" style="font-size:10px;color:#666;">${escapeHtml(numeroTxt)}</div>
     <div class="tp-line"></div>
     <div class="tp-row"><span>${fmtFecha(e.fecha)}</span><span>${escapeHtml(e.hora)}</span></div>
     <div class="tp-line"></div>
@@ -2052,9 +2352,17 @@ function verTicket(id){
     <div class="tp-line"></div>
     <div class="tp-row tp-total"><span>TOTAL</span><span>${fmtMoney(e.monto)}</span></div>
     <div class="tp-row" style="margin-top:4px;"><span>Pago</span><span>${escapeHtml(e.metodoPago)}</span></div>
+    ${fiscalBlock}
     <div class="tp-line"></div>
     <div class="tp-center" style="font-size:10px;color:#666;">¡Gracias por tu compra!</div>
   `;
+  if(emitida && window.QRCode && facturacionConfig){
+    new QRCode(document.getElementById('ticketQr'), { text: armarQrArca({
+      monto: factura.monto, tipoComprobante: factura.tipo_comprobante, puntoVenta: factura.punto_venta,
+      numero: factura.numero, cae: factura.cae, fechaEmision: factura.fecha_emision,
+    }), width: 108, height: 108, correctLevel: QRCode.CorrectLevel.M });
+  }
+  renderFacturarActions(e);
   document.getElementById('ticketModal').style.display = 'flex';
 }
 document.getElementById('ticketCloseBtn').addEventListener('click', ()=>{
