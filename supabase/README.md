@@ -19,6 +19,7 @@ New query). En el proyecto real de Tikera ya están todas aplicadas.
 | 11 | `011_profiles_plan_lockdown.sql` | Restringe qué columnas de `profiles` puede editar el propio usuario — `plan` y `trial_started_at` quedan fuera, solo editables a mano (antes cualquier cuenta podía regalarse el plan pago desde la consola del navegador) |
 | 12 | `012_storage_lockdown.sql` | Saca el permiso de escritura al bucket `uploads` (la pantalla de foto de producto/perfil que lo usaba ya no existe) y le saca `avatar_url` a lo que `profiles_update_own` puede tocar, por el mismo motivo |
 | 13 | `013_facturacion_arca.sql` | Tablas `facturacion_config` (CUIT, punto de venta, certificado cifrado por negocio) y `facturas` (CAE por venta) para facturación electrónica ARCA |
+| 14 | `014_movements_gasto_extras.sql` | Suma `categoria`, `proveedor_id` y `es_fijo` a `movements`, para poder categorizar un gasto, ligarlo a un proveedor y marcarlo como fijo/mensual |
 
 Hay además cuatro Edge Functions — `functions/delete-account` (borrado real
 de cuenta), `functions/ai-agent` (el asistente de IA) y

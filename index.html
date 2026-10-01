@@ -235,7 +235,8 @@
   .dash-replica-bar.is-up{background:var(--green-deep);}
   .dash-replica-bar.is-peak{background:var(--green);}
   .dash-replica-list{border-top:1px solid rgba(244,242,237,0.08);padding-top:8px;}
-  .dash-replica-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:6px 0;color:var(--text-dim);}
+  .dash-replica-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:6px 0;color:var(--text-dim);gap:10px;}
+  .dash-replica-row-meta{font-size:10px;color:var(--text-faint);margin-top:2px;}
   .dash-replica-row span:last-child{font-family:'IBM Plex Mono',monospace;font-weight:600;}
 
   /* Bento */
@@ -473,13 +474,22 @@
             <div class="dash-replica-bar is-up" style="height:80%;"></div>
           </div>
           <div class="dash-replica-list">
-            <div class="dash-replica-row"><span>Gaseosas x6 — venta</span><span class="dash-green">+$4.200</span></div>
-            <div class="dash-replica-row"><span>Reposición almacén — gasto</span><span class="dash-red">−$18.000</span></div>
-            <div class="dash-replica-row"><span>Cigarrillos — venta</span><span class="dash-green">+$3.100</span></div>
+            <div class="dash-replica-row">
+              <div><div>Gaseosas x6 — venta</div><div class="dash-replica-row-meta">18:42 · Efectivo</div></div>
+              <span class="dash-green">+$4.200</span>
+            </div>
+            <div class="dash-replica-row">
+              <div><div>Reposición almacén — gasto</div><div class="dash-replica-row-meta">16:10 · Transferencia</div></div>
+              <span class="dash-red">−$18.000</span>
+            </div>
+            <div class="dash-replica-row">
+              <div><div>Cigarrillos — venta</div><div class="dash-replica-row-meta">15:27 · Efectivo</div></div>
+              <span class="dash-green">+$3.100</span>
+            </div>
           </div>
         </div>
       </div>
-      <p class="text-[11.5px] text-[var(--text-faint)] mt-3 px-1">La app real de Tikera, funcionando ahora mismo.</p>
+      <p class="text-[11.5px] text-[var(--text-faint)] mt-3 px-1">Así se ve el Resumen de tu caja en Tikera.</p>
     </div>
   </div>
 </section>

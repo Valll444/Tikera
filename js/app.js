@@ -32,6 +32,13 @@ let catalogoTab = 'productos';
 let cierresCaja = [];
 let facturacionConfig = null;
 let facturas = [];
+let selectedCategoria = null;
+
+// Categorias fijas de gasto -- a proposito una lista chica y cerrada (no un
+// campo libre ni una pantalla de "administrar categorias"): lo que importa
+// aca es no perder velocidad de carga, no armar un sistema de categorias
+// configurable.
+const GASTO_CATEGORIAS = ['Mercadería', 'Alquiler', 'Servicios', 'Sueldos', 'Impuestos', 'Otro'];
 
 // ============================================
 // Plan y prueba gratuita.
@@ -1071,6 +1078,9 @@ function mapRowToEntry(row){
     monto: row.monto,
     metodoPago: row.metodo_pago || '',
     nota: row.nota || '',
+    categoria: row.categoria || '',
+    proveedorId: row.proveedor_id || null,
+    esFijo: !!row.es_fijo,
     timestamp: row.created_at ? new Date(row.created_at).getTime() : Date.now()
   };
 }
@@ -1089,7 +1099,10 @@ function mapFieldsToRow(fields){
     ganancia: fields.ganancia === '' ? null : fields.ganancia,
     monto: fields.monto,
     metodo_pago: fields.metodoPago,
-    nota: fields.nota
+    nota: fields.nota,
+    categoria: fields.categoria || null,
+    proveedor_id: fields.proveedorId || null,
+    es_fijo: !!fields.esFijo
   };
 }
 
@@ -1261,6 +1274,7 @@ async function loadData(){
   }
   renderFreqChips();
   fillProductSelectOptions();
+  fillGastoProveedorOptions();
   render();
   syncPendingMovements();
 }
@@ -1406,7 +1420,9 @@ function fillProductSelectOptions(){
       sorted.map(p => `<div class="custom-select-option" role="option" data-value="${p.id}">${escapeHtml(p.nombre)} · stock ${Number(p.stock_actual)||0}</div>`).join('');
   }
   updateProductoSelectLabel();
-  document.getElementById('productoSelectWrap').style.display = (currentTipo === 'Venta' && products.length) ? 'block' : 'none';
+  const showCatalogo = currentTipo === 'Venta' && products.length > 0;
+  document.getElementById('productoSelectWrap').style.display = showCatalogo ? 'block' : 'none';
+  document.getElementById('catalogoDivider').style.display = showCatalogo ? 'block' : 'none';
   renderStockWheel();
   renderRestockPrediction();
 }
@@ -1587,6 +1603,7 @@ function totalPendienteProveedor(provId){
 }
 
 function renderProveedores(){
+  fillGastoProveedorOptions();
   const list = document.getElementById('proveedoresList');
   const empty = document.getElementById('proveedoresEmpty');
   if(proveedores.length === 0){
@@ -1943,12 +1960,20 @@ function setTipo(t){
   document.getElementById('descripcion').placeholder = t==='Venta' ? 'Ej: 2 gaseosas, cigarrillos...' : 'Ej: alquiler, luz, mercadería...';
 
   const rowCantPrecio = document.getElementById('rowCantPrecio');
-  const rowCosto = document.getElementById('rowCosto');
   const productoWrap = document.getElementById('productoSelectWrap');
+  const catalogoDivider = document.getElementById('catalogoDivider');
+  const categoriaWrap = document.getElementById('categoriaWrap');
+  const gastoProveedorWrap = document.getElementById('gastoProveedorWrap');
+  const esFijoWrap = document.getElementById('esFijoWrap');
+  const costoToggleBtn = document.getElementById('costoToggleBtn');
   if(t === 'Gasto'){
     rowCantPrecio.style.display = 'none';
-    rowCosto.style.display = 'none';
     productoWrap.style.display = 'none';
+    catalogoDivider.style.display = 'none';
+    costoToggleBtn.style.display = 'none';
+    categoriaWrap.style.display = 'block';
+    gastoProveedorWrap.style.display = 'block';
+    esFijoWrap.style.display = 'flex';
     document.getElementById('cantidad').value = 1;
     document.getElementById('precioUnit').value = '';
     document.getElementById('costoUnit').value = '';
@@ -1956,11 +1981,22 @@ function setTipo(t){
     document.getElementById('productoSelect').value = '';
     updateProductoSelectLabel();
     selectedProductId = null;
+    renderCategoriaChips();
   }else{
     rowCantPrecio.style.display = 'grid';
-    rowCosto.style.display = 'block';
     productoWrap.style.display = products.length ? 'block' : 'none';
+    catalogoDivider.style.display = products.length ? 'block' : 'none';
+    costoToggleBtn.style.display = 'inline-block';
+    categoriaWrap.style.display = 'none';
+    gastoProveedorWrap.style.display = 'none';
+    esFijoWrap.style.display = 'none';
+    selectedCategoria = null;
+    document.getElementById('gastoProveedor').value = '';
+    document.getElementById('esFijo').checked = false;
   }
+  collapseField('rowCosto', 'costoToggleBtn');
+  collapseField('notaWrap', 'notaToggleBtn');
+  collapseField('freqAddWrap', 'freqAddToggleBtn');
 
   if(typeof renderFreqChips === 'function' && document.getElementById('freqChips')){
     renderFreqChips();
@@ -1968,6 +2004,70 @@ function setTipo(t){
 }
 document.getElementById('btnVenta').addEventListener('click', ()=>setTipo('Venta'));
 document.getElementById('btnGasto').addEventListener('click', ()=>setTipo('Gasto'));
+
+// Campos que casi nunca hace falta tocar en una carga rapida (costo, nota,
+// agregar un frecuente nuevo): arrancan colapsados detras de un boton chico
+// y se muestran recien si el usuario los pide, o si ya tienen un valor
+// cargado (por ejemplo al editar un movimiento que si tenia nota).
+function collapseField(wrapId, toggleBtnId){
+  document.getElementById(wrapId).style.display = 'none';
+  const btn = document.getElementById(toggleBtnId);
+  if(btn) btn.style.display = 'inline-block';
+}
+function expandField(wrapId, toggleBtnId){
+  document.getElementById(wrapId).style.display = 'block';
+  const btn = document.getElementById(toggleBtnId);
+  if(btn) btn.style.display = 'none';
+}
+document.getElementById('costoToggleBtn').addEventListener('click', ()=>{
+  expandField('rowCosto', 'costoToggleBtn');
+  document.getElementById('costoUnit').focus();
+});
+document.getElementById('notaToggleBtn').addEventListener('click', ()=>{
+  expandField('notaWrap', 'notaToggleBtn');
+  document.getElementById('nota').focus();
+});
+document.getElementById('freqAddToggleBtn').addEventListener('click', ()=>{
+  expandField('freqAddWrap', 'freqAddToggleBtn');
+  document.getElementById('freqAddWrap').style.display = 'flex';
+  document.getElementById('newFreqName').focus();
+});
+document.getElementById('fechaEditBtn').addEventListener('click', ()=>{
+  document.getElementById('fechaDisplay').style.display = 'none';
+  const fechaInput = document.getElementById('fecha');
+  if(!fechaInput.value) fechaInput.value = todayStr();
+  fechaInput.style.display = 'block';
+  fechaInput.focus();
+});
+
+// Categorias de gasto: chips de seleccion unica, mismo patron visual que
+// "Productos frecuentes" (reusa .type-btn) para no meter un componente nuevo.
+function renderCategoriaChips(){
+  const wrap = document.getElementById('categoriaChips');
+  if(!wrap) return;
+  wrap.innerHTML = GASTO_CATEGORIAS.map(cat => `
+    <button type="button" class="type-btn${cat===selectedCategoria ? ' active-gasto' : ''}" style="flex:none;padding:6px 12px;font-size:12.5px;" data-categoria="${escapeHtml(cat)}">${escapeHtml(cat)}</button>
+  `).join('');
+  wrap.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      selectedCategoria = selectedCategoria === btn.dataset.categoria ? null : btn.dataset.categoria;
+      renderCategoriaChips();
+    });
+  });
+}
+
+// Desplegable de proveedor en Gasto: mismo listado que ya carga loadData(),
+// se repuebla cada vez que cambia (alta/baja de proveedor).
+function fillGastoProveedorOptions(){
+  const sel = document.getElementById('gastoProveedor');
+  if(!sel) return;
+  const current = sel.value;
+  const sorted = [...proveedores].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  sel.innerHTML = '<option value="">— Ninguno —</option>' +
+    sorted.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join('');
+  sel.value = sorted.some(p => String(p.id) === current) ? current : '';
+}
+
 setTipo('Venta');
 
 // Bloquea cualquier carácter que no sea número o punto decimal en campos numéricos.
@@ -2037,7 +2137,10 @@ function selectProductoParaVenta(p){
   updateProductoSelectLabel();
   document.getElementById('descripcion').value = p.nombre;
   if(p.precio_venta){ document.getElementById('precioUnit').value = p.precio_venta; }
-  if(p.costo_unitario){ document.getElementById('costoUnit').value = p.costo_unitario; }
+  if(p.costo_unitario){
+    document.getElementById('costoUnit').value = p.costo_unitario;
+    expandField('rowCosto', 'costoToggleBtn');
+  }
   recalcMonto();
 }
 document.getElementById('productoSelect').addEventListener('change', (e)=>{
@@ -2085,6 +2188,11 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
     fieldsFromForm.productoId = selectedProductId;
     fieldsFromForm.cantidadVenta = cantidadNum || 1;
   }
+  if(currentTipo === 'Gasto'){
+    fieldsFromForm.categoria = selectedCategoria || 'Otro';
+    fieldsFromForm.proveedorId = document.getElementById('gastoProveedor').value || null;
+    fieldsFromForm.esFijo = document.getElementById('esFijo').checked;
+  }
 
   document.getElementById('submitBtn').disabled = true;
 
@@ -2118,6 +2226,15 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
     document.getElementById('productoSelect').value = '';
     updateProductoSelectLabel();
     selectedProductId = null;
+    selectedCategoria = null;
+    document.getElementById('gastoProveedor').value = '';
+    document.getElementById('esFijo').checked = false;
+    if(currentTipo === 'Gasto') renderCategoriaChips();
+    collapseField('rowCosto', 'costoToggleBtn');
+    collapseField('notaWrap', 'notaToggleBtn');
+    collapseField('freqAddWrap', 'freqAddToggleBtn');
+    document.getElementById('fechaDisplay').style.display = 'block';
+    document.getElementById('fecha').style.display = 'none';
     document.getElementById('descripcion').focus();
   }
 
@@ -2137,6 +2254,14 @@ document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
   document.getElementById('monto').value = '';
   document.getElementById('nota').value = '';
   document.getElementById('errorMsg').textContent = '';
+  selectedCategoria = null;
+  document.getElementById('gastoProveedor').value = '';
+  document.getElementById('esFijo').checked = false;
+  if(currentTipo === 'Gasto') renderCategoriaChips();
+  collapseField('rowCosto', 'costoToggleBtn');
+  collapseField('notaWrap', 'notaToggleBtn');
+  document.getElementById('fechaDisplay').style.display = 'block';
+  document.getElementById('fecha').style.display = 'none';
 });
 
 function editEntry(id){
@@ -2146,7 +2271,7 @@ function editEntry(id){
   editingId = id;
   editingHora = e.hora || null;
   document.getElementById('errorMsg').textContent = '';
-  setTipo(e.tipo);
+  setTipo(e.tipo); // ojo: resetea/colapsa los campos -- las siguientes lineas los repueblan con los datos reales de este movimiento.
   document.getElementById('descripcion').value = e.descripcion;
   document.getElementById('cantidad').value = e.cantidad || '';
   document.getElementById('precioUnit').value = e.precioUnitario || '';
@@ -2155,6 +2280,21 @@ function editEntry(id){
   document.getElementById('metodoPago').value = e.metodoPago;
   document.getElementById('fecha').value = e.fecha;
   document.getElementById('nota').value = e.nota || '';
+
+  // Mostrar (no esconder) los campos colapsados que esta carga puntual si tiene.
+  if(e.costoUnitario) expandField('rowCosto', 'costoToggleBtn');
+  if(e.nota) expandField('notaWrap', 'notaToggleBtn');
+  if(e.fecha !== todayStr()){
+    document.getElementById('fechaDisplay').style.display = 'none';
+    document.getElementById('fecha').style.display = 'block';
+  }
+  if(e.tipo === 'Gasto'){
+    selectedCategoria = e.categoria || null;
+    renderCategoriaChips();
+    document.getElementById('gastoProveedor').value = e.proveedorId || '';
+    document.getElementById('esFijo').checked = !!e.esFijo;
+  }
+
   document.getElementById('submitBtn').textContent = 'Guardar cambios';
   document.getElementById('cancelEditBtn').style.display = 'block';
   recalcGananciaPreview();

@@ -158,11 +158,14 @@
       </div>
 
       <label style="margin-top:0;" id="freqLabel">Productos frecuentes</label>
-      <div id="freqChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;"></div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <div id="freqChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;"></div>
+      <button type="button" id="freqAddToggleBtn" class="field-toggle-btn">+ Agregar frecuente</button>
+      <div id="freqAddWrap" style="display:none;gap:6px;margin:6px 0 14px;">
         <input type="text" id="newFreqName" placeholder="Agregar producto frecuente" style="font-size:12.5px;padding:7px 10px;">
         <button type="button" id="addFreqBtn" style="border:1.5px solid var(--line);background:var(--paper);border-radius:8px;padding:0 12px;font-size:13px;color:var(--ink-soft);cursor:pointer;">+</button>
       </div>
+
+      <div class="field-divider" id="catalogoDivider">o elegí del catálogo, o escribí a mano</div>
 
       <div id="productoSelectWrap">
         <label id="productoSelectLbl" style="margin-top:0;">Producto del catálogo</label>
@@ -190,7 +193,8 @@
         </div>
       </div>
 
-      <div id="rowCosto">
+      <button type="button" id="costoToggleBtn" class="field-toggle-btn">+ Agregar costo (opcional)</button>
+      <div id="rowCosto" style="display:none;">
         <label for="costoUnit">Costo unitario <span style="font-weight:400;color:var(--ink-soft);">(lo que te costó a vos, opcional)</span></label>
         <input type="text" id="costoUnit" placeholder="0.00" inputmode="decimal" autocomplete="off">
         <div id="gananciaPreview" style="font-size:12px;color:var(--ink-soft);margin-top:5px;min-height:16px;"></div>
@@ -198,6 +202,16 @@
 
       <label for="monto">Monto total</label>
       <input type="text" id="monto" placeholder="0.00" style="font-family:'IBM Plex Mono';font-size:16px;" inputmode="decimal" autocomplete="off">
+
+      <div id="categoriaWrap" style="display:none;">
+        <label style="margin-top:14px;">Categoría</label>
+        <div id="categoriaChips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+
+      <div id="gastoProveedorWrap" style="display:none;">
+        <label for="gastoProveedor">Proveedor <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+        <select id="gastoProveedor"><option value="">— Ninguno —</option></select>
+      </div>
 
       <div class="row2">
         <div>
@@ -210,13 +224,22 @@
           </select>
         </div>
         <div>
-          <label for="fecha">Fecha</label>
-          <input type="date" id="fecha">
+          <label style="margin-top:0;">Fecha</label>
+          <div id="fechaDisplay" style="padding:9px 0 0 1px;font-size:13.5px;color:var(--ink-soft);">Hoy <button type="button" id="fechaEditBtn" class="field-toggle-link">cambiar</button></div>
+          <input type="date" id="fecha" style="display:none;">
         </div>
       </div>
 
-      <label for="nota">Nota (opcional)</label>
-      <input type="text" id="nota" placeholder="Detalle adicional">
+      <label id="esFijoWrap" style="display:none;align-items:center;gap:8px;cursor:pointer;margin-top:14px;font-weight:400;">
+        <input type="checkbox" id="esFijo" style="width:auto;margin:0;">
+        <span style="font-size:13px;color:var(--ink);">Es un gasto fijo (se repite todos los meses)</span>
+      </label>
+
+      <button type="button" id="notaToggleBtn" class="field-toggle-btn">+ Agregar nota</button>
+      <div id="notaWrap" style="display:none;">
+        <label for="nota">Nota (opcional)</label>
+        <input type="text" id="nota" placeholder="Detalle adicional">
+      </div>
 
       <div class="error-msg" id="errorMsg" role="alert" aria-live="polite"></div>
       <button class="submit-btn" id="submitBtn">Registrar</button>
