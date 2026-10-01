@@ -33,8 +33,9 @@ Deno.serve(async (req) => {
     if (userErr || !userData?.user) return json({ error: "Sesión inválida." }, 401);
     const userId = userData.user.id;
 
-    const movementId = Number((await req.json()).movement_id);
-    if (!Number.isInteger(movementId)) return json({ error: "Falta la venta a facturar." }, 400);
+    // movement_id es uuid (como movements.id), no numerico -- no castear con Number().
+    const movementId = String((await req.json()).movement_id || "");
+    if (!movementId) return json({ error: "Falta la venta a facturar." }, 400);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 

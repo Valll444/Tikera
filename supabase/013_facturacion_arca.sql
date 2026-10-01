@@ -34,7 +34,10 @@ create table if not exists public.facturas (
   user_id uuid not null references auth.users(id) on delete cascade,
   -- Una sola factura por venta: ademas de logica de negocio, es el backstop
   -- real contra doble click o dos pestañas pidiendo dos CAE para la misma venta.
-  movement_id bigint not null references public.movements(id) on delete cascade unique,
+  -- uuid (no bigint): es el tipo real de movements.id en la base de Tikera,
+  -- aunque 002_movements.sql lo documenta mal como bigint -- esta es la unica
+  -- FK contra movements.id de todo el proyecto, asi que nunca se habia notado.
+  movement_id uuid not null references public.movements(id) on delete cascade unique,
   tipo_comprobante text not null,
   punto_venta integer not null,
   numero bigint,
