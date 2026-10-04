@@ -20,7 +20,8 @@
 <title>Precios — Tikera</title>
 <meta name="description" content="Probá Tikera gratis durante 14 días. Después, $9.500/mes por un solo plan con todo incluido.">
 <link rel="canonical" href="https://valll444.github.io/Tikera/precios.html">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -130,6 +131,18 @@
   .feature-row{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;color:var(--text-dim);}
   .feature-check{color:var(--green);flex-shrink:0;margin-top:1px;}
 
+  /* Mismo resplandor verde + azul pizarra que tienen todas las secciones
+     de index.html (ver .section-glow ahi) -- cada pagina publica es
+     autocontenida, asi que el patron se repite aca en vez de compartirse. */
+  @keyframes glowBreathe{0%,100%{opacity:0.75;transform:scale(1);}50%{opacity:1;transform:scale(1.08);}}
+  .glow-host{position:relative;overflow-x:clip;}
+  .glow-host > .container-w{position:relative;z-index:1;}
+  .section-glow{position:absolute;border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none;animation:glowBreathe 9s ease-in-out infinite;}
+  .section-glow-a{top:-8%;left:-12%;width:46%;height:42%;background:radial-gradient(circle, rgba(76,175,128,0.38), transparent 70%);}
+  .section-glow-b{bottom:-10%;right:-10%;width:42%;height:38%;background:radial-gradient(circle, rgba(62,86,112,0.48), transparent 70%);animation-delay:-4.5s;}
+  :root[data-theme="light"] .section-glow-a{background:radial-gradient(circle, rgba(46,143,99,0.55), transparent 72%);}
+  :root[data-theme="light"] .section-glow-b{background:radial-gradient(circle, rgba(62,86,112,0.55), transparent 72%);}
+
   #mobile-menu{transform:translateY(-8px);opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease, background-color .35s ease;}
   #mobile-menu.open{transform:translateY(0);opacity:1;pointer-events:auto;}
 
@@ -203,7 +216,9 @@
 </header>
 
 <main>
-<section class="py-16 md:py-24">
+<section class="glow-host py-16 md:py-24">
+  <div class="section-glow section-glow-a"></div>
+  <div class="section-glow section-glow-b"></div>
   <div class="container-w">
     <div class="text-center max-w-[620px] mx-auto mb-14">
       <div class="chip mb-6 border border-[var(--slate)] rounded-full px-4 py-2 w-fit mx-auto" style="background:var(--slate-soft);">
