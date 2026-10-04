@@ -714,9 +714,19 @@
         </div>
 
         <label for="facCertificado">Certificado (.crt/.pem)</label>
-        <input type="file" id="facCertificado" accept=".crt,.pem,.cer">
+        <input type="file" id="facCertificado" class="file-pick-input" accept=".crt,.pem,.cer">
+        <label for="facCertificado" class="file-pick" data-placeholder="Ningún archivo elegido">
+          <svg class="file-pick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+          <span class="file-pick-name">Ningún archivo elegido</span>
+          <span class="file-pick-btn">Elegir</span>
+        </label>
         <label for="facClavePrivada">Clave privada (.key/.pem)</label>
-        <input type="file" id="facClavePrivada" accept=".key,.pem">
+        <input type="file" id="facClavePrivada" class="file-pick-input" accept=".key,.pem">
+        <label for="facClavePrivada" class="file-pick" data-placeholder="Ningún archivo elegido">
+          <svg class="file-pick-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          <span class="file-pick-name">Ningún archivo elegido</span>
+          <span class="file-pick-btn">Elegir</span>
+        </label>
         <div style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;">
           Se guardan cifrados. Si ya tenés una configuración guardada, dejar estos dos campos vacíos mantiene el certificado actual.
         </div>

@@ -712,11 +712,28 @@ function renderFacturacionAjustesForm(){
   facAmbienteSeleccionado = (facturacionConfig && facturacionConfig.ambiente) || 'homologacion';
   document.querySelectorAll('#facTipoToggle .type-btn').forEach(b => b.classList.toggle('active-accent', b.dataset.tipo === facTipoSeleccionado));
   document.querySelectorAll('#facAmbienteToggle .type-btn').forEach(b => b.classList.toggle('active-accent', b.dataset.ambiente === facAmbienteSeleccionado));
-  document.getElementById('facCertificado').value = '';
-  document.getElementById('facClavePrivada').value = '';
+  ['facCertificado','facClavePrivada'].forEach(id => {
+    const input = document.getElementById(id);
+    input.value = '';
+    syncFilePick(input);
+  });
   document.getElementById('facConfigMsg').className = 'settings-msg';
   document.getElementById('facConfigMsg').textContent = '';
 }
+
+// El label .file-pick (hermano siguiente del input oculto) muestra el
+// nombre del archivo elegido, o el placeholder si no hay ninguno.
+function syncFilePick(input){
+  const pick = input.nextElementSibling;
+  if(!pick || !pick.classList.contains('file-pick')) return;
+  const file = input.files && input.files[0];
+  pick.classList.toggle('has-file', !!file);
+  pick.querySelector('.file-pick-name').textContent = file ? file.name : pick.dataset.placeholder;
+}
+['facCertificado','facClavePrivada'].forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener('change', () => syncFilePick(input));
+});
 
 document.querySelectorAll('#facTipoToggle .type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
