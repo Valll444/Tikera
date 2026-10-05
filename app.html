@@ -309,6 +309,46 @@
   </div>
   </div>
 
+  <!-- Tiki: asistente con motor propio (reglas, sin IA externa ni costo por
+       consulta). Responde con los datos que la app ya tiene cargados, todo
+       en el dispositivo -- ver js/tiki.js y docs/tiki.md. -->
+  <div id="viewTiki" style="display:none;">
+  <div class="title-row">
+    <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4.5 3.5V17H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9.5v1M15 9.5v1"/><path d="M9.5 13.5c1.4.9 3.6.9 5 0"/></svg></span>
+    <h2 class="section-title">Tiki</h2>
+  </div>
+  <div class="tiki-layout">
+    <div class="card tiki-chat">
+      <div class="tiki-messages" id="tikiMessages" role="log" aria-live="polite" aria-label="Conversación con Tiki"></div>
+      <div class="tiki-chips" id="tikiChips"></div>
+      <form class="tiki-inputrow" id="tikiForm" autocomplete="off">
+        <input type="text" id="tikiInput" placeholder="Preguntale a Tiki sobre tu negocio..." maxlength="200" aria-label="Pregunta para Tiki">
+        <button type="submit" class="tiki-sendbtn" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </form>
+    </div>
+    <aside class="tiki-aside">
+      <div class="tiki-aside-block">
+        <div class="tiki-aside-label">Lo que Tiki sabe de tu negocio</div>
+        <ul class="tiki-sabe" id="tikiSabe"></ul>
+      </div>
+      <div class="tiki-aside-block">
+        <div class="tiki-aside-label">Lo que me pediste que recuerde</div>
+        <ul class="tiki-sabe tiki-recuerda" id="tikiRecuerda"></ul>
+      </div>
+      <div class="tiki-aside-block">
+        <div class="tiki-aside-label">Queda entre vos y Tiki</div>
+        <p>Tiki hace las cuentas en este dispositivo, con tus propios datos. Tus preguntas no se mandan a ningún servidor ni a ninguna IA, y la charla se borra al cerrar la app. Solo guarda lo que le pedís que recuerde. <a href="privacidad.html#tiki" target="_blank" rel="noopener">Cómo funciona</a></p>
+      </div>
+      <div class="tiki-aside-block">
+        <div class="tiki-aside-label">Cómo preguntarle</div>
+        <p>Decile qué querés saber (ventas, gastos, stock, deudas, cierre) y de cuándo (hoy, ayer, el sábado, este mes). Si nombrás un producto o un proveedor, te responde sobre ese.</p>
+      </div>
+    </aside>
+  </div>
+  </div>
+
   <div id="viewCaja" style="display:none;">
   <div class="title-row">
     <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
@@ -773,6 +813,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
     <span>Inicio</span>
   </button>
+  <button type="button" class="bottom-nav-btn" id="navBtnTiki" onclick="switchView('tiki')" aria-label="Tiki, tu asistente">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4.5 3.5V17H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9.5v1M15 9.5v1"/><path d="M9.5 13.5c1.4.9 3.6.9 5 0"/></svg>
+    <span>Tiki</span>
+  </button>
   <button type="button" class="bottom-nav-btn" id="navBtnCargar" onclick="switchView('cargar')" aria-label="Cargar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     <span>Cargar</span>
@@ -808,35 +852,6 @@
 </nav>
 
 <div id="toast" class="toast"></div>
-
-<button type="button" id="agentBubbleBtn" class="agent-bubble" style="display:none;" aria-label="Abrir asistente de Tikera">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-</button>
-
-<div id="agentChatModal" class="ticket-modal-overlay" style="display:none;" role="dialog" aria-label="Asistente de Tikera">
-  <div class="ticket-modal agent-chat-modal">
-    <div class="agent-chat-header">
-      <div style="display:flex;align-items:center;gap:9px;min-width:0;">
-        <div class="agent-chat-avatar">T</div>
-        <div style="min-width:0;">
-          <div style="font-weight:700;font-size:14.5px;color:var(--ink);">Asistente Tikera</div>
-          <div style="font-size:10.5px;color:var(--ink-soft);">No reemplaza a un contador o asesor</div>
-        </div>
-      </div>
-      <button type="button" id="agentChatCloseBtn" aria-label="Cerrar" style="background:none;border:none;color:var(--ink-soft);font-size:22px;line-height:1;cursor:pointer;padding:4px;flex-shrink:0;">&times;</button>
-    </div>
-    <div class="agent-chat-messages" id="agentChatMessages"></div>
-    <div style="padding:0 18px;">
-      <div class="error-msg" id="agentChatErrorMsg" role="alert" aria-live="polite"></div>
-    </div>
-    <div class="agent-chat-inputrow">
-      <input type="text" id="agentChatInput" placeholder="Preguntale algo sobre tu negocio..." autocomplete="off" style="margin:0;">
-      <button type="button" id="agentChatSendBtn" class="agent-chat-sendbtn" aria-label="Enviar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
-    </div>
-  </div>
-</div>
 
 <div id="ticketModal" class="ticket-modal-overlay" style="display:none;" role="dialog" aria-label="Ticket de venta">
   <div class="ticket-modal">
@@ -887,5 +902,6 @@
   </div>
 </div>
 <script src="js/app.js"></script>
+<script src="js/tiki.js"></script>
 </body>
 </html>

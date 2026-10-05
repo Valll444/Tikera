@@ -49,35 +49,56 @@ ningún lado, arma la URL sola a partir de `SUPABASE_URL`.
 
 ## ai-agent
 
-Asistente de IA (chat flotante, ícono abajo a la derecha) que responde
-dudas de plata/negocio con el contexto real del usuario (ventas y gastos
-de los últimos 30 días, productos que más venden, proveedores). A
-diferencia de `delete-account`, esta función **no** usa la service role
-key: lee y escribe autenticada como el usuario que pregunta (con su
-propio token), así que queda sujeta a las mismas reglas de RLS de
-siempre. Solo necesita la API key de Anthropic, que no puede estar en
-app.html.
+> **Hoy no está deployada ni conectada a la app.** El asistente que usa la
+> app es Tiki, con motor propio en `js/tiki.js` (sin IA externa ni costo por
+> consulta). Esta función es la etapa 2: Tiki con Claude. Diseño, amenazas
+> y lo que falta para activarla: [`docs/tiki.md`](../../docs/tiki.md).
 
-### Deploy
+Recibe una pregunta, arma un resumen chico del negocio del usuario (ventas
+y gastos de hoy/7/30 días, lo que más factura, deudas con proveedores,
+último cierre y lo que el usuario le pidió recordar a Tiki) y se lo pasa a
+Claude junto con los últimos 10 mensajes de la charla.
+
+- **Aislamiento:** no usa la service role key. Lee y escribe con el token
+  del usuario que pregunta, así que RLS limita todo a su cuenta. El modelo
+  no tiene herramientas: no puede consultar la base, solo contestar texto.
+- **Costo:** antes de llamar a la API corta si la prueba gratis venció y
+  descuenta el cupo diario (20 consultas, en hora argentina) con
+  `tiki_consumir_consulta`, una función atómica de la base (`016`). Si esa
+  función no existe, la función se niega a responder.
+- **Prompt injection:** las reglas van solas en el system prompt; los datos
+  (que escribe el usuario o vienen de un Excel importado) van aparte,
+  limpios y marcados como datos (`prompt.ts`, probado en `prompt.test.ts`).
+- **Errores:** el usuario ve siempre un mensaje genérico; los logs guardan
+  el tipo de error, nunca el contenido de la charla.
+
+### Antes de deployar
+
+1. Correr `015_tiki_memoria.sql` y `016_tiki_agente_seguro.sql`.
+2. Actualizar `privacidad.html#tiki`: hoy promete que las preguntas a Tiki
+   no salen del dispositivo, y con esta función van a Anthropic.
+3. Conectar la pantalla de Tiki a esta función (opt-in del usuario).
+
+### Deploy y secretos
 
 ```bash
 supabase functions deploy ai-agent
-```
-
-### Secretos que necesita
-
-`SUPABASE_URL` y `SUPABASE_ANON_KEY` ya los inyecta Supabase solo. Lo
-único que hay que cargar a mano es la API key de Anthropic — se consigue
-en [console.anthropic.com](https://console.anthropic.com/settings/keys):
-
-```bash
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-Esta es la única función del proyecto que genera costo por uso (se paga por
-consulta al modelo). La función ya limita a 20 consultas por día por
-usuario para que ese costo no se dispare solo; para cambiar ese número hay
-que editar `LIMITE_DIARIO` en `index.ts` y volver a deployar.
+Opcionales: `TIKI_MODEL` (por defecto `claude-haiku-4-5`, el más barato) y
+`TIKI_ALLOWED_ORIGINS` (orígenes permitidos separados por coma, por ejemplo
+`https://valll444.github.io`; por defecto cualquiera).
+
+### Probarla sin gastar
+
+```bash
+deno check supabase/functions/ai-agent/index.ts
+deno test supabase/functions/ai-agent/
+```
+
+Esta es la única función del proyecto que genera costo por uso. Para
+cambiar el cupo diario, editar `LIMITE_DIARIO` en `index.ts`.
 
 ## arca-config y arca-facturar
 

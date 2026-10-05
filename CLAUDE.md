@@ -36,8 +36,8 @@ catálogo) y no se reasignan a otro uso solo porque "queda lindo".
 Cada sección principal del nav tiene su propio color fijo (ícono + estado
 activo), **independiente** del color de acento que el usuario elige en
 Apariencia — así el nav no cambia de identidad cuando alguien cambia su
-acento. Son 7 hasta ahora, cada uno reusado 1 a 1 de `ACCENT_PRESETS`
-(js/app.js) salvo el último:
+acento. Son 8 hasta ahora, los primeros 7 reusados 1 a 1 de
+`ACCENT_PRESETS` (js/app.js) y el último propio del nav:
 
 ```
 pizarra  #3E5670  → Inicio / marca
@@ -47,13 +47,21 @@ dorado   #C08A3E  → Historial
 violeta  #6E63A6  → Ajustes
 coral    #A66358  → Noticias
 oliva    #5C7A42  → Facturación
+ciruela  #9A5C86  → Tiki (asistente)
 ```
 
-`oliva` es el único color agregado específicamente para un ícono de nav sin
-que ya existiera en la paleta de acentos — se sumó porque los otros 6 ya
-estaban tomados 1 a 1 por otra sección cuando hizo falta un 7°. Verde
-apagado a propósito, bien separado en el círculo cromático de los otros 6 y
-del verde semántico de venta (`--green`), para que no se confundan.
+`oliva` se agregó en su momento para un ícono de nav sin que existiera en
+la paleta de acentos: los otros 6 ya estaban tomados 1 a 1 por otra sección
+cuando hizo falta un 7°. Verde apagado a propósito, bien separado en el
+círculo cromático de los otros 6 y del verde semántico de venta (`--green`),
+para que no se confundan.
+
+`ciruela` se sumó igual que oliva, cuando Tiki necesitó un 8° color y los
+otros 7 ya estaban tomados. Es un rosado apagado (tono ~320°), lejos de
+violeta (Ajustes) y de coral (Noticias). En css/app.css vive como `--tiki`
+(más claro en oscuro, #B97AA5; más oscuro en claro, #8A4F78) y
+`--tiki-dark`/`--tiki-bg`, con el mismo patrón que `--factura`. No es un
+preset de acento: no se ofrece en Apariencia.
 
 ## Paleta clara
 

@@ -21,6 +21,7 @@ incluso con la conexión cortada.
 - Cierre de caja: efectivo esperado (según lo cargado) vs. contado, para cualquier fecha, con historial y gráfico de diferencias
 - Noticias: cotización del dólar (oficial/blue/mayorista/tarjeta), inflación mensual (INDEC), riesgo país, tasa de plazo fijo promedio, próximo feriado y una calculadora de IVA — todo de fuentes públicas reales
 - Resumen con gráfico de ventas de los últimos 7 días y ranking de productos que más facturan
+- Tiki, un asistente al que le preguntás por tu negocio ("¿cómo fue el cierre?", "¿qué hacemos hoy?", "¿cuánto le debo a Arcor?") y responde con tu propio historial: cierres de caja, stock por agotarse, deudas con proveedores, gastos fijos sin cargar, mejor día y horario de venta
 - Historial completo, filtrable, exportable a Excel/PDF e importable desde Excel
 - Funciona offline: las ventas se guardan en el dispositivo y se sincronizan solas al volver la conexión
 - Ticket de venta imprimible (comprobante no fiscal)
@@ -33,7 +34,7 @@ incluso con la conexión cortada.
 
 - **Frontend**: HTML/CSS/JS vanilla, sin framework ni build step. Las páginas públicas (`index.html`, `precios.html`, etc.) son cada una un solo archivo autocontenido; `app.html` separa su CSS y JS en `css/app.css` y `js/app.js` por ser la más grande, pero se sirve igual, sin ningún paso de compilación
 - **Backend**: [Supabase](https://supabase.com) (Postgres + Auth + Storage + Edge Functions), con Row Level Security en todas las tablas
-- **IA**: asistente conversacional opcional vía Edge Function + API de Anthropic (ver `supabase/functions/README.md`) — apagado por defecto porque tiene costo por uso
+- **Asistente (Tiki)**: motor propio en `js/tiki.js`, sin IA externa — las cuentas se hacen en el navegador con los datos ya cargados, así que no tiene costo por consulta, anda sin conexión y las preguntas no salen del dispositivo. La Edge Function `ai-agent` (Claude) queda escrita para una etapa futura, sin conectar a la app (ver `supabase/functions/README.md`)
 - **Hosting**: GitHub Pages
 - **PWA**: service worker con cache del shell de la app para carga instantánea
 
@@ -43,14 +44,35 @@ incluso con la conexión cortada.
 app.html                  la aplicación (requiere login)
 css/app.css                estilos de app.html
 js/app.js                  logica de app.html
+js/tiki.js                 Tiki, el asistente (motor propio, sin IA externa; ver docs/tiki.md)
 index.html                 landing page
 precios.html                página de precios
 terminos.html / privacidad.html    términos y política de privacidad
 404.html                   página de error
 sw.js / manifest.json       service worker y manifest de la PWA
 supabase/                   esquema de la base de datos (ver supabase/README.md)
-supabase/functions/          Edge Functions: borrado de cuenta, asistente de IA (ver supabase/functions/README.md)
+supabase/functions/          Edge Functions: borrado de cuenta, asistente de IA sin conectar (ver supabase/functions/README.md)
+tests/                      tests (ver abajo)
+docs/tiki.md                diseño, seguridad y memoria de Tiki
 ```
+
+## Tests
+
+```bash
+cd tests
+npm install   # una vez: instala PGlite (Postgres en WASM) para los tests de base de datos
+npm test      # Tiki, carga de datos, cola offline y RLS de las migraciones
+```
+
+Los tests de Tiki corren `js/app.js` + `js/tiki.js` de verdad dentro de Node
+(DOM simulado, reloj fijo y un Supabase falso que aplica RLS y el corte de
+1000 filas). Los de `tests/db/` aplican las migraciones de `supabase/` en un
+Postgres real y prueban que ninguna cuenta pueda ver ni tocar datos de otra.
+La función `ai-agent` se prueba con `deno test supabase/functions/ai-agent/`.
+
+Para ver la app con datos de prueba sin una cuenta real, servir la carpeta y
+cargar `tests/fixtures/kiosco.mjs` desde la consola (ver el comentario al
+principio de ese archivo).
 
 ## Correrlo localmente
 

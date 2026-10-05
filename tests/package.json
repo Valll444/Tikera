@@ -1,0 +1,12 @@
+{
+  "name": "tikera-tests",
+  "private": true,
+  "description": "Tikera no tiene build step: esto existe solo para correr los tests (cd tests && npm install && npm test). Va aca y no en la raiz para no cambiar como Deno resuelve los paquetes de supabase/functions.",
+  "scripts": {
+    "test": "node --test \"**/*.test.mjs\"",
+    "test:db": "node --test \"db/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0"
+  }
+}

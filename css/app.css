@@ -38,6 +38,13 @@
     --factura:#7C9A68;
     --factura-dark:#5C7A42;
     --factura-bg:rgba(124,154,104,0.16);
+    /* Ciruela -- color nuevo, igual que oliva: los 7 anteriores ya estaban
+       tomados 1 a 1 cuando hizo falta uno para Tiki. Rosado apagado, lejos
+       en el circulo cromatico de violeta (Ajustes) y de coral (Noticias).
+       Documentado en CLAUDE.md. */
+    --tiki:#B97AA5;
+    --tiki-dark:#9A5C86;
+    --tiki-bg:rgba(185,122,165,0.16);
     /* Identidad fija del nav (logo, Inicio, Cuenta): a proposito NO usa
        --accent, para que elegir un color de acento en Apariencia no deje
        algunos iconos del dock cambiados y otros no -- o cambian todos o
@@ -87,6 +94,9 @@
     --factura:#5C7A42;
     --factura-dark:#44592F;
     --factura-bg:rgba(92,122,66,0.10);
+    --tiki:#8A4F78;
+    --tiki-dark:#6E3D5F;
+    --tiki-bg:rgba(138,79,120,0.10);
     --nav-brand:#3E5670;
     --nav-brand-dark:#2C4256;
     --nav-brand-bg:rgba(62,86,112,0.10);
@@ -174,6 +184,7 @@
   #viewCaja .title-icon{background:var(--caja);}
   #viewNoticias .title-icon{background:var(--noticias);}
   #viewFacturacion .title-icon{background:var(--factura);}
+  #viewTiki .title-icon{background:var(--tiki);}
   .type-toggle{display:flex;gap:8px;margin-bottom:16px;}
   .type-btn{
     flex:1;padding:10px 0;border-radius:8px;border:1.5px solid var(--line);
@@ -392,6 +403,8 @@
   #navBtnNoticias.active{background:var(--noticias-bg);}
   #navBtnFacturacion{color:var(--factura);}
   #navBtnFacturacion.active{background:var(--factura-bg);}
+  #navBtnTiki{color:var(--tiki);}
+  #navBtnTiki.active{background:var(--tiki-bg);}
   #navBtnCuenta{color:var(--nav-brand);}
   #navBtnCuenta.active{background:var(--nav-brand-bg);}
   #navBtnConfig{color:#8B7EC8;}
@@ -445,6 +458,7 @@
     #navBtnCaja.active{background:var(--caja);color:#fff;}
     #navBtnNoticias.active{background:var(--noticias);color:#fff;}
     #navBtnFacturacion.active{background:var(--factura);color:#fff;}
+    #navBtnTiki.active{background:var(--tiki);color:#fff;}
     #navBtnCuenta.active{background:var(--nav-brand);color:#fff;}
     #navBtnConfig.active{background:#8B7EC8;color:#fff;}
     /* Cuenta y Ajustes ya no necesitan separador propio -- ahora quedan
@@ -840,34 +854,97 @@
   .ticket-modal-actions{display:flex;gap:10px;margin-top:16px;}
   .ticket-modal-actions .settings-btn{flex:1;}
 
-  /* Asistente de IA: burbuja flotante + panel de chat */
-  .agent-bubble{
-    position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:45;
-    width:52px;height:52px;border-radius:50%;background:var(--brand-gradient);color:#fff;
-    display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;
-    box-shadow:0 12px 30px -8px rgba(0,0,0,0.55);transition:transform .15s ease;
+  /* Tiki: el asistente. Chat a la izquierda, y al costado (abajo en mobile)
+     lo que sabe del negocio + la nota de privacidad -- asimetrico a
+     proposito, y el costado NO es una card: es texto suelto, no compite
+     con la conversacion. */
+  .tiki-layout{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:24px;align-items:start;}
+  @media(max-width:900px){ .tiki-layout{grid-template-columns:minmax(0,1fr);gap:20px;} }
+  .tiki-chat{
+    padding:0;display:flex;flex-direction:column;overflow:hidden;
+    height:calc(100vh - 190px);height:calc(100dvh - 190px);min-height:460px;
   }
-  .agent-bubble:hover{transform:translateY(-2px);}
-  .agent-bubble svg{width:23px;height:23px;}
-  @media(min-width:900px){ .agent-bubble{bottom:24px;} }
-  .agent-chat-modal{max-width:420px;padding:0;display:flex;flex-direction:column;height:min(600px,82vh);overflow:hidden;}
-  .agent-chat-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 16px 14px;border-bottom:1px solid var(--line);flex-shrink:0;}
-  .agent-chat-avatar{width:30px;height:30px;border-radius:9px;background:var(--brand-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:14px;flex-shrink:0;}
-  .agent-chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
-  .agent-msg{max-width:85%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;}
-  .agent-msg-user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
-  .agent-msg-assistant{align-self:flex-start;background:var(--paper);color:var(--ink);border-bottom-left-radius:4px;}
-  .agent-msg-empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:30px 14px;line-height:1.5;}
-  .agent-chat-inputrow{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);flex-shrink:0;}
-  .agent-chat-sendbtn{width:40px;height:40px;border-radius:10px;background:var(--accent);color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
-  .agent-chat-sendbtn svg{width:16px;height:16px;}
-  .agent-chat-sendbtn:disabled{opacity:.5;cursor:default;}
-  .agent-msg-loading{align-self:flex-start;display:flex;gap:4px;padding:11px 13px;background:var(--paper);border-radius:14px;border-bottom-left-radius:4px;}
-  .agent-msg-loading span{width:6px;height:6px;border-radius:50%;background:var(--ink-soft);animation:agentDot 1.2s ease-in-out infinite;}
-  .agent-msg-loading span:nth-child(2){animation-delay:.15s;}
-  .agent-msg-loading span:nth-child(3){animation-delay:.3s;}
-  @keyframes agentDot{0%,60%,100%{opacity:.3;transform:translateY(0);}30%{opacity:1;transform:translateY(-3px);}}
-  @media(prefers-reduced-motion:reduce){ .agent-msg-loading span{animation:none;opacity:.7;} }
+  @media(max-width:899px){ .tiki-chat{height:calc(100vh - 250px);height:calc(100dvh - 250px);min-height:420px;} }
+  .tiki-messages{flex:1;overflow-y:auto;padding:20px 20px 8px;display:flex;flex-direction:column;gap:14px;position:relative;}
+  .tiki-row{display:flex;gap:9px;align-items:flex-end;max-width:88%;}
+  .tiki-row-user{align-self:flex-end;}
+  .tiki-avatar{
+    width:28px;height:28px;border-radius:9px;background:var(--tiki);color:#fff;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .tiki-avatar svg{width:17px;height:17px;}
+  .tiki-msg{padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.5;word-break:break-word;min-width:0;}
+  .tiki-msg-user{background:var(--accent);color:#fff;border-bottom-right-radius:5px;white-space:pre-wrap;}
+  .tiki-msg-tiki{background:var(--paper);color:var(--ink);border-bottom-left-radius:5px;}
+  .tiki-msg-tiki p{margin:0;}
+  .tiki-msg-tiki p + p,.tiki-msg-tiki p + .tiki-list,.tiki-msg-tiki .tiki-list + p{margin-top:8px;}
+  .tiki-msg-tiki strong{font-weight:600;color:var(--ink);}
+  .tiki-msg-tiki .tiki-pos{color:var(--venta);font-weight:600;}
+  .tiki-msg-tiki .tiki-neg{color:var(--gasto);font-weight:600;}
+  .tiki-msg-tiki .tiki-soft{color:var(--ink-soft);font-size:12.5px;}
+  .tiki-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+  .tiki-list li{display:flex;gap:9px;align-items:baseline;}
+  .tiki-list li::before{
+    content:'';width:7px;height:7px;border-radius:50%;flex-shrink:0;
+    background:var(--ink-soft);transform:translateY(-1px);
+  }
+  .tiki-list li.urgente::before{background:var(--gasto);}
+  .tiki-list li.pronto::before{background:var(--gold);}
+  .tiki-list li.bien::before{background:var(--venta);}
+  /* Mini barras dentro de una respuesta (mejor dia, horario, ranking):
+     mas rapido de leer que una lista de montos sueltos. */
+  .tiki-bars{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+  .tiki-bar-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:9px;font-size:12px;}
+  .tiki-bars.wide .tiki-bar-row{grid-template-columns:minmax(0,118px) minmax(40px,1fr) auto;}
+  .tiki-bar-label{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tiki-bar-track{height:8px;border-radius:4px;background:var(--line);overflow:hidden;}
+  .tiki-bar-fill{display:block;height:100%;border-radius:4px;background:var(--tiki);opacity:.5;}
+  .tiki-bar-row.top .tiki-bar-fill{opacity:1;}
+  .tiki-bar-row.top .tiki-bar-label{color:var(--ink);font-weight:600;}
+  .tiki-bar-val{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink);text-align:right;white-space:nowrap;}
+  /* El avatar va solo en el ultimo de varios mensajes seguidos de Tiki
+     (como en cualquier chat), no repetido en cada globo. */
+  .tiki-row:not(.tiki-row-user):has(+ .tiki-row:not(.tiki-row-user)) .tiki-avatar{visibility:hidden;}
+  .tiki-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tiki-action{
+    border:1.5px solid var(--line-strong);background:var(--card);color:var(--ink);
+    border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;
+  }
+  .tiki-action:hover{border-color:var(--tiki);color:var(--tiki);}
+  .tiki-action:disabled,.tiki-action:disabled:hover{opacity:.45;cursor:default;border-color:var(--line-strong);color:var(--ink);}
+  .tiki-recuerda li{align-items:baseline;}
+  .tiki-recuerda li span{color:var(--ink);line-height:1.45;}
+  .tiki-recuerda .tiki-recuerda-vacio{color:var(--ink-soft);line-height:1.5;}
+  .tiki-olvidar{
+    flex-shrink:0;background:none;border:none;padding:0;cursor:pointer;
+    color:var(--tiki);font:inherit;font-size:12px;text-decoration:underline;
+  }
+  .tiki-chips{display:flex;gap:7px;padding:10px 20px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+  .tiki-chips::-webkit-scrollbar{display:none;}
+  .tiki-chip{
+    flex:0 0 auto;border:1.5px solid var(--line);background:var(--paper);color:var(--ink-soft);
+    border-radius:9px;padding:7px 11px;font-size:12.5px;font-weight:500;font-family:var(--font-body);cursor:pointer;white-space:nowrap;
+  }
+  .tiki-chip:hover{border-color:var(--tiki);color:var(--ink);}
+  .tiki-inputrow{display:flex;gap:8px;padding:12px 20px 16px;flex-shrink:0;}
+  .tiki-inputrow input{margin:0;}
+  .tiki-sendbtn{width:44px;height:44px;border-radius:11px;background:var(--tiki);color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .tiki-sendbtn svg{width:17px;height:17px;}
+  .tiki-sendbtn:focus-visible,.tiki-chip:focus-visible,.tiki-action:focus-visible{outline:2px solid var(--tiki);outline-offset:2px;}
+  .tiki-typing{display:flex;gap:4px;padding:13px 14px;}
+  .tiki-typing span{width:6px;height:6px;border-radius:50%;background:var(--ink-soft);animation:tikiDot 1.1s ease-in-out infinite;}
+  .tiki-typing span:nth-child(2){animation-delay:.15s;}
+  .tiki-typing span:nth-child(3){animation-delay:.3s;}
+  @keyframes tikiDot{0%,60%,100%{opacity:.3;transform:translateY(0);}30%{opacity:1;transform:translateY(-3px);}}
+  @media(prefers-reduced-motion:reduce){ .tiki-typing span{animation:none;opacity:.7;} }
+  .tiki-aside{display:flex;flex-direction:column;gap:22px;padding-top:4px;}
+  .tiki-aside-block{border-top:1px solid var(--line);padding-top:14px;}
+  .tiki-aside-label{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:8px;letter-spacing:-0.01em;}
+  .tiki-aside p{margin:0;font-size:12.5px;line-height:1.55;color:var(--ink-soft);}
+  .tiki-aside a{color:var(--tiki);}
+  .tiki-sabe{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .tiki-sabe li{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--ink-soft);}
+  .tiki-sabe li strong{font-family:'IBM Plex Mono';font-weight:500;color:var(--ink);}
   @media print{
     body *{visibility:hidden;}
     #ticketContent,#ticketContent *{visibility:visible;}

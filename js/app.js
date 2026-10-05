@@ -432,6 +432,7 @@ function traducirErrorAuth(msg){
 function switchView(view){
   document.getElementById('viewCargar').style.display = view==='cargar' ? 'block' : 'none';
   document.getElementById('viewInicio').style.display = view==='inicio' ? 'block' : 'none';
+  document.getElementById('viewTiki').style.display = view==='tiki' ? 'block' : 'none';
   document.getElementById('viewHistorial').style.display = view==='historial' ? 'block' : 'none';
   document.getElementById('viewCatalogo').style.display = view==='catalogo' ? 'block' : 'none';
   document.getElementById('viewCaja').style.display = view==='caja' ? 'block' : 'none';
@@ -441,6 +442,7 @@ function switchView(view){
   document.getElementById('viewAjustes').style.display = view==='ajustes' ? 'block' : 'none';
   document.getElementById('navBtnCargar').classList.toggle('active', view==='cargar');
   document.getElementById('navBtnInicio').classList.toggle('active', view==='inicio');
+  document.getElementById('navBtnTiki').classList.toggle('active', view==='tiki');
   document.getElementById('navBtnHistorial').classList.toggle('active', view==='historial');
   document.getElementById('navBtnCatalogo').classList.toggle('active', view==='catalogo');
   document.getElementById('navBtnCaja').classList.toggle('active', view==='caja');
@@ -450,13 +452,14 @@ function switchView(view){
   document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
   if(view==='catalogo'){ renderCatalog(); if(catalogoTab === 'proveedores') renderProveedores(); }
   if(view==='caja') openCajaView();
+  if(view==='tiki') openTikiView();
   if(view==='noticias'){ fetchDolar(); fetchInflacion(); fetchFeriados(); }
   if(view==='facturacion') openFacturacionView();
   if(view==='cuenta') loadPerfilView();
   if(view==='ajustes') loadAjustesView();
   window.scrollTo({top:0, behavior:'instant'});
 
-  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', historial:'viewHistorial', catalogo:'viewCatalogo', caja:'viewCaja', noticias:'viewNoticias', facturacion:'viewFacturacion', cuenta:'viewCuenta', ajustes:'viewAjustes'};
+  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', tiki:'viewTiki', historial:'viewHistorial', catalogo:'viewCatalogo', caja:'viewCaja', noticias:'viewNoticias', facturacion:'viewFacturacion', cuenta:'viewCuenta', ajustes:'viewAjustes'};
   const activeEl = document.getElementById(viewIds[view]);
   if(activeEl){
     activeEl.classList.remove('view-fade-in');
@@ -510,10 +513,6 @@ function revealApp(){
     document.body.classList.add('app-active');
     setTimeout(()=> app.classList.remove('entering'), 350);
     document.getElementById('bottomNav').style.display = 'flex';
-    // El asistente de IA todavia no esta activado (falta deployar la
-    // funcion y cargar la API key de Anthropic, que tiene costo por uso) --
-    // la burbuja se queda oculta a proposito hasta que se decida sumarla.
-    // document.getElementById('agentBubbleBtn').style.display = 'flex';
     switchView('inicio');
   }, 180);
 }
@@ -524,11 +523,7 @@ document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
   app.classList.add('leaving-app');
   await sb.auth.signOut();
   setTimeout(()=>{
-    entries = [];
-    frequentProducts = [];
-    frequentExpenses = [];
-    proveedores = [];
-    pedidosProveedor = [];
+    clearUserState();
     closeProveedorModal();
     document.getElementById('gateError').textContent = '';
     document.getElementById('gateCode').value = '';
@@ -538,9 +533,6 @@ document.getElementById('switchBizBtn').addEventListener('click', async ()=>{
     document.getElementById('trialBlocked').classList.remove('show');
     document.body.classList.remove('app-active');
     document.getElementById('bottomNav').style.display = 'none';
-    document.getElementById('agentBubbleBtn').style.display = 'none';
-    closeAgentChat();
-    agentMessagesLoaded = false;
     gate.style.display = 'flex';
     gate.classList.add('entering');
     setTimeout(()=> gate.classList.remove('entering'), 350);
@@ -762,7 +754,7 @@ function readFileAsText(fileInput){
 
 // Helper comun para las tres llamadas a Edge Functions de facturacion
 // (guardar config, probar conexion, facturar una venta) -- mismo patron de
-// auth que ya usa sendAgentMessage() con ai-agent.
+// auth que usaba el chat de ai-agent (ver supabase/functions/README.md).
 async function llamarArca(funcionNombre, body){
   const { data: sessionData } = await sb.auth.getSession();
   const token = sessionData && sessionData.session && sessionData.session.access_token;
@@ -1072,7 +1064,6 @@ document.getElementById('settDeleteBtn').addEventListener('click', async ()=>{
       document.getElementById('app').style.display = 'block';
       document.body.classList.add('app-active');
       document.getElementById('bottomNav').style.display = 'flex';
-      // document.getElementById('agentBubbleBtn').style.display = 'flex'; // ver revealApp()
       switchView('inicio');
     }
   }catch(e){ console.error(e); }
@@ -1186,41 +1177,56 @@ function adjustLocalProductStock(productId, delta){
   if(document.getElementById('viewCatalogo').style.display !== 'none') renderCatalog();
 }
 
+// La cola vive en localStorage, que es del navegador y no de la cuenta: en
+// un celular compartido puede haber movimientos pendientes de otra cuenta.
+// Cada uno guarda su user_id (lo pone mapFieldsToRow), y solo se muestra y
+// se sube lo de la cuenta logueada -- lo ajeno queda esperando a su dueño.
+// Subirlo igual lo rechazaria RLS, pero mostrarlo ya mezclaba datos de dos
+// cuentas en Inicio, Caja (efectivo esperado) y Tiki.
+function esPendienteDeLaCuenta(item){
+  return !!(currentUserId && item && item.row && item.row.user_id === currentUserId);
+}
+
 let syncingPending = false;
 async function syncPendingMovements(){
   if(syncingPending) return;
-  const queue = loadPendingQueue();
-  if(queue.length === 0 || !navigator.onLine) return;
+  const mios = loadPendingQueue().filter(esPendienteDeLaCuenta);
+  if(mios.length === 0 || !navigator.onLine) return;
   syncingPending = true;
-  let syncedCount = 0;
-  const remaining = [];
-  for(const item of queue){
+  const subidos = new Set();
+  for(const item of mios){
     try{
       const { data, error } = await sb.from('movements').insert(item.row).select().single();
       if(error){
-        remaining.push(item);
         if(!looksLikeNetworkError(error)) console.error(error);
         continue;
       }
+      // Ya esta en la base: sale de la cola pase lo que pase despues (si
+      // fallaba el ajuste de stock y quedaba en la cola, se volvia a subir
+      // y la venta aparecia duplicada).
+      subidos.add(item.localId);
       const idx = entries.findIndex(e => e.id === item.localId);
       const synced = mapRowToEntry(data);
       if(idx !== -1) entries[idx] = synced; else entries.push(synced);
-      if(item.fields.productoId) await applyStockDelta(item.fields.productoId, item.fields.cantidadVenta);
-      syncedCount++;
+      if(item.fields.productoId){
+        try{ await applyStockDelta(item.fields.productoId, item.fields.cantidadVenta); }
+        catch(err){ console.error(err); }
+      }
     }catch(err){
-      remaining.push(item);
       if(!looksLikeNetworkError(err)) console.error(err);
     }
   }
-  savePendingQueue(remaining);
+  // Se relee la cola en vez de pisarla con una copia vieja: lo que se haya
+  // encolado mientras se subia (otra venta sin conexion) no se pierde.
+  savePendingQueue(loadPendingQueue().filter(item => !subidos.has(item.localId)));
   syncingPending = false;
-  if(syncedCount > 0){
-    showToast(syncedCount === 1 ? 'Se sincronizó 1 movimiento pendiente' : `Se sincronizaron ${syncedCount} movimientos pendientes`);
+  if(subidos.size > 0){
+    showToast(subidos.size === 1 ? 'Se sincronizó 1 movimiento pendiente' : `Se sincronizaron ${subidos.size} movimientos pendientes`);
     render();
   }
 }
 function hydratePendingIntoEntries(){
-  const queue = loadPendingQueue();
+  const queue = loadPendingQueue().filter(esPendienteDeLaCuenta);
   queue.forEach(item => {
     if(!entries.some(e => e.id === item.localId)){
       entries.push(pendingFieldsToEntry(item.fields, item.localId));
@@ -1229,11 +1235,62 @@ function hydratePendingIntoEntries(){
 }
 window.addEventListener('online', syncPendingMovements);
 
+// Todo lo que pertenece a la cuenta logueada. Se limpia al cerrar sesion,
+// al entrar otra cuenta y si falla la carga: antes solo se vaciaban algunas
+// listas, y en un celular compartido la cuenta B podia ver en Catalogo, Caja
+// o Tiki los productos y cierres que habian quedado en memoria de la A.
+function clearUserState(){
+  currentUserId = null;
+  entries = [];
+  frequentProducts = [];
+  frequentExpenses = [];
+  products = [];
+  proveedores = [];
+  pedidosProveedor = [];
+  cierresCaja = [];
+  facturacionConfig = null;
+  facturas = [];
+  editingId = null;
+  editingHora = null;
+  editingProductId = null;
+  selectedProductId = null;
+  editingProveedorId = null;
+  openProveedorId = null;
+  cierreCajaFechaActiva = null;
+  if(typeof resetTiki === 'function') resetTiki();
+}
+
+// Supabase corta cada respuesta en "Max rows" (1000 por default en API
+// settings). Sin paginar, un kiosco con mas de 1000 movimientos recibia
+// solo los 1000 MAS VIEJOS (el orden es ascendente): Inicio, Historial, el
+// efectivo esperado del cierre de caja y Tiki trabajaban sin las ventas
+// recientes. Avanza por la cantidad realmente recibida (sirve con cualquier
+// valor de Max rows) y descarta repetidos por si entra una fila nueva entre
+// pagina y pagina.
+const PAGE_SIZE = 1000;
+async function fetchAllRows(buildQuery){
+  const rows = [];
+  const vistos = new Set();
+  let total = null;
+  for(let pagina = 0; pagina < 500; pagina++){
+    const desde = rows.length;
+    const { data, error, count } = await buildQuery(total === null ? { count: 'exact' } : undefined).range(desde, desde + PAGE_SIZE - 1);
+    if(error) return { data: null, error };
+    if(total === null && typeof count === 'number') total = count;
+    if(!data || data.length === 0) break;
+    let nuevos = 0;
+    data.forEach(r => { if(!vistos.has(r.id)){ vistos.add(r.id); rows.push(r); nuevos++; } });
+    if(nuevos === 0 || (total !== null && rows.length >= total)) break;
+  }
+  return { data: rows, error: null };
+}
+
 async function loadData(){
   try{
     const { data: userData } = await sb.auth.getUser();
     const user = userData && userData.user;
-    if(!user){ entries = []; return; }
+    if(!user){ clearUserState(); return; }
+    if(currentUserId !== user.id) clearUserState();
     currentUserId = user.id;
 
     const { data: profile } = await sb.from('profiles').select('business_name, plan, trial_started_at').eq('id', user.id).single();
@@ -1241,7 +1298,7 @@ async function loadData(){
     currentPlan = (profile && profile.plan) || 'trial';
     currentTrialStartedAt = profile && profile.trial_started_at ? new Date(profile.trial_started_at) : null;
 
-    const { data: movRows, error: movErr } = await sb.from('movements').select('*').eq('user_id', user.id).order('created_at', {ascending:true});
+    const { data: movRows, error: movErr } = await fetchAllRows(opts => sb.from('movements').select('*', opts).eq('user_id', user.id).order('created_at', {ascending:true}).order('id', {ascending:true}));
     entries = movErr ? [] : (movRows || []).map(mapRowToEntry);
     if(movErr){ console.error(movErr); showToast('No se pudieron cargar los movimientos'); }
 
@@ -1251,23 +1308,23 @@ async function loadData(){
 
     // Si la tabla "products" todavía no existe (falta correr supabase/products.sql),
     // el catálogo queda vacío en vez de romper el resto de la app.
-    const { data: productRows, error: prodErr } = await sb.from('products').select('*').eq('user_id', user.id).order('nombre', {ascending:true});
+    const { data: productRows, error: prodErr } = await fetchAllRows(opts => sb.from('products').select('*', opts).eq('user_id', user.id).order('nombre', {ascending:true}).order('id', {ascending:true}));
     products = prodErr ? [] : (productRows || []);
     if(prodErr) console.error(prodErr);
 
     // Igual que "products": si todavía no corriste 008_proveedores.sql,
     // esta sección queda vacía en vez de romper el resto de la app.
-    const { data: provRows, error: provErr } = await sb.from('proveedores').select('*').eq('user_id', user.id).order('nombre', {ascending:true});
+    const { data: provRows, error: provErr } = await fetchAllRows(opts => sb.from('proveedores').select('*', opts).eq('user_id', user.id).order('nombre', {ascending:true}).order('id', {ascending:true}));
     proveedores = provErr ? [] : (provRows || []);
     if(provErr) console.error(provErr);
 
-    const { data: pedidoRows, error: pedidoErr } = await sb.from('pedidos_proveedor').select('*').eq('user_id', user.id).order('fecha', {ascending:false});
+    const { data: pedidoRows, error: pedidoErr } = await fetchAllRows(opts => sb.from('pedidos_proveedor').select('*', opts).eq('user_id', user.id).order('fecha', {ascending:false}).order('id', {ascending:false}));
     pedidosProveedor = pedidoErr ? [] : (pedidoRows || []);
     if(pedidoErr) console.error(pedidoErr);
 
     // Igual que "products"/"proveedores": si todavía no corriste 009_cierres_caja.sql,
     // esta sección queda vacía en vez de romper el resto de la app.
-    const { data: cierreRows, error: cierreErr } = await sb.from('cierres_caja').select('*').eq('user_id', user.id).order('fecha', {ascending:false});
+    const { data: cierreRows, error: cierreErr } = await fetchAllRows(opts => sb.from('cierres_caja').select('*', opts).eq('user_id', user.id).order('fecha', {ascending:false}).order('id', {ascending:false}));
     cierresCaja = cierreErr ? [] : (cierreRows || []);
     if(cierreErr) console.error(cierreErr);
 
@@ -1287,7 +1344,12 @@ async function loadData(){
   }catch(e){
     console.error(e);
     showToast('No se pudieron cargar tus datos');
-    entries = [];
+    // Falla cerrada: mejor pantallas vacias que datos a medio cargar (o de
+    // la sesion anterior). La sesion sigue siendo la misma, por eso se
+    // conserva el id.
+    const uid = currentUserId;
+    clearUserState();
+    currentUserId = uid;
   }
   renderFreqChips();
   fillProductSelectOptions();
@@ -2404,6 +2466,40 @@ function renderStockWheel(){
 // Matchea por nombre igual que "Productos que mas facturan" (las ventas no
 // guardan el id del producto, solo la descripcion) asi que solo cuenta ventas
 // hechas eligiendo el producto del catalogo o escaneando su codigo.
+// La cuenta vive aparte del render porque Tiki usa exactamente la misma
+// (asi la tarjeta y el asistente nunca dicen cosas distintas).
+// Ventana = los ultimos 14 dias de calendario, hoy incluido. Antes se
+// comparaba new Date(e.fecha) (medianoche UTC = 21 hs del dia anterior en
+// Argentina) contra "ahora menos 14 dias", y entraban 13 o 14 dias segun la
+// hora en que se mirara, pero siempre se dividia por 14.
+const RESTOCK_WINDOW_DAYS = 14;
+function fechaHaceDias(n){
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function ventaDiariaDe(p){
+  const nameKey = (p.nombre || '').trim().toLowerCase();
+  if(!nameKey) return 0;
+  const desde = fechaHaceDias(RESTOCK_WINDOW_DAYS - 1);
+  const hasta = todayStr();
+  const vendido = entries
+    .filter(e => e.tipo === 'Venta' && e.fecha && e.fecha >= desde && e.fecha <= hasta && (e.descripcion || '').trim().toLowerCase() === nameKey)
+    .reduce((s,e) => s + (Number(e.cantidad) || 0), 0);
+  return vendido / RESTOCK_WINDOW_DAYS;
+}
+function calcularReposicion(){
+  return products.map(p => {
+    const dailyRate = ventaDiariaDe(p);
+    if(dailyRate <= 0) return null;
+    const stock = Number(p.stock_actual) || 0;
+    const daysLeft = stock / dailyRate;
+    if(daysLeft > 10) return null;
+    const suggestedQty = Math.max(1, Math.ceil(dailyRate * RESTOCK_WINDOW_DAYS - stock));
+    return { nombre: p.nombre, daysLeft, suggestedQty };
+  }).filter(Boolean).sort((a,b) => a.daysLeft - b.daysLeft);
+}
+
 function renderRestockPrediction(){
   const wrap = document.getElementById('restockBody');
   if(!wrap) return;
@@ -2411,24 +2507,7 @@ function renderRestockPrediction(){
     wrap.innerHTML = `<div class="restock-empty">Todavía no cargaste productos en el catálogo.</div>`;
     return;
   }
-  const WINDOW_DAYS = 14;
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - WINDOW_DAYS);
-
-  const predictions = products.map(p => {
-    const nameKey = (p.nombre || '').trim().toLowerCase();
-    if(!nameKey) return null;
-    const vendido = entries
-      .filter(e => e.tipo === 'Venta' && e.fecha && new Date(e.fecha) >= cutoff && (e.descripcion || '').trim().toLowerCase() === nameKey)
-      .reduce((s,e) => s + (Number(e.cantidad) || 0), 0);
-    const dailyRate = vendido / WINDOW_DAYS;
-    if(dailyRate <= 0) return null;
-    const stock = Number(p.stock_actual) || 0;
-    const daysLeft = stock / dailyRate;
-    if(daysLeft > 10) return null;
-    const suggestedQty = Math.max(1, Math.ceil(dailyRate * WINDOW_DAYS - stock));
-    return { nombre: p.nombre, daysLeft, suggestedQty };
-  }).filter(Boolean).sort((a,b) => a.daysLeft - b.daysLeft);
+  const predictions = calcularReposicion();
 
   if(predictions.length === 0){
     wrap.innerHTML = `<div class="restock-empty">Con las ventas de las últimas dos semanas, ningún producto se está por quedar sin stock pronto.</div>`;
@@ -3020,112 +3099,6 @@ function calcularIva(){
   }
 }
 
-// ============================================
-// Asistente de IA: burbuja flotante + chat con memoria de la conversacion
-// y contexto real del negocio (lo arma el lado servidor, en la Edge
-// Function ai-agent -- aca solo mandamos el mensaje y mostramos la charla).
-// ============================================
-let agentMessagesLoaded = false;
-let agentSending = false;
-
-async function openAgentChat(){
-  document.getElementById('agentChatModal').style.display = 'flex';
-  document.getElementById('agentChatErrorMsg').textContent = '';
-  if(!agentMessagesLoaded){
-    await loadAgentHistory();
-    agentMessagesLoaded = true;
-  }
-  document.getElementById('agentChatInput').focus();
-}
-function closeAgentChat(){
-  const modal = document.getElementById('agentChatModal');
-  if(modal) modal.style.display = 'none';
-}
-document.getElementById('agentBubbleBtn').addEventListener('click', openAgentChat);
-document.getElementById('agentChatCloseBtn').addEventListener('click', closeAgentChat);
-document.getElementById('agentChatModal').addEventListener('click', (e)=>{
-  if(e.target.id === 'agentChatModal') closeAgentChat();
-});
-
-async function loadAgentHistory(){
-  const wrap = document.getElementById('agentChatMessages');
-  try{
-    const { data, error } = await sb.from('agent_messages').select('role, content').eq('user_id', currentUserId).order('created_at', {ascending:true}).limit(60);
-    if(error) throw error;
-    renderAgentMessages(data || []);
-  }catch(err){
-    console.error(err);
-    renderAgentMessages([]);
-  }
-}
-
-function renderAgentMessages(list){
-  const wrap = document.getElementById('agentChatMessages');
-  if(list.length === 0){
-    wrap.innerHTML = `<div class="agent-msg-empty">Preguntale lo que quieras sobre tu negocio: cuánto ganaste este mes, si te conviene subir un precio, qué le podés preguntar a tu contador antes de ir. Tiene el contexto de tus ventas reales.</div>`;
-    return;
-  }
-  wrap.innerHTML = list.map(m => `<div class="agent-msg ${m.role === 'user' ? 'agent-msg-user' : 'agent-msg-assistant'}">${escapeHtml(m.content)}</div>`).join('');
-  wrap.scrollTop = wrap.scrollHeight;
-}
-
-function appendAgentMessage(role, content){
-  const wrap = document.getElementById('agentChatMessages');
-  const empty = wrap.querySelector('.agent-msg-empty');
-  if(empty) empty.remove();
-  const el = document.createElement('div');
-  el.className = 'agent-msg ' + (role === 'user' ? 'agent-msg-user' : 'agent-msg-assistant');
-  el.textContent = content;
-  wrap.appendChild(el);
-  wrap.scrollTop = wrap.scrollHeight;
-}
-
-async function sendAgentMessage(){
-  if(agentSending) return;
-  const input = document.getElementById('agentChatInput');
-  const mensaje = input.value.trim();
-  if(!mensaje) return;
-  const errEl = document.getElementById('agentChatErrorMsg');
-  errEl.textContent = '';
-
-  agentSending = true;
-  input.value = '';
-  document.getElementById('agentChatSendBtn').disabled = true;
-  appendAgentMessage('user', mensaje);
-
-  const wrap = document.getElementById('agentChatMessages');
-  const loadingEl = document.createElement('div');
-  loadingEl.className = 'agent-msg-loading';
-  loadingEl.innerHTML = '<span></span><span></span><span></span>';
-  wrap.appendChild(loadingEl);
-  wrap.scrollTop = wrap.scrollHeight;
-
-  try{
-    const { data: sessionData } = await sb.auth.getSession();
-    const token = sessionData && sessionData.session && sessionData.session.access_token;
-    if(!token) throw new Error('Sin sesión activa.');
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-agent`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mensaje })
-    });
-    const result = await res.json().catch(()=>({}));
-    loadingEl.remove();
-    if(!res.ok || result.error) throw new Error(result.error || 'No se pudo responder.');
-    appendAgentMessage('assistant', result.respuesta);
-  }catch(err){
-    console.error(err);
-    loadingEl.remove();
-    errEl.textContent = err.message || 'No se pudo enviar el mensaje. Probá de nuevo.';
-  }
-  agentSending = false;
-  document.getElementById('agentChatSendBtn').disabled = false;
-}
-document.getElementById('agentChatSendBtn').addEventListener('click', sendAgentMessage);
-document.getElementById('agentChatInput').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter'){ e.preventDefault(); sendAgentMessage(); }
-});
-
 async function addCierreCaja(fields){
   try{
     const { data, error } = await sb.from('cierres_caja').insert({ user_id: currentUserId, ...fields }).select().single();
@@ -3172,10 +3145,12 @@ function renderHistory(){
   }
 }
 
+// Sirve para texto y tambien dentro de atributos ("..." o '...'). La version
+// anterior (textContent -> innerHTML) no escapaba comillas: un nombre como
+// `x" onmouseover="..."` dentro de value="..." o title="..." inyectaba
+// codigo, y las descripciones pueden venir de un Excel importado.
 function escapeHtml(s){
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
 document.getElementById('importBtn').addEventListener('click', ()=>{
