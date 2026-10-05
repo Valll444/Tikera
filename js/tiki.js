@@ -1124,9 +1124,9 @@ function tikiActividad(periodo){
 // propios (que se podria leer como si fueran "del otro comercio"). Igual,
 // la proteccion real no es esta: la app solo descarga los datos de la
 // cuenta logueada (RLS en Supabase), asi que Tiki no tiene como verlos.
-const TIKI_RE_META = /\b(ignor\w*|olvida\w*|saltea\w*|desactiva\w*|anula\w*)\b.{0,25}\b(instrucciones|reglas|indicaciones|restricciones|limites)\b|\bsystem prompt\b|\bprompt\b|\binstrucciones (internas|del sistema|que te dieron|ocultas|secretas)\b|\bmodo (admin\w*|administrador|desarrollador|dios|debug|sin (reglas|limites)|libre)\b|\bactua\w* como\b|\bhace(te)? de cuenta que sos\b|\bsoy (el |la |un |una )?(admin\w*|desarrollador\w*|programador\w*|creador\w*|developer)\b|\bsoy (el |la )?(dueno|duena|creador|creadora) de (la plataforma|tikera|la app|el sistema|tiki)\b|\bjailbreak\b|\bdeveloper mode\b/;
-const TIKI_RE_AJENO = /\b(otr[oa]s?|ajen[oa]s?|demas)\b.{0,25}\b(comercios?|kioscos?|negocios?|usuarios?|locales?|almacen(es)?|tiendas?|duenos?|personas)\b|\b(otra cuenta|cuenta de otr[oa]|otras cuentas de tikera)\b|\b(competencia|competidor\w*)\b|\bde (todos|todas) (los|las) (comercios|kioscos|negocios|usuarios|cuentas)\b|\bcualquier (comercio|kiosco|negocio|usuario|cuenta)\b|\b(kiosco|negocio|local|comercio) de (enfrente|al lado|la esquina)\b|\b(user|usuario) ?id\b/;
-const TIKI_RE_ACCION = /\b(carga|cargame|cargale|anota|anotame|registra|registrame|borra|borrame|borrale|elimina|eliminame|modifica|modificame|cambia|cambiame|cambiale|edita|agrega|agregame|crea|creame|subi|subile|baja|bajale|pone|ponele|ponle|actualiza|marca|marcame)\b.*\b(ventas?|gastos?|productos?|stock|precios?|cierres?|caja|proveedor(es)?|pedidos?|movimientos?|pagos?|deudas?)\b/;
+const TIKI_RE_META = /\b(ignor\w*|olvida\w*|olvidate|saltea\w*|desactiva\w*|desactivame|anula\w*|quita\w*|saca\w*|baja\w*|apaga\w*)\b.{0,25}\b(instrucciones|reglas|indicaciones|restricciones|restriccion|limites|filtros?|controles?|protecciones?|censura|seguridad)\b|\b(sin|sin ninguna) (restricci\w*|regla\w*|limite\w*|filtro\w*|censura)\b|\bobedec\w*.{0,15}\b(solo|solamente|unicamente) (mis|a mi)\b|\bsolo (tenes que |debes )?(obedecer|hacer|seguir) (lo que (yo |te )?diga|mis)\b|\bsystem prompt\b|\bprompt\b|\binstrucciones (internas|del sistema|que te dieron|ocultas|secretas)\b|\bmodo (admin\w*|administrador|desarrollador|dios|debug|sin (reglas|limites)|libre|dan)\b|\bactua\w* como\b|\b(hace(te)? de cuenta|imagin\w*|supon\w*|pretend\w*|fingi\w*|jug(a|ue)mos a) que (sos|eres|fueras)\b|\bsos (ahora )?(dan|un modelo|una ia sin|un sistema sin|otro (sistema|asistente|bot))\b|\b(hacer|podes hacer|pode[ií]s hacer) cualquier cosa\b|\bsin ning(un|ún) l[ií]mite\b|\bsoy (el |la |un |una )?(admin\w*|desarrollador\w*|programador\w*|creador\w*|developer|soporte|equipo)\b|\bsoy (el |la )?(dueno|duena|creador|creadora) de (la plataforma|tikera|la app|el sistema|tiki)\b|\bte habla (el |la )?(equipo|soporte|desarrollador|administrador)\b|\bjailbreak\b|\bdeveloper mode\b|\bignore\b.{0,20}\b(instructions|rules|prompt)\b|\bdisregard\b.{0,20}\b(instructions|rules)\b|\bforget\b.{0,15}\b(your |the )?(rules|instructions)\b|\bshow\b.{0,15}\b(your |the )?(system )?prompt\b/;
+const TIKI_RE_AJENO = /\b(otr[oa]s?|ajen[oa]s?|demas)\b.{0,25}\b(comercios?|kioscos?|negocios?|usuarios?|locales?|almacen(es)?|tiendas?|duenos?|personas|cuentas?)\b|\b(otra cuenta|cuenta de otr[oa]|otras cuentas de tikera)\b|\b(competencia|competidor\w*)\b|\bde (todos|todas|los demas) (los|las)? ?(comercios|kioscos|negocios|usuarios|cuentas)\b|\bdatos de (todos|otros|los demas)\b|\bcualquier (comercio|kiosco|negocio|usuario|cuenta)\b|\b(kiosco|negocio|local|comercio) de (enfrente|al lado|la esquina)\b|\b(user|usuario) ?id\b|\bother (users?|merchants?|accounts?|shops?|stores?|businesses)\b|\b(all|other) (users?|accounts?) (sales|data)\b/;
+const TIKI_RE_ACCION = /\b(carga|cargame|cargale|anota|anotame|registra|registrame|borra|borrame|borrale|elimina|eliminame|modifica|modificame|cambia|cambiame|cambiale|edita|agrega|agregame|crea|creame|subi|subile|baja|bajale|pone|ponele|ponle|actualiza|marca|marcame)\b.*\b(ventas?|gastos?|productos?|stock|precios?|cierres?|caja|proveedor(es)?|pedidos?|movimientos?|pagos?|deudas?)\b|\b(borr[aá]|elimin[aá]|resete[aá]|limpi[aá]|vaci[aá])\w*\b.{0,12}\b(todo|todos|todas|la base|los datos|mi (cuenta|negocio|historial)|el historial)\b/;
 function tikiFueraDeAlcance(tipo, t){
   if(tipo === 'ajeno'){
     return { html: '<p>Solo puedo ver los datos de esta cuenta. Ventas, productos o charlas de otros comercios o usuarios no los tengo: la app nunca los descarga, así que no hay forma de pedírmelos.</p><p class="tiki-soft">Si tenés otro local con otra cuenta de Tikera, entrá con esa cuenta.</p>' };
@@ -1142,6 +1142,185 @@ function tikiFueraDeAlcance(tipo, t){
     : /\b(proveedor(es)?|pedidos?|deudas?)\b/.test(t) ? { label: 'Ver proveedores', view: 'catalogo', tab: 'proveedores' }
     : { label: 'Ir al catálogo', view: 'catalogo' };
   return { html: '<p>Yo solo leo tus datos: no puedo cargar, cambiar ni borrar ventas, gastos, productos, cierres ni pedidos. Así nada se modifica sin que lo hagas vos.</p>', acciones: [destino] };
+}
+
+// ---------- Seguridad: intencion y riesgo ----------
+// No es una lista negra de palabras: clasifica QUE se pide, CON QUE fin
+// (protegerse o dañar) y SOBRE QUIEN. "¿Cómo detecto un billete falso?" se
+// ayuda; "¿Cómo falsifico un billete?" se rechaza; las dos tienen la
+// palabra "billete". Igual, la seguridad de fondo no depende de esto: Tiki
+// no tiene datos ajenos ni secretos (RLS en Supabase) ni puede escribir
+// nada. Esta capa es para contestar bien, no para "contener" al modelo.
+//
+// Corre sobre tres formas del mensaje para que no la esquiven escondiendo
+// el texto: el normal, uno "aplanado" (junta letras separadas como
+// "v-e-n-t-a-s" y deshace leet 0/1/3/4/5/@) y, si hay un bloque tipo
+// base64, su contenido decodificado.
+let tikiManipSeguidas = 0; // intentos de manipulacion al hilo (para endurecer la respuesta)
+
+function tikiAplanar(t){
+  let s = t;
+  // "v e n t a s" / "v-e-n-t-a-s" / "o.t.r.o.s": 4+ letras sueltas seguidas.
+  s = s.replace(/\b([a-z]( |-|\.|_|\*){1,2}){3,}[a-z]\b/g, m => m.replace(/[ \-._*]/g, ''));
+  // leet basico, solo para esta capa (nunca para las cuentas).
+  s = s.replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's').replace(/@/g, 'a').replace(/\$/g, 's');
+  return s.replace(/\s+/g, ' ').trim();
+}
+function tikiDeBase64(raw){
+  const salidas = [];
+  const tokens = String(raw || '').match(/[A-Za-z0-9+/]{16,}={0,2}/g) || [];
+  for(const tok of tokens.slice(0, 4)){
+    if(tok.length % 4 !== 0 && !tok.includes('=')) continue;
+    try{
+      const dec = (typeof atob === 'function' ? atob(tok) : Buffer.from(tok, 'base64').toString('latin1'));
+      if(/[a-zA-Z]{4,}/.test(dec) && /^[\x09\x0a\x0d\x20-\x7e]*$/.test(dec)) salidas.push(tikiNorm(dec));
+    }catch(e){}
+  }
+  return salidas;
+}
+
+// Marco de la pregunta: protegerse/detectar vs. hacer daño, y a quién.
+// "comprob(ar...)" es el verbo (verificar); "comprobante" NO entra acá.
+const TIKI_SEG_PROT = /\b(proteg\w*|protej\w*|cuidar\w*|cuido|resguard\w*|defend\w*|evitar|evito|evita|prevenir|previene|detect\w*|reconoc\w*|identific\w*|darme cuenta|darnos cuenta|me doy cuenta|nos damos cuenta|verific\w*|chequear|chequeo|comprob(ar|a|as|e|en|ando|alo|arlo|arla)|asegurar\w*|revisar si|como se si|como saber si|como me doy|saber si es|si es (falso|falsa|trucho|trucha|verdadero|real|confiable|legitim\w*)|me quieren (estafar|robar|hacke\w*)|me estan (estafando|robando|hacke\w*)|no (me )?(estafen|roben|enganen|hacke\w*)|caer en|no caer)\b/;
+const TIKI_SEG_OFEN = /\b(hacer|hago|hace|crear|creo|crea|armar|armo|fabricar|fabrico|programar|desarrollar|robar|robo|roba|robarle|robarme|hacke\w*|crack\w*|vulnerar|explotar|falsific\w*|truchar|adulter\w*|clonar|clono|estafar|estafo|enganar|timar|sacarle|sacarse|quedarme con|conseguir las|obtener las|burlar|evadir el control)\b/;
+const TIKI_SEG_VICTIMA = /\b(a (un|una|otr[oa]|algun|alguna|mi|el|la) (client\w*|person\w*|usuari\w*|comerciante|vecin\w*|señor\w*|tip[oa]|min[oa]|gente|chab[oó]n)|de (un|una|otr[oa]|algun|alguna) (client\w*|cuenta|person\w*|usuari\w*|comerciante)|a alguien|a otr[oa]|a la gente|ajen[oa]s?)\b/;
+// Señales de engaño/robo a alguien (van con victima).
+const TIKI_SEG_ENGANO = /\b(sin que se de cuenta|sin que lo note|sin que se avive|de mas|cobrar\w* de mas|afanar\w*|robarle|sacarle (la )?plata|saco plata|sacar\w* plata|quedarme con (la |su )?plata|hacerle (un )?cuento|enganand\w*|enganarl\w*)\b/;
+// Engañar escondiéndose, aunque no se nombre a la víctima explícitamente.
+const TIKI_SEG_OCULTO = /\b(sin que se de cuenta|sin que lo note|sin que se note|sin que se avive|sin que nadie se entere)\b/;
+const TIKI_SEG_COBRO_INDEBIDO = /\b(cobr\w*|saco plata|sacar\w* plata|de mas|el vuelto|afanar\w*|quedarme)\b/;
+// Producir algo falso (ofensivo) vs. recibir/dudar de algo (defensivo).
+// Los verbos ambiguos (hacer/armar/crear) solo cuentan si van seguidos del
+// objeto: "hago UN billete" sí, "¿qué hago con este billete?" no.
+const TIKI_SEG_FABRICAR = /\b(falsific\w*|imprim\w*|fabric\w*|truchar|adulter\w*|clonar|clono|inventar)\b|\b(hacer|hago|hace|armar|armo|crear|creo|consigo|conseguir|comprar|compro|vender|vendo) (un|una|uno|unos|unas|billetes?|monedas?|comprobantes?|transferencias?|recibos?|facturas?|boletas?)\b/;
+const TIKI_SEG_AUTENT = /\b(fals\w*|truch\w*|adulter\w*|falsific\w*|clonad\w*|no se si (es|sea|son)|sospech\w*|dud\w*|(es|sea|son|será) (real|verdader\w*|autentic\w*|legitim\w*|confiable)|parece (falso|trucho|raro|adulterad\w*))\b/;
+
+// Temas sensibles por co-ocurrencia: un sustantivo del tema + (opcional) un
+// calificador en cualquier parte del mensaje (mas robusto que exigir que
+// esten pegados). soloDanino = nunca se responde, aunque sea "defensivo".
+const TIKI_SEG_FALSO = /\b(fals\w*|truch\w*|adulter\w*|trucad\w*|falsific\w*|clonad\w*)\b/;
+const TIKI_SEG_TEMAS = [
+  { id: 'arma', soloDanino: true, nombres: /\b(explosiv\w*|bomba casera|bombas?|municion\w*|granada\w*|polvora|arma de fuego|armas de fuego)\b/ },
+  { id: 'violencia', soloDanino: true, nombres: /\b(lastimar a|hacerle daño a|golpear a|matar a|envenenar|secuestrar)\b/ },
+  { id: 'malware', nombres: /\b(malware|troyan\w*|ransomware|keylogger\w*|spyware|gusano informatic\w*|ciberataque)\b/ },
+  // "virus" solo cuenta con contexto tecnico o intencion (no el de un resfrío).
+  { id: 'malware', nombres: /\bvirus\b/, calif: /\b(informatic\w*|compu|computador\w*|\bpc\b|celular|telefono|datos|sistema|programa|archivo|hacer|hago|crear|programar|armar|armo|robar|infectar|espiar|antivirus|troyan\w*)\b/ },
+  { id: 'phishing', nombres: /\b(phishing|pishing|fishing|correo falso|mail falso|pagina falsa|sitio falso|link falso)\b/ },
+  { id: 'hackeo', nombres: /\b(hacke\w*|hackin\w*|crackear|exploit|vulnerar (una |la )?(cuenta|clave|seguridad|contrasen\w*))\b/ },
+  { id: 'credenciales', nombres: /\b(credencial\w*|contrasen\w*|password|clave) (de|del|de la|ajen\w*)\b|\b(robar|roba|sacar|conseguir|obtener|hacke\w*|adivinar) (la |las |una )?(credencial\w*|contrasen\w*|password|clave|cuenta|cuentas)\b/ },
+  // Protegerse (siempre defensivo): "cómo protejo/cuido mi cuenta/clave".
+  { id: 'credenciales', nombres: /\b(proteg\w*|protej\w*|cuidar\w*|cuido|asegurar\w*|resguard\w*) (mi |la |una |mis )?(cuenta|cuentas|clave|claves|contrasen\w*|usuario|acceso)\b|\bcuenta (segura|hacke\w*|robada|comprometida)\b/ },
+  { id: 'estafa', nombres: /\b(estaf\w*|timo|timar|chamuyo para|hacer un cuento|cuento del tio)\b/ },
+  { id: 'tarjeta', soloDanino: true, nombres: /\b(clon\w*|copiar|duplicar|grabar) (la |una |mi |su |esa |otra )?(tarjeta|banda magnetica|chip)\b|\btarjeta (clonad\w*|duplicad\w*|copiad\w*)\b/ },
+  { id: 'evasion', soloDanino: true, nombres: /\b(no pagar impuestos|no declarar|evadir\w*|evasion|vender en negro|facturar menos|esconder (plata|ventas|ingresos)|blanquear plata|lavar plata|que no me (agarr|pesqu|descubr|vea la afip|vea arca))\w*\b/ },
+  // billete/comprobante: fabricarlo es peligroso; recibirlo o dudar, defensivo.
+  { id: 'dinero_falso', nombres: /\b(billete\w*|moneda\w*)\b/, calif: TIKI_SEG_AUTENT, ofensivo: TIKI_SEG_FABRICAR },
+  { id: 'comprobante_falso', nombres: /\b(comprobante\w*|transferencia\w*|recibo\w*|boleta\w*|factura\w*)\b/, calif: TIKI_SEG_AUTENT, ofensivo: TIKI_SEG_FABRICAR },
+  { id: 'robo', nombres: /\b(afanar|afanarle|sacarle (la )?plata|quedarme con la plata|vaciar la caja|robarle)\b/ }
+];
+const TIKI_RE_SECRETO = /\b(api ?key\w*|apikey|token\w*|service.?role|variables? de entorno|secret\w*|clave de (la api|supabase|la base|el servidor|la app|tikera|produccion)|contrasen\w* de (los|las|otr\w*|tod\w*) (usuari\w*|cuentas?|clientes?|comercios?))\b/;
+
+// Devuelve { nivel, tema } o null. nivel: 'peligroso' | 'defensivo' | 'secreto'.
+function tikiRiesgoDe(t){
+  if(TIKI_RE_SECRETO.test(t)) return { nivel: 'secreto' };
+  const prot = TIKI_SEG_PROT.test(t), ofen = TIKI_SEG_OFEN.test(t), victima = TIKI_SEG_VICTIMA.test(t);
+  // Engañar o robarle a alguien, aunque no se nombre un tema puntual.
+  if(victima && TIKI_SEG_ENGANO.test(t)) return { nivel: 'peligroso', tema: 'robo' };
+  // Cobrar de más / quedarse con plata escondiéndose (sin víctima explícita).
+  if(TIKI_SEG_OCULTO.test(t) && TIKI_SEG_COBRO_INDEBIDO.test(t)) return { nivel: 'peligroso', tema: 'robo' };
+  for(const tema of TIKI_SEG_TEMAS){
+    if(!tema.nombres.test(t)) continue;
+    if(tema.calif && !tema.calif.test(t)) continue;
+    if(tema.soloDanino) return { nivel: 'peligroso', tema: tema.id };
+    // Si el tema distingue "fabricar" (ofensivo) de "recibir/dudar", eso manda.
+    const ofensivo = tema.ofensivo ? tema.ofensivo.test(t) : (ofen || victima);
+    if(ofensivo && !(prot && !tema.ofensivo)) return { nivel: 'peligroso', tema: tema.id };
+    // Protegerse/detectar, recibir, o para uno mismo: defensivo, se ayuda.
+    return { nivel: 'defensivo', tema: tema.id };
+  }
+  return null;
+}
+
+// Rechazo natural y corto, con una alternativa legitima cuando existe.
+// Nada de sermones. Si el usuario insiste, mas firme y mas breve.
+function tikiRechazoPeligroso(tema){
+  const alt = {
+    malware: { pregunta: '¿Cómo detecto si tengo malware en la compu?', label: 'Cómo protegerme del malware' },
+    phishing: { pregunta: '¿Cómo me protejo del phishing?', label: 'Cómo protegerme del phishing' },
+    hackeo: { pregunta: '¿Cómo protejo mi cuenta?', label: 'Cómo proteger mi cuenta' },
+    credenciales: { pregunta: '¿Cómo protejo mi cuenta?', label: 'Cómo proteger mi cuenta' },
+    estafa: { pregunta: '¿Cómo evito que me estafen?', label: 'Cómo evitar que me estafen' },
+    dinero_falso: { pregunta: '¿Cómo detecto un billete falso?', label: 'Cómo detectar un billete falso' },
+    comprobante_falso: { pregunta: '¿Cómo sé si una transferencia es falsa?', label: 'Cómo detectar una transferencia falsa' },
+    robo: { pregunta: '¿Cómo evito que me estafen?', label: 'Cómo cuidar la caja' },
+    tarjeta: { pregunta: '¿Cómo evito que me estafen?', label: 'Cómo cuidarme de estafas' }
+  }[tema];
+  const frase = {
+    arma: 'Con eso no te puedo ayudar.',
+    violencia: 'Con eso no te puedo ayudar.',
+    malware: 'No te puedo ayudar a hacer un virus ni nada para dañar o robar datos.',
+    phishing: 'No te puedo ayudar a armar un phishing ni a engañar a nadie.',
+    hackeo: 'No te puedo ayudar a entrar en una cuenta que no es tuya.',
+    credenciales: 'No te puedo ayudar a robar contraseñas ni a entrar en una cuenta ajena.',
+    estafa: 'No te puedo ayudar a estafar ni a engañar a nadie.',
+    dinero_falso: 'No te puedo ayudar a falsificar billetes.',
+    comprobante_falso: 'No te puedo ayudar a falsificar un comprobante ni una transferencia.',
+    tarjeta: 'No te puedo ayudar a clonar ni copiar una tarjeta.',
+    robo: 'No te puedo ayudar con eso.'
+  }[tema] || 'Con eso no te puedo ayudar.';
+  if(tema === 'evasion'){
+    return { html: '<p>De eso no te puedo aconsejar. Para ver qué podés hacer dentro de la ley con tus impuestos, lo mejor es hablarlo con un contador.</p>' };
+  }
+  if(tikiManipSeguidas >= 2) return { html: `<p>${frase}</p>` };
+  return {
+    html: `<p>${frase}${alt ? ' Si lo que querés es cuidarte, sí te puedo dar una mano.' : ''}</p>`,
+    acciones: alt ? [{ label: alt.label, pregunta: alt.pregunta }] : undefined
+  };
+}
+
+// Respuestas de seguridad utiles para un comercio. Generales y defensivas,
+// no instrucciones para atacar a nadie.
+function tikiSeguridadDefensiva(tema){
+  const lista = (items) => `<ul class="tiki-list">${items.map(x => `<li><span>${x}</span></li>`).join('')}</ul>`;
+  const nota = '<p class="tiki-soft">Esto es orientativo; soy un asistente del negocio, no un experto en seguridad.</p>';
+  switch(tema){
+    case 'dinero_falso':
+      return { html: `<p>Para darte cuenta si un billete es falso, al cobrar fijate en:</p>${lista(['La marca de agua y el hilo de seguridad mirándolo al trasluz.', 'El relieve: los billetes reales tienen zonas que se sienten al tacto.', 'Que el número cambie de color al moverlo.', 'Comparar con otro billete del mismo valor si tenés dudas.'])}<p>Ante la duda, mejor no aceptarlo. El Banco Central tiene una guía oficial de cada billete.</p>${nota}` };
+    case 'comprobante_falso':
+      return { html: `<p>Un comprobante de transferencia por foto se falsifica fácil. Para no comerte una trucha:</p>${lista(['No entregues la mercadería hasta ver la plata <strong>acreditada en tu cuenta</strong>, no en la captura del cliente.', 'Abrí tu propia app del banco o billetera y confirmá que entró.', 'Desconfiá si apuran, si el nombre no coincide o si “ya te la mando y no figura”.'])}<p>La captura no es comprobante: el único comprobante es que la veas en tu cuenta.</p>${nota}` };
+    case 'phishing':
+      return { html: `<p>El phishing es cuando te mandan un mail, WhatsApp o link que se hace pasar por el banco, la billetera o una empresa para robarte los datos. Para cuidarte:</p>${lista(['No entres a links de mensajes; abrí la app o la web del banco vos mismo.', 'Nunca des tu clave, token o código por mensaje o teléfono: el banco no los pide.', 'Desconfiá de premios, urgencias y “verificá tu cuenta o se bloquea”.', 'Mirá bien la dirección: suelen usar una parecida con una letra cambiada.'])}${nota}` };
+    case 'malware':
+      return { html: `<p>Para la compu o el celular del negocio:</p>${lista(['Tené un antivirus al día y hacé un análisis completo.', 'No instales programas “crackeados” ni abras adjuntos raros.', 'Mantené el sistema y las apps actualizados.', 'Si va lento, aparecen ventanas solas o se reinicia, puede estar infectado: conviene revisarlo.'])}${nota}` };
+    case 'estafa':
+    case 'robo':
+      return { html: `<p>Las estafas más comunes a un comercio:</p>${lista(['El “comprobante de transferencia” por foto que nunca se acredita.', 'Pagar con un billete grande para confundirte con el vuelto: contá la plata con calma.', 'Billetes falsos.', 'Llamados que dicen ser del banco o de la tarjeta pidiéndote datos o códigos.'])}<p>La regla general: no entregues nada hasta tener la plata confirmada, y nunca pases claves ni códigos por teléfono.</p>${nota}` };
+    case 'hackeo':
+    case 'credenciales':
+      return { html: `<p>Para proteger tu cuenta:</p>${lista(['Una contraseña larga y que no uses en otro lado.', 'No la compartas ni la anotes a la vista.', 'Activá el segundo factor donde se pueda.', 'Cerrá sesión en dispositivos que no son tuyos.'])}${nota}` };
+    default:
+      return { html: `<p>Para cuidarte, lo general es: no compartir claves ni códigos, confirmar la plata en tu cuenta antes de entregar nada, y desconfiar de mensajes con links o apuros.</p>${nota}` };
+  }
+}
+
+function tikiSecreto(){
+  return { html: '<p>No manejo claves, tokens ni contraseñas, ni las mías ni las de nadie, así que no hay nada de eso que pueda mostrarte. Lo único que hago es leer los datos de tu negocio para contestarte.</p>' };
+}
+
+// Pasa el mensaje por las tres formas y devuelve el riesgo mas serio.
+function tikiClasificarRiesgo(raw, t){
+  const variantes = [t, tikiAplanar(t), ...tikiDeBase64(raw)];
+  let mejor = null;
+  const orden = { peligroso: 3, secreto: 2, defensivo: 1 };
+  for(const v of variantes){
+    const r = tikiRiesgoDe(v);
+    if(r && (!mejor || orden[r.nivel] > orden[mejor.nivel])) mejor = r;
+    // meta/ajeno tambien se chequean sobre las variantes (ataques escondidos)
+    if(!mejor && (TIKI_RE_META.test(v) || TIKI_RE_AJENO.test(v))){
+      mejor = { nivel: TIKI_RE_AJENO.test(v) ? 'ajeno' : 'meta' };
+    }
+  }
+  return mejor;
 }
 
 // ---------- Conversacion ----------
@@ -1475,9 +1654,21 @@ async function tikiResponder(texto){
   if(tikiCtx && Date.now() - tikiCtx.ts > TIKI_CONTEXTO_MS) tikiCtx = null;
   const sugerida = tikiSugerencia && Date.now() - tikiSugerencia.ts <= TIKI_CONTEXTO_MS ? tikiSugerencia : null;
   tikiSugerencia = null; // la oferta vale solo para la respuesta siguiente
-  // Los limites van primero, antes que cualquier repregunta.
-  if(TIKI_RE_META.test(t)) return tikiCerrarRespuesta(tikiFueraDeAlcance('meta', t));
-  if(TIKI_RE_AJENO.test(t)) return tikiCerrarRespuesta(tikiFueraDeAlcance('ajeno', t));
+  // Capa de intencion/riesgo, antes que cualquier repregunta. Lo peligroso
+  // y la manipulacion se cortan aca; lo defensivo se responde con ayuda.
+  const riesgo = tikiClasificarRiesgo(raw, t);
+  if(riesgo){
+    if(riesgo.nivel === 'defensivo'){
+      tikiManipSeguidas = 0;
+      return tikiCerrarRespuesta(tikiSeguridadDefensiva(riesgo.tema));
+    }
+    tikiManipSeguidas++;
+    if(riesgo.nivel === 'peligroso') return tikiCerrarRespuesta(tikiRechazoPeligroso(riesgo.tema));
+    if(riesgo.nivel === 'secreto') return tikiCerrarRespuesta(tikiSecreto());
+    if(riesgo.nivel === 'ajeno') return tikiCerrarRespuesta(tikiFueraDeAlcance('ajeno', t));
+    return tikiCerrarRespuesta(tikiFueraDeAlcance('meta', t));
+  }
+  tikiManipSeguidas = 0;
   const seguimiento = await tikiSeguimiento(t, sugerida);
   return tikiCerrarRespuesta(seguimiento || await tikiRutear(raw, t));
 }
@@ -1605,6 +1796,7 @@ function resetTiki(){
   tikiSeguir = null;
   tikiCtx = null;
   tikiSugerencia = null;
+  tikiManipSeguidas = 0;
   tikiPendiente = null;
   tikiMemoria = {};
   tikiMemoriaDe = null;

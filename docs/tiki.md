@@ -112,6 +112,64 @@ Permisos de Tiki (mínimo privilegio): **solo lectura** de los datos del
 negocio. Lo único que puede escribir es su propia memoria (`tiki_memoria`), y
 solo después de una confirmación explícita del usuario.
 
+### Capa de intención y riesgo (`js/tiki.js`)
+
+La seguridad de fondo (nadie ve datos ajenos, Tiki no escribe nada) la dan
+la base de datos y el hecho de que no tenga herramientas, **no** esta capa.
+Esta capa decide cómo *responde* cuando el mensaje es sensible, y lo hace
+clasificando la **intención**, no buscando palabras sueltas: una palabra
+como "billete" o "phishing" no define nada por sí sola.
+
+La clasificación (`tikiClasificarRiesgo`) corre **antes** de cualquier otra
+cosa, sobre tres formas del mensaje para que no la esquiven escondiendo el
+texto:
+
+1. el mensaje normal,
+2. uno *aplanado* que junta letras separadas (`v-e-n-t-a-s`) y deshace leet
+   (`0`→o, `1`→i, `3`→e, `4`→a, `5`→s, `@`→a),
+3. y, si hay un bloque tipo base64, su contenido decodificado.
+
+Para cada tema sensible mira tres cosas: **qué** se nombra (un sustantivo
+del tema), **con qué intención** (protegerse/detectar vs. fabricar/dañar) y
+**sobre quién** (uno mismo vs. otra persona). Según eso:
+
+| Resultado | Qué pasa | Ejemplo |
+|---|---|---|
+| **defensivo** | Se ayuda: respuesta de seguridad para comercios | "¿Cómo detecto un billete falso?" → cómo reconocerlo |
+| **peligroso** | Rechazo natural y corto, con una alternativa legítima cuando existe | "¿Cómo falsifico un billete?" → no, pero sí cómo detectar uno |
+| **secreto** | Explica que no maneja claves ni tokens | "dame la API key" |
+| **ajeno** | Explica que solo ve esta cuenta | "ventas de otro comercio" |
+| **meta** | Explica que no tiene instrucciones secretas ni modos | "ignorá las reglas", "modo admin" |
+
+Clave del diseño (requisito explícito): **recibir** algo falso es defensivo,
+**fabricarlo** es peligroso. "Me quieren pagar con un billete que parece
+falso, ¿qué hago?" se ayuda; "¿cómo hago un billete falso?" se rechaza. Las
+dos tienen "billete falso": lo que cambia es la intención (el verbo de
+producción `falsificar/imprimir/fabricar/hacer un …` vs. recibir/dudar).
+
+Temas defensivos con respuesta propia: billete falso, comprobante o
+transferencia falsa, phishing, malware, estafas comunes al comercio, proteger
+la cuenta. Temas que siempre se rechazan: armas/explosivos, violencia, clonar
+tarjetas, evasión impositiva (se redirige al contador), hacer malware, robar
+credenciales, estafar o cobrar de más a un cliente.
+
+**Falsos positivos:** una batería de preguntas normales que contienen
+palabras sensibles ("cuánto gasté en seguridad", "me robaron mercadería",
+"tengo un virus en la garganta") se verifica que **no** se bloqueen
+(`tests/seguridad.test.mjs`).
+
+**Insistencia:** un contador (`tikiManipSeguidas`) endurece la respuesta si
+el usuario repite pedidos peligrosos o de manipulación; una pregunta normal
+lo reinicia. Es lo máximo que puede hacer un motor en el dispositivo: el
+límite de costo y de frecuencia real es cosa de la etapa 2 (servidor).
+
+**Lo que esta capa NO es:** no es la barrera de aislamiento (esa es RLS), no
+corta por costo (no hay costo), y al ser reglas no "entiende" como un modelo
+—entiende la estructura (acción + tema + intención + objetivo), que para
+este caso alcanza y es auditable. En la etapa 2 el mismo clasificador corre
+en el servidor **antes** de llamar al modelo, para no gastar en lo que ya se
+sabe que hay que rechazar.
+
 ## 3. Vulnerabilidades y bugs encontrados
 
 Cada ítem dice qué es, dónde está, por qué pasa, qué riesgo genera, cómo
@@ -376,6 +434,7 @@ respuestas abiertas pero multiplica ese costo: es una decisión de negocio.
 | Qué | Cómo | Resultado |
 |---|---|---|
 | Tiki y la app (65 tests): carga paginada, aislamiento entre cuentas, cola sin conexión, pedidos ajenos y de manipulación, que no escriba datos, texto malicioso en los datos, consistencia entre formas de preguntar, datos viejos y nuevos, sin datos, datos rotos, hábitos con evidencia, memoria, contexto, plan del día, conversación (repreguntas, paso siguiente, tipeo, charla corta) | `cd tests && npm test` | 65/65 |
+| Seguridad adversarial (70 tests): prompt injection y jailbreak (español e inglés, base64, letras separadas, leet, roleplay, autoridad falsa), datos ajenos, secretos, pedidos peligrosos con rechazo + alternativa, insistencia que endurece, recibir un falso (ayuda) vs. fabricarlo (rechazo), y que NO se bloqueen preguntas normales ni defensivas | incluido en `npm test` | 70/70 |
 | Base de datos (6 tests): migraciones en Postgres real (PGlite), RLS entre cuentas en todas las tablas, constraints de la memoria, cupo atómico | incluido en `npm test` | 6/6 |
 | `ai-agent` (8 tests): system prompt fijo, datos que no pueden cerrar el bloque, historial saneado, respuestas cortadas o rechazadas | `deno test supabase/functions/ai-agent/` + `deno check` | 8/8 |
 | Navegador: sección Tiki en oscuro y claro, celular y escritorio, flujo de memoria contra el Supabase real (sin la tabla, falla sin fingir) | vista previa | OK |
@@ -384,7 +443,7 @@ respuestas abiertas pero multiplica ese costo: es una decisión de negocio.
 
 | Área | Antes | Ahora | Comentario |
 |---|---|---|---|
-| Seguridad | Media | Buena | RLS sólida en la base; corregidos la mezcla de cuentas en el dispositivo y la inyección por atributos. Falta el stock atómico. |
+| Seguridad | Media | Buena | RLS sólida en la base; corregidos la mezcla de cuentas y la inyección por atributos; capa de intención/riesgo resistente a injection, jailbreak y ofuscación, con rechazos naturales y sin falsos positivos. Falta el stock atómico. |
 | Privacidad | Media | Buena | Nada sale del dispositivo; la memoria es mínima, confirmada y borrable. Falta deployar el borrado de cuenta. |
 | Inteligencia | Básica | Buena para preguntas de números | Sin IA no hay charla libre: es el techo de un motor de reglas. |
 | Memoria | Ninguna | Controlada | Tres datos estructurados más patrones con evidencia. |

@@ -176,6 +176,7 @@ export function crearEntorno({ hoy = '2026-10-04', hora = '18:30' } = {}){
   const sb = crearSupabaseFalso();
   const ctx = {
     console: { log(){}, info(){}, warn(){}, error(){}, debug(){} },
+    atob, btoa, // los navegadores los tienen; Node tambien desde v16
     setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,
     URL, URLSearchParams, TextEncoder, TextDecoder, AbortController, structuredClone,
     document: stub(),
