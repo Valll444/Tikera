@@ -1201,7 +1201,8 @@ const TIKI_SEG_AUTENT = /\b(fals\w*|truch\w*|adulter\w*|falsific\w*|clonad\w*|no
 const TIKI_SEG_FALSO = /\b(fals\w*|truch\w*|adulter\w*|trucad\w*|falsific\w*|clonad\w*)\b/;
 const TIKI_SEG_TEMAS = [
   { id: 'arma', soloDanino: true, nombres: /\b(explosiv\w*|bomba casera|bombas?|municion\w*|granada\w*|polvora|arma de fuego|armas de fuego)\b/ },
-  { id: 'violencia', soloDanino: true, nombres: /\b(lastimar a|hacerle daño a|golpear a|matar a|envenenar|secuestrar)\b/ },
+  // Daño físico claro, sin ambigüedad (envenenar/secuestrar/apuñalar...).
+  { id: 'violencia', soloDanino: true, nombres: /\b(envenen\w*|secuestr\w*|asesin\w*|apu(ñ|n)al\w*|acuchill\w*|descuartiz\w*)\b/ },
   { id: 'malware', nombres: /\b(malware|troyan\w*|ransomware|keylogger\w*|spyware|gusano informatic\w*|ciberataque)\b/ },
   // "virus" solo cuenta con contexto tecnico o intencion (no el de un resfrío).
   { id: 'malware', nombres: /\bvirus\b/, calif: /\b(informatic\w*|compu|computador\w*|\bpc\b|celular|telefono|datos|sistema|programa|archivo|hacer|hago|crear|programar|armar|armo|robar|infectar|espiar|antivirus|troyan\w*)\b/ },
@@ -1224,6 +1225,10 @@ const TIKI_RE_SECRETO = /\b(api ?key\w*|apikey|token\w*|service.?role|variables?
 function tikiRiesgoDe(t){
   if(TIKI_RE_SECRETO.test(t)) return { nivel: 'secreto' };
   const prot = TIKI_SEG_PROT.test(t), ofen = TIKI_SEG_OFEN.test(t), victima = TIKI_SEG_VICTIMA.test(t);
+  // Hacerle daño físico a alguien: verbo de daño + persona (evita falsos
+  // positivos como "matar el tiempo" o "pegar un cartel", que no llevan víctima).
+  // El texto ya está normalizado (sin tildes, ñ→n): "daño" se escribe "dano".
+  if(victima && /\b(lastim\w*|hacerle? (dano|mal)|hago (le )?dano|danar\w*|golpe\w*|pegarl?e|pegar|mat(ar|o|arlo|arla|arlos|en)|amenaz\w*|lesion\w*|reventar\w*|cagar a (palos|trompadas)|fajar)\b/.test(t)) return { nivel: 'peligroso', tema: 'violencia' };
   // Engañar o robarle a alguien, aunque no se nombre un tema puntual.
   if(victima && TIKI_SEG_ENGANO.test(t)) return { nivel: 'peligroso', tema: 'robo' };
   // Cobrar de más / quedarse con plata escondiéndose (sin víctima explícita).
@@ -1270,6 +1275,10 @@ function tikiRechazoPeligroso(tema){
   }[tema] || 'Con eso no te puedo ayudar.';
   if(tema === 'evasion'){
     return { html: '<p>De eso no te puedo aconsejar. Para ver qué podés hacer dentro de la ley con tus impuestos, lo mejor es hablarlo con un contador.</p>' };
+  }
+  // Daño físico a una persona: rechazo + ayuda de emergencia.
+  if(tema === 'violencia'){
+    return { html: '<p>No te puedo ayudar con eso. Si vos o alguien está en peligro, llamá al <strong>911</strong>.</p>' };
   }
   if(tikiManipSeguidas >= 2) return { html: `<p>${frase}</p>` };
   return {
