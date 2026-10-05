@@ -111,6 +111,17 @@
      sobre los botones chicos del nav se ve como una barrita suelta.
      Reemplazado por los estados :active/:focus-visible propios de cada boton. */
   *{-webkit-tap-highlight-color:transparent;}
+  /* El contorno de foco por defecto del navegador: varios navegadores y
+     webviews (sobre todo en celular) lo dibujan al TOCAR un boton/link y lo
+     dejan pegado hasta tocar otra cosa -- un recuadro feo alrededor de cada
+     icono. La app ya dibuja su propio anillo con :focus-visible (solo
+     teclado), asi que aca se saca el de :focus a secas. Se hace sin
+     :focus-visible a proposito: los navegadores que muestran el bug son
+     justo los que no soportan :focus-visible, donde `:focus:not(:focus-visible)`
+     no serviria. Los :focus-visible de cada boton tienen mas especificidad,
+     asi que el anillo de teclado se mantiene donde el navegador lo soporta. */
+  a:focus, button:focus, input:focus, select:focus, textarea:focus,
+  [tabindex]:focus, [role="button"]:focus, [contenteditable]:focus, summary:focus{outline:none;}
   body{
     margin:0;
     background:var(--counter);

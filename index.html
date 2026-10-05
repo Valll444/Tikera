@@ -107,6 +107,14 @@
   @media(max-width:767px){ main{padding-bottom:88px;} }
   .font-display{font-family:'Manrope',ui-sans-serif,system-ui,sans-serif;}
   ::selection{background:var(--slate-soft);color:var(--text);}
+  /* Saca el contorno de foco por defecto que algunos navegadores/webviews
+     dibujan al TOCAR un link o boton y dejan pegado (un recuadro feo en cada
+     icono). El anillo de teclado se mantiene con :focus-visible, que tiene
+     mas especificidad. Sin :focus-visible a proposito: los navegadores con
+     el bug son los que no lo soportan (ver css/app.css). */
+  *{-webkit-tap-highlight-color:transparent;}
+  a:focus, button:focus, input:focus, select:focus, textarea:focus,
+  [tabindex]:focus, [role="button"]:focus, summary:focus{outline:none;}
 
   .container-w{max-width:1180px;margin:0 auto;padding-left:24px;padding-right:24px;}
   @media(min-width:768px){.container-w{padding-left:40px;padding-right:40px;}}
