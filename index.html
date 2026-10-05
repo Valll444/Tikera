@@ -60,6 +60,8 @@
     --green-soft:rgba(76,175,128,0.14);
     --red:#B85B5D;
     --red-soft:rgba(184,91,93,0.14);
+    /* Ciruela de Tiki (mismo que --tiki en css/app.css; ver CLAUDE.md). */
+    --tiki:#B97AA5;
   }
   /* Tema claro: data-theme="light" en <html>. La replica del dashboard
      (.mockup-shell / .dash-replica) y el mini-demo de la seccion
@@ -83,6 +85,7 @@
     --green-soft:rgba(46,143,99,0.12);
     --red:#A23F42;
     --red-soft:rgba(162,63,66,0.10);
+    --tiki:#8A4F78;
   }
   :root[data-theme="light"] .bento-hero-card{
     background:linear-gradient(155deg,#E3F3EA 0%, #FFFFFF 60%);
@@ -719,16 +722,18 @@
         </div>
       </div>
 
-      <div class="reveal bento-card p-6 flex flex-col justify-between" style="border-style:dashed;border-color:var(--hairline-strong);">
+      <!-- Tiki: mismo color ciruela que su seccion en la app (--tiki en
+           css/app.css), como Catalogo usa el turquesa de la suya. -->
+      <div class="reveal bento-card p-6 flex flex-col justify-between" style="background:linear-gradient(155deg,rgba(185,122,165,0.10) 0%, var(--bg-card) 55%);border-color:rgba(185,122,165,0.24);">
         <div class="flex items-center justify-between mb-4">
-          <div class="w-9 h-9 rounded-lg bg-[rgba(245,243,239,0.05)] flex items-center justify-center">
-            <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 2L9.8 6.2L14 7.5L9.8 8.8L8.5 13L7.2 8.8L3 7.5L7.2 6.2L8.5 2Z" stroke="var(--text-faint)" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:rgba(185,122,165,0.16);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--tiki)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4.5 3.5V17H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9.5v1M15 9.5v1"/><path d="M9.5 13.5c1.4.9 3.6.9 5 0"/></svg>
           </div>
-          <span class="text-[10.5px] font-semibold text-[var(--text-faint)] uppercase tracking-wide border border-[var(--hairline-strong)] rounded-full px-2.5 py-1">Próximamente</span>
+          <span class="text-[10.5px] font-semibold uppercase tracking-wide rounded-full px-2.5 py-1" style="color:var(--tiki);border:1px solid rgba(185,122,165,0.35);">Nuevo</span>
         </div>
         <div>
-          <h3 class="font-display font-bold text-[16px] mb-2 text-[var(--text-dim)]">Asistente de IA para tu negocio</h3>
-          <p class="text-[14px] text-[var(--text-faint)] leading-relaxed">Estamos sumando un asistente que conoce los números de tu negocio y te ayuda con dudas de plata y gestión.</p>
+          <h3 class="font-display font-bold text-[16px] mb-2">Tiki, tu asistente</h3>
+          <p class="text-[14px] text-[var(--text-dim)] leading-relaxed">Preguntale cómo fue el cierre, qué reponer o cuánto le debés a un proveedor. Responde con tus números reales, sin inventar, y tus preguntas no salen del celular.</p>
         </div>
       </div>
     </div>

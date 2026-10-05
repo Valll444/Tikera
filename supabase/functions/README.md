@@ -27,14 +27,11 @@ El `project-ref` se ve en la URL del dashboard de Supabase
 ### Secretos que necesita
 
 La función lee `SUPABASE_URL`, `SUPABASE_ANON_KEY` y
-`SUPABASE_SERVICE_ROLE_KEY`. Supabase ya inyecta las dos primeras
-automáticamente en toda Edge Function. Solo hay que cargar la service role
-key a mano (Settings → API del dashboard, "service_role secret" — **nunca**
-la publishable/anon key):
-
-```bash
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<tu-service-role-key>
-```
+`SUPABASE_SERVICE_ROLE_KEY`. Supabase inyecta **las tres** automáticamente
+en toda Edge Function (se puede ver con `supabase secrets list`, que muestra
+solo los nombres y una huella, nunca el valor): no hay que cargar nada a
+mano. La service role key no tiene que aparecer nunca en `app.html` ni en
+`js/`.
 
 ### Probarla
 

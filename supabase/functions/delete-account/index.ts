@@ -1,6 +1,10 @@
 // Borra la cuenta del usuario que hace el pedido: sus fotos en Storage, y el
-// usuario de auth.users (que en cascada se lleva profiles/movements/products,
-// porque esas tablas tienen "on delete cascade" contra auth.users).
+// usuario de auth.users (que en cascada se lleva todas sus filas: todas las
+// tablas de supabase/ tienen "on delete cascade" contra auth.users --
+// profiles, movements, products, frequent_items, proveedores,
+// pedidos_proveedor, cierres_caja, agent_messages, facturacion_config,
+// facturas, tiki_memoria, agent_uso). Si se agrega una tabla nueva con
+// user_id, tiene que tener ese cascade o este borrado falla.
 //
 // Necesita la service role key, que nunca puede viajar al navegador -- por
 // eso esto corre acá, como Edge Function, y no directo desde app.html.
@@ -59,7 +63,9 @@ Deno.serve(async (req) => {
 
     const { error: deleteErr } = await adminClient.auth.admin.deleteUser(userId);
     if (deleteErr) {
-      return new Response(JSON.stringify({ error: deleteErr.message }), {
+      // El detalle va a los logs de la funcion, no al navegador.
+      console.error("deleteUser fallo:", deleteErr.status, deleteErr.code);
+      return new Response(JSON.stringify({ error: "No se pudo eliminar la cuenta." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -70,7 +76,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error("delete-account: error inesperado", err instanceof Error ? err.name : typeof err);
+    return new Response(JSON.stringify({ error: "Ocurrió un error inesperado." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

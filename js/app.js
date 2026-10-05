@@ -1022,7 +1022,7 @@ document.getElementById('settLogoutBtn').addEventListener('click', ()=>{
 
 document.getElementById('settDeleteBtn').addEventListener('click', async ()=>{
   const msg = document.getElementById('settDeleteMsg');
-  const sure = confirm('¿Seguro que querés eliminar tu cuenta?\n\nSe van a borrar tu perfil, tus ventas, tus gastos, tu catálogo y tus fotos de Tikera. Esta acción no se puede deshacer.');
+  const sure = confirm('¿Seguro que querés eliminar tu cuenta?\n\nSe van a borrar tu perfil, tus ventas y gastos, tu catálogo, tus proveedores, tus cierres de caja y lo que le pediste a Tiki que recuerde. Esta acción no se puede deshacer.');
   if(!sure) return;
 
   const btn = document.getElementById('settDeleteBtn');
@@ -1039,6 +1039,10 @@ document.getElementById('settDeleteBtn').addEventListener('click', async ()=>{
     });
     const result = await res.json().catch(()=>({}));
     if(!res.ok || result.error) throw new Error(result.error || 'No se pudo eliminar la cuenta.');
+    // Las ventas sin conexion de esta cuenta que no llegaron a subirse viven
+    // en este dispositivo: tambien se borran (las de otras cuentas que usen
+    // el mismo navegador se dejan).
+    savePendingQueue(loadPendingQueue().filter(item => !esPendienteDeLaCuenta(item)));
     await sb.auth.signOut();
     window.location.reload();
   }catch(err){

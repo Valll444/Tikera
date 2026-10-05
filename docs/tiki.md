@@ -153,8 +153,11 @@ solución. Los que dicen **Corregido** tienen test.
 - Riesgo: la Ley 25.326 da derecho de supresión y la política de privacidad
   promete que se puede borrar la cuenta desde la app. Hoy el botón falla con
   un mensaje de error.
-- Solución: `supabase functions deploy delete-account` + el secret de la
-  service role key (ver `supabase/functions/README.md`).
+- Solución: `supabase functions deploy delete-account`. No hace falta cargar
+  ningún secret: Supabase ya inyecta `SUPABASE_SERVICE_ROLE_KEY` (verificado
+  con `supabase secrets list`). La función ya no devuelve errores internos al
+  navegador, y la app borra del dispositivo las ventas sin conexión de la
+  cuenta borrada.
 
 ### MEDIO
 
@@ -368,7 +371,7 @@ respuestas abiertas pero multiplica ese costo: es una decisión de negocio.
    pagina, pero conviene saberlo).
 4. Stock atómico (M5).
 5. Filtrar los breadcrumbs de Sentry (B2).
-6. Actualizar la tarjeta "Próximamente: Asistente de IA" de la landing.
+6. ~~Actualizar la tarjeta "Próximamente: Asistente de IA" de la landing.~~ Hecho: ahora es la tarjeta de Tiki.
 
 ## 11. Recomendaciones para versiones futuras
 
