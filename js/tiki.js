@@ -29,6 +29,8 @@ let tikiOcupado = false;
 let tikiGen = 0;            // sube en cada reset: descarta respuestas en vuelo de una sesion anterior
 let tikiSeguir = null;      // ultima pregunta con fecha, para repreguntar "¿y ayer?"
 let tikiSeguirTs = 0;
+let tikiCtx = null;         // de que se hablo en la ultima respuesta (para "¿por que?", "¿es bueno?"...)
+let tikiSugerencia = null;  // paso siguiente que ofrecio Tiki y se acepta con "si"
 const TIKI_CONTEXTO_MS = 10 * 60 * 1000;
 let tikiFeriadosCache = null;
 
@@ -111,6 +113,11 @@ function tikiSaludo(){
   if(h >= 13 && h < 20) return 'Buenas tardes';
   return 'Buenas noches';
 }
+
+// Alterna entre formas de decir lo mismo, para no sonar a contestador.
+// En orden (no al azar): la misma conversacion siempre suena igual.
+let tikiVariante = 0;
+function tikiUnaDe(opciones){ return opciones[(tikiVariante++) % opciones.length]; }
 
 // Saca el periodo de la pregunta. null = no dijo de cuando (cada
 // respuesta elige su default: hoy, este mes, ultimos 30 dias...).
@@ -402,7 +409,8 @@ async function tikiPlanDelDia(){
   return {
     html: `<p>${tareas.length === 1 ? 'Para hoy hay una sola cosa:' : `Para hoy hay ${tareas.length} cosas, de la más urgente a la menos:`}</p>
       <ul class="tiki-list">${tareas.map(t => `<li class="${t.nivel}"><span>${t.html}</span></li>`).join('')}</ul>`,
-    acciones: acciones.slice(0, 3)
+    acciones: acciones.slice(0, 3),
+    ctx: { tema: 'plan' }
   };
 }
 
@@ -427,32 +435,25 @@ function tikiCierre(periodo){
     if(!tikiMovs(fecha, fecha).length) return { html: `<p>${tikiCap(label)} no hay cierre de caja ni movimientos cargados.</p>` };
     const rs = tikiResumen(fecha, fecha);
     const vendido = rs.cantVentas ? ` Ese día vendiste ${tikiPlata(rs.ventas)} en ${rs.cantVentas} ${rs.cantVentas === 1 ? 'venta' : 'ventas'}.` : '';
-    return { html: `<p>${tikiCap(label)} todavía no cerraste la caja. Según lo cargado, tendría que haber <strong>${tikiPlata(efectivoEsperadoDe(fecha))}</strong> en efectivo.${vendido}</p>`, acciones: [irACaja(fecha)] };
+    return { html: `<p>${tikiCap(label)} todavía no cerraste la caja. Según lo cargado, tendría que haber <strong>${tikiPlata(efectivoEsperadoDe(fecha))}</strong> en efectivo.${vendido}</p>`, acciones: [irACaja(fecha)], ctx: { tema: 'cierreAbierto', fecha } };
   }
 
+  // Primero el veredicto (es lo que el comerciante quiere saber), despues el detalle.
   const dif = Number(c.diferencia) || 0;
-  const resultado = Math.abs(dif) < 1 ? '<span class="tiki-pos">dio justo</span>'
-    : dif < 0 ? `<span class="tiki-neg">faltaron ${tikiPlata(-dif)}</span>`
-    : `<strong>sobraron ${tikiPlata(dif)}</strong>`;
-  let html = `<p>${tikiCap(label)} esperabas <strong>${tikiPlata(c.efectivo_esperado)}</strong> en efectivo y contaste <strong>${tikiPlata(c.efectivo_contado)}</strong>: ${resultado}.</p>`;
-  if(dif >= 1) html += '<p class="tiki-soft">Cuando sobra plata, muchas veces es una venta que no se cargó.</p>';
+  const esperado = tikiPlata(c.efectivo_esperado), contado = tikiPlata(c.efectivo_contado);
+  let html = Math.abs(dif) < 1
+    ? `<p>${tikiUnaDe(['Todo en orden', 'Bien ahí'])}: la caja ${tikiDeDia(fecha)} <span class="tiki-pos">dio justo</span>. Esperabas <strong>${esperado}</strong> en efectivo y contaste lo mismo.</p>`
+    : dif < 0
+      ? `<p>Ojo: en el cierre ${tikiDeDia(fecha)} <span class="tiki-neg">faltaron ${tikiPlata(-dif)}</span>. Esperabas <strong>${esperado}</strong> en efectivo y contaste <strong>${contado}</strong>.</p>`
+      : `<p>En el cierre ${tikiDeDia(fecha)} <strong>sobraron ${tikiPlata(dif)}</strong>: esperabas <strong>${esperado}</strong> en efectivo y contaste <strong>${contado}</strong>.</p><p class="tiki-soft">Cuando sobra plata, muchas veces es una venta que no se cargó.</p>`;
   if(c.notas) html += `<p class="tiki-soft">Anotaste: “${escapeHtml(c.notas)}”</p>`;
-
-  const r = tikiResumen(fecha, fecha);
-  if(r.cantVentas){
-    html += `<p>Ese día vendiste <strong>${tikiPlata(r.ventas)}</strong> en ${r.cantVentas} ${r.cantVentas === 1 ? 'venta' : 'ventas'}${r.gastos ? `, gastaste ${tikiPlata(r.gastos)}` : ''} y la ganancia real fue de <strong>${tikiPlata(r.ganancia)}</strong>.`;
-    const ant = tikiSumarDias(fecha, -7);
-    const v = tikiVariacion(r.ventas, tikiResumen(ant, ant).ventas);
-    if(v) html += ` Vendiste ${v} el ${tikiDiaSemana(ant)} anterior.`;
-    html += '</p>';
-  }
 
   const acciones = [];
   const ultimos = ordenados.filter(x => x.fecha <= fecha).slice(0, 7);
   const faltantes = ultimos.filter(x => (Number(x.diferencia) || 0) <= -1).length;
   const avisoFaltantes = dif <= -1 && faltantes >= 3;
   if(avisoFaltantes){
-    html += `<p>Ojo: es el faltante número ${faltantes} en tus últimos ${ultimos.length} cierres. Conviene revisar si quedan ventas sin cargar o cómo se está dando el vuelto.</p>`;
+    html += `<p>Y no es la primera vez: es el faltante número ${faltantes} en tus últimos ${ultimos.length} cierres. Conviene revisar si quedan ventas sin cargar o cómo se está dando el vuelto.</p>`;
   }
   if(!periodo){
     const ayer = tikiSumarDias(hoy, -1);
@@ -461,7 +462,10 @@ function tikiCierre(periodo){
       acciones.push(irACaja(ayer));
     }
   }
-  return { html, acciones };
+  return {
+    html, acciones, ctx: { tema: 'cierre', fecha, dif },
+    sugerencia: dif <= -1 ? { texto: '¿Querés que veamos de dónde puede venir la diferencia?', pregunta: '¿por qué?' } : null
+  };
 }
 function tikiCierresRango(p){
   const hoy = todayStr();
@@ -497,7 +501,9 @@ function tikiDeudas(provs, sobrantes){
         if(!d) return `<p>Con <strong>${escapeHtml(p.nombre)}</strong> estás al día: no tenés pedidos sin pagar.</p>`;
         return `<p>A <strong>${escapeHtml(p.nombre)}</strong> le debés <strong>${tikiPlata(d.total)}</strong> en ${d.cant} ${d.cant === 1 ? 'pedido' : 'pedidos'}${d.desde ? `; el más viejo es del ${tikiFechaCorta(d.desde)}` : ''}.</p>`;
       }).join(''),
-      acciones: accion
+      acciones: accion,
+      ctx: { tema: 'deudas' },
+      sugerencia: lista.length ? { texto: '¿Te digo a quién conviene pagarle primero?', pregunta: '¿qué hago?' } : null
     };
   }
   const aviso = sobrantes && sobrantes.length ? `<p class="tiki-soft">No encontré a «${escapeHtml(sobrantes.join(' '))}» entre tus proveedores, así que te paso todos.</p>` : '';
@@ -507,7 +513,9 @@ function tikiDeudas(provs, sobrantes){
     html: `${aviso}<p>En total le debés <strong>${tikiPlata(total)}</strong> a ${lista.length === 1 ? 'un proveedor' : `${lista.length} proveedores`}:</p>
       <ul class="tiki-list">${lista.slice(0, 6).map(d => `<li class="pronto"><span><strong>${escapeHtml(d.p.nombre)}</strong>: ${tikiPlata(d.total)} <span class="tiki-soft">· desde el ${tikiFechaCorta(d.desde)}</span></span></li>`).join('')}</ul>
       ${lista.length > 6 ? `<p class="tiki-soft">Y ${lista.length - 6} más.</p>` : ''}`,
-    acciones: accion
+    acciones: accion,
+    ctx: { tema: 'deudas' },
+    sugerencia: { texto: '¿Te digo a quién conviene pagarle primero?', pregunta: '¿qué hago?' }
   };
 }
 
@@ -531,8 +539,11 @@ function tikiStockTexto(p){
   return txt;
 }
 function tikiStock(prods){
-  if(prods.length === 1) return { html: `<p>${tikiStockTexto(prods[0])}</p>` };
+  if(prods.length === 1){
+    return { html: `<p>${tikiStockTexto(prods[0])}</p>`, ctx: { tema: 'stock', prods }, sugerencia: { texto: '¿Querés ver todo lo que hay que reponer?', pregunta: '¿Qué tengo que reponer?' } };
+  }
   return {
+    ctx: { tema: 'stock', prods },
     html: `<p>Encontré ${prods.length} productos parecidos:</p>
       <ul class="tiki-list">${prods.slice(0, 8).map(p => {
         const stock = Number(p.stock_actual) || 0;
@@ -553,7 +564,9 @@ function tikiReponer(sobrantes){
       <ul class="tiki-list">${lista.slice(0, 8).map(r => `<li class="${r.dias !== null && r.dias <= 2 ? 'urgente' : 'pronto'}"><span><strong>${escapeHtml(r.nombre)}</strong>: ${r.largo}</span></li>`).join('')}</ul>
       ${lista.length > 8 ? `<p class="tiki-soft">Y ${lista.length - 8} más.</p>` : ''}
       <p class="tiki-soft">Lo calculo con lo que vendiste en las últimas dos semanas.</p>`,
-    acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }]
+    acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }],
+    ctx: { tema: 'stock', prods: [] },
+    sugerencia: { texto: '¿Te digo por dónde empezar?', pregunta: '¿qué hago?' }
   };
 }
 
@@ -575,7 +588,7 @@ function tikiProducto(p){
   html += v
     ? `<p>En los últimos 30 días vendiste <strong>${tikiNum(v.cantidad)}</strong> por ${tikiPlata(v.monto)}.</p>`
     : '<p>En los últimos 30 días no registraste ventas de este producto.</p>';
-  return { html };
+  return { html, ctx: { tema: 'producto', prod: p }, sugerencia: { texto: '¿Querés ver cuánto vendiste este mes?', pregunta: `¿Cuánto vendí de ${p.nombre} este mes?` } };
 }
 function tikiVariosProductos(prods){
   return {
@@ -596,7 +609,7 @@ function tikiVentasProducto(nombres, periodo){
   html += '.</p>';
   if(tot.conCosto < tot.n) html += `<p class="tiki-soft">${tot.conCosto === 0 ? 'Esas ventas no tienen' : `${tot.n - tot.conCosto} de esas ventas no tienen`} el costo cargado, así que no puedo calcular cuánto te ${tot.conCosto === 0 ? 'dejaron' : 'dejaron en total'}.</p>`;
   if(grupos.length > 1) html += tikiBarras(grupos.sort((a,b) => b.monto - a.monto).slice(0, 6).map((g,i) => ({ label: g.nombre, valor: g.monto, texto: `${tikiNum(g.cantidad)} u. · ${tikiPlata(g.monto)}`, top: i === 0 })), true);
-  return { html };
+  return { html, ctx: { tema: 'ventasProducto', p, nombres } };
 }
 
 function tikiTextoMeta(vendido, meta, enCurso, sujeto){
@@ -617,6 +630,16 @@ function tikiVentas(periodo, foco){
   let html = foco === 'ganancia'
     ? `<p>${tikiCap(p.label)} la ganancia real ${verbo} ${gan}: vendiste ${tikiPlata(r.ventas)}${r.gastos ? `, la mercadería te costó ${tikiPlata(r.costoMerc)} y gastaste ${tikiPlata(r.gastos)}` : ` y la mercadería te costó ${tikiPlata(r.costoMerc)}`}.</p>`
     : `<p>${tikiCap(p.label)} vendiste <strong>${tikiPlata(r.ventas)}</strong> en ${r.cantVentas} ${r.cantVentas === 1 ? 'venta' : 'ventas'}${r.gastos ? ` y gastaste ${tikiPlata(r.gastos)}` : ''}. La ganancia real ${verbo} ${gan}.</p>`;
+  // Una reaccion corta, solo si los numeros la justifican: un dia ya
+  // terminado contra el promedio de ese mismo dia de la semana.
+  if(foco !== 'ganancia' && p.dia && p.desde !== hoy){
+    const { prom, n } = tikiPromedioMismoDia(p.desde);
+    if(n >= 3 && prom > 0){
+      const pct = (r.ventas - prom) / prom;
+      if(pct >= 0.15) html = `<p><strong>${tikiUnaDe(['¡Buen día!', 'Fue un buen día.'])}</strong></p>` + html;
+      else if(pct <= -0.15) html = `<p><strong>${tikiUnaDe(['Fue un día flojo.', 'Vino más tranquilo que de costumbre.'])}</strong></p>` + html;
+    }
+  }
 
   if(p.dia){
     const ant = tikiSumarDias(p.desde, -7);
@@ -635,8 +658,13 @@ function tikiVentas(periodo, foco){
     const partes = Object.entries(porMetodo).sort((a,b) => b[1] - a[1]).map(([m,v]) => `${escapeHtml(m === m.toUpperCase() ? m : m.toLowerCase())} ${Math.round(v / r.ventas * 100)}%`);
     if(partes.length > 1) html += `<p class="tiki-soft">Cómo te pagaron: ${partes.join(', ')}.</p>`;
   }
-  if(r.sinCosto) html += `<p class="tiki-soft">${r.sinCosto === r.cantVentas ? 'Ninguna de esas ventas tiene' : `${r.sinCosto} de esas ventas no tienen`} el costo cargado: la ganancia real puede ser menor.</p>`;
-  return { html };
+  if(r.sinCosto) html += `<p class="tiki-soft">${r.sinCosto === r.cantVentas ? 'Ninguna de esas ventas tiene' : r.sinCosto === 1 ? 'Una de esas ventas no tiene' : `${r.sinCosto} de esas ventas no tienen`} el costo cargado: la ganancia real puede ser menor.</p>`;
+  return {
+    html, ctx: { tema: 'ventas', p, r, foco },
+    sugerencia: foco === 'ganancia'
+      ? { texto: '¿Querés que te muestre cómo se calcula?', pregunta: '¿por qué?' }
+      : { texto: '¿Querés ver qué fue lo que más vendiste?', pregunta: `¿Qué fue lo que más vendí ${p.label}?` }
+  };
 }
 
 function tikiComoVengo(){
@@ -666,7 +694,7 @@ function tikiComoVengo(){
   const top = tikiAgruparVentas(r.lista).sort((a,b) => b.monto - a.monto)[0];
   if(top) html += `<p>Lo que más facturó: <strong>${escapeHtml(top.nombre)}</strong> (${tikiPlata(top.monto)}).</p>`;
   if(r.sinCosto) html += `<p class="tiki-soft">${r.sinCosto} ${r.sinCosto === 1 ? 'venta no tiene' : 'ventas no tienen'} el costo cargado: la ganancia real puede ser menor.</p>`;
-  return { html };
+  return { html, ctx: { tema: 'mes', r }, sugerencia: { texto: '¿Te muestro qué día de la semana vendés más?', pregunta: '¿Qué día vendo más?' } };
 }
 
 const TIKI_CATEGORIAS = { alquiler: 'Alquiler', servicio: 'Servicios', sueldo: 'Sueldos', empleado: 'Sueldos', impuesto: 'Impuestos', monotributo: 'Impuestos', mercaderia: 'Mercadería' };
@@ -708,10 +736,10 @@ function tikiGastos(periodo, claves){
   }
   const fijos = gastos.filter(e => e.esFijo).reduce((s,e) => s + (Number(e.monto) || 0), 0);
   if(fijos > 0 && fijos < total) html += `<p class="tiki-soft">De eso, ${tikiPlata(fijos)} son gastos fijos.</p>`;
-  return { html };
+  return { html, ctx: { tema: 'gastos', p }, sugerencia: { texto: '¿Querés ver cuánto te quedó de ganancia real?', pregunta: `¿Cuánto gané ${p.label}?` } };
 }
 
-function tikiTopProductos(periodo, criterio, menos){
+function tikiTopProductos(periodo, criterio, menos, cuantos = 5){
   const p = periodo || tikiUltimos30();
   if(menos){
     if(!products.length) return { html: '<p>Para decirte qué no se vende necesito tu catálogo de productos con su stock.</p>', acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }] };
@@ -723,7 +751,9 @@ function tikiTopProductos(periodo, criterio, menos){
       html: `<p>${tikiCap(p.label)} no vendiste ${quietos.length === 1 ? 'este producto' : `estos ${quietos.length} productos`}, y tenés stock:</p>
         <ul class="tiki-list">${quietos.slice(0, 8).map(x => `<li class="pronto"><span>${escapeHtml(x.nombre)} <span class="tiki-soft">· quedan ${tikiNum(x.stock_actual)}</span></span></li>`).join('')}</ul>
         ${quietos.length > 8 ? `<p class="tiki-soft">Y ${quietos.length - 8} más.</p>` : ''}
-        ${parado > 0 ? `<p>Ahí tenés <strong>${tikiPlata(parado)}</strong> parados (a precio de costo). Una promo o un combo puede ayudar a moverlos.</p>` : ''}`
+        ${parado > 0 ? `<p>Ahí tenés <strong>${tikiPlata(parado)}</strong> parados (a precio de costo).</p>` : ''}`,
+      ctx: { tema: 'ranking', p, criterio, menos: true },
+      sugerencia: { texto: '¿Querés algunas ideas para moverlos?', pregunta: '¿qué hago?' }
     };
   }
   let grupos = tikiAgruparVentas(tikiMovs(p.desde, p.hasta, 'Venta'));
@@ -740,8 +770,14 @@ function tikiTopProductos(periodo, criterio, menos){
     titulo = 'Lo que más facturó';
   }
   grupos.sort((a,b) => b[campo] - a[campo]);
-  const filas = grupos.slice(0, 5).map((g,i) => ({ label: g.nombre, valor: g[campo], texto: campo === 'cantidad' ? `${tikiNum(g.cantidad)} u.` : tikiPlata(g[campo]), top: i === 0 }));
-  return { html: `<p>${titulo} ${p.label}:</p>${tikiBarras(filas, true)}` };
+  const filas = grupos.slice(0, cuantos).map((g,i) => ({ label: g.nombre, valor: g[campo], texto: campo === 'cantidad' ? `${tikiNum(g.cantidad)} u.` : tikiPlata(g[campo]), top: i === 0 }));
+  return {
+    html: `<p>${titulo} ${p.label}:</p>${tikiBarras(filas, true)}`,
+    ctx: { tema: 'ranking', p, criterio, menos: false },
+    sugerencia: criterio === 'ganancia'
+      ? { texto: '¿Te muestro también lo que no se vende?', pregunta: '¿Qué no se vende?' }
+      : { texto: '¿Querés ver cuál te deja más ganancia?', pregunta: `¿Qué producto me deja más ganancia ${p.label}?` }
+  };
 }
 
 function tikiMejorDia(){
@@ -755,7 +791,7 @@ function tikiMejorDia(){
   const semana = [1,2,3,4,5,6,0].map(i => prom[i]);
   html += tikiBarras(semana.map(x => ({ label: tikiCap(TIKI_DIAS[x.dia].slice(0, 3)), valor: x.promedio, texto: cerrados.includes(x.dia) ? 'cerrado' : x.promedio > 0 ? tikiPlata(x.promedio) : '—', top: x.dia === mejor.dia })));
   html += '<p class="tiki-soft">Promedio de las últimas 8 semanas.</p>';
-  return { html };
+  return { html, ctx: { tema: 'dias' }, sugerencia: { texto: '¿Y querés ver a qué hora vendés más?', pregunta: '¿A qué hora vendo más?' } };
 }
 
 function tikiMejorHora(periodo){
@@ -774,7 +810,7 @@ function tikiMejorHora(periodo){
   const top = [...horas].sort((a,b) => b.t - a.t)[0];
   let html = `<p>${tikiCap(p.label)} vendiste más entre las <strong>${top.h} y las ${top.h + 1} hs</strong>: ${tikiPlata(top.t)} en ${top.c} ${top.c === 1 ? 'venta' : 'ventas'}.</p>`;
   html += tikiBarras(horas.map(x => ({ label: `${x.h} hs`, valor: x.t, texto: tikiPlata(x.t), top: x.h === top.h })));
-  return { html };
+  return { html, ctx: { tema: 'horas' } };
 }
 
 function tikiAyuda(){
@@ -1080,7 +1116,7 @@ function tikiActividad(periodo){
   }
   if(nuevos.length) items.push(`<li><span>${nuevos.length === 1 ? 'Un producto nuevo' : `${nuevos.length} productos nuevos`} en el catálogo</span></li>`);
   if(!items.length) return { html: `<p>${tikiCap(p.label)} no quedó nada registrado en Tikera.</p>` };
-  return { html: `<p>${tikiCap(p.label)} quedó registrado en Tikera:</p><ul class="tiki-list">${items.join('')}</ul>` };
+  return { html: `<p>${tikiCap(p.label)} quedó registrado en Tikera:</p><ul class="tiki-list">${items.join('')}</ul>`, ctx: { tema: 'actividad', p } };
 }
 
 // ---------- Lo que Tiki nunca hace ----------
@@ -1108,6 +1144,316 @@ function tikiFueraDeAlcance(tipo, t){
   return { html: '<p>Yo solo leo tus datos: no puedo cargar, cambiar ni borrar ventas, gastos, productos, cierres ni pedidos. Así nada se modifica sin que lo hagas vos.</p>', acciones: [destino] };
 }
 
+// ---------- Conversacion ----------
+// Lo que hace que Tiki se sienta como una charla y no como un formulario,
+// sin IA: entiende errores de tipeo, se acuerda de que se estaba hablando
+// (tikiCtx) para contestar "¿por que?", "¿y eso es bueno?", "¿y que hago?",
+// "contame mas" o "¿y la coca?", ofrece el paso siguiente (tikiSugerencia,
+// que se acepta con "si") y pregunta cuando le falta un dato. Todo sale de
+// los mismos datos y cuentas que el resto: ninguna respuesta inventa.
+
+// Errores de tipeo comunes de alguien que escribe rapido en el celular
+// ("bendi", "sierre", "aller", "ganansia", "provedor"): se corrige solo
+// cuando la palabra SUENA exactamente igual que una palabra clave de Tiki
+// (b/v, s/c/z, ll/y, h muda, letras repetidas). Nunca se cambia una
+// palabra por otra "parecida" -- "cierro" no es "cierre", y "gaseosa" no
+// es "gastos" --, ni una palabra conocida o del nombre de un producto o
+// proveedor.
+const TIKI_CLAVES_TIPEO = ['vendi', 'vendimos', 'vendiste', 'venta', 'ventas', 'gaste', 'gastos', 'cierre', 'cierres', 'cerre', 'caja', 'stock', 'quedan', 'queda', 'reponer', 'proveedor', 'proveedores', 'debo', 'deuda', 'deudas', 'ganancia', 'gane', 'hoy', 'ayer', 'semana', 'mes', 'pasado', 'pasada', 'efectivo', 'producto', 'productos', 'cuanto', 'cuantos', 'cuantas', 'hacemos', 'vengo', 'horario', 'hora', 'precio', 'meta', 'recordas', 'olvidate', 'facture', 'recaude', 'porque', 'explicame', 'recomendas', 'sabado', 'viernes'];
+function tikiFonetica(w){
+  return w.replace(/h/g, '').replace(/ll/g, 'y').replace(/qu/g, 'k').replace(/c([ei])/g, 's$1').replace(/c/g, 'k')
+    .replace(/z/g, 's').replace(/b/g, 'v').replace(/(.)\1+/g, '$1');
+}
+const TIKI_CLAVES_FONETICA = new Map(TIKI_CLAVES_TIPEO.map(c => [tikiFonetica(c), c]));
+function tikiCorregir(t){
+  if(!t) return t;
+  const nombres = new Set();
+  products.concat(proveedores).forEach(x => tikiNorm(x && x.nombre).split(' ').forEach(w => nombres.add(w)));
+  return t.split(' ').map(w => {
+    if(w.length < 3 || /\d/.test(w) || TIKI_STOP.has(w) || TIKI_CLAVES_TIPEO.includes(w) || nombres.has(w)) return w;
+    return TIKI_CLAVES_FONETICA.get(tikiFonetica(w)) || w;
+  }).join(' ');
+}
+
+// Cuanto se vende un dia como este (mismo dia de la semana, ultimas 8
+// semanas, solo los que tuvieron ventas). hastaMin: comparar solo hasta esa
+// hora del dia (para el dia en curso).
+function tikiPromedioMismoDia(fecha, hastaMin){
+  const valores = [];
+  for(let k = 1; k <= 8; k++){
+    const f = tikiSumarDias(fecha, -7 * k);
+    let ventas = tikiMovs(f, f, 'Venta');
+    if(!ventas.length) continue;
+    if(hastaMin !== undefined) ventas = ventas.filter(e => { const m = String(e.hora || '').match(/^(\d{1,2}):(\d{2})/); return m && Number(m[1]) * 60 + Number(m[2]) <= hastaMin; });
+    valores.push(ventas.reduce((s, e) => s + (Number(e.monto) || 0), 0));
+  }
+  return { prom: valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : 0, n: valores.length };
+}
+function tikiMinutosAhora(){ const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+function tikiPeriodoAnterior(p){
+  if(p.dia) return { desde: tikiSumarDias(p.desde, -7), hasta: tikiSumarDias(p.hasta, -7), label: `el ${tikiDiaSemana(tikiSumarDias(p.desde, -7))} anterior` };
+  const dias = Math.round((tikiParse(p.hasta) - tikiParse(p.desde)) / 86400000) + 1;
+  return { desde: tikiSumarDias(p.desde, -dias), hasta: tikiSumarDias(p.hasta, -dias), label: 'el período anterior' };
+}
+function tikiTopHoras(n){
+  const p = tikiUltimos30();
+  const porHora = new Map();
+  tikiMovs(p.desde, p.hasta, 'Venta').forEach(e => { const m = String(e.hora || '').match(/^(\d{1,2}):/); if(m) porHora.set(Number(m[1]), (porHora.get(Number(m[1])) || 0) + (Number(e.monto) || 0)); });
+  return [...porHora.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([h]) => h).sort((a, b) => a - b);
+}
+function tikiTopNombres(n){
+  const p = tikiUltimos30();
+  return tikiAgruparVentas(tikiMovs(p.desde, p.hasta, 'Venta')).sort((a, b) => b.monto - a.monto).slice(0, n).map(g => g.nombre);
+}
+
+// "¿Por que?" / "¿como sale eso?": de donde viene lo ultimo que dijo Tiki.
+function tikiExplicar(c){
+  if(c.tema === 'ventas'){
+    const { p, r, foco } = c;
+    if(foco === 'ganancia'){
+      return { html: `<p>La ganancia real es lo que vendiste, menos lo que te costó esa mercadería, menos los gastos: ${tikiPlata(r.ventas)} − ${tikiPlata(r.costoMerc)} − ${tikiPlata(r.gastos)} = <strong>${tikiPlata(r.ganancia)}</strong>.</p>${r.sinCosto ? `<p class="tiki-soft">${r.sinCosto} ${r.sinCosto === 1 ? 'venta no tiene' : 'ventas no tienen'} el costo cargado, así que ${r.sinCosto === 1 ? 'cuenta' : 'cuentan'} como si no te hubieran costado nada.</p>` : ''}` };
+    }
+    const ant = tikiPeriodoAnterior(p);
+    const ra = tikiResumen(ant.desde, ant.hasta);
+    if(!ra.cantVentas) return { html: `<p>No tengo ventas de ${ant.label} para comparar, así que no puedo decirte qué cambió.</p>` };
+    const promedio = (x) => (x.cantVentas ? x.ventas / x.cantVentas : 0);
+    const a = new Map(tikiAgruparVentas(r.lista).map(g => [tikiNorm(g.nombre), g]));
+    const b = new Map(tikiAgruparVentas(ra.lista).map(g => [tikiNorm(g.nombre), g]));
+    const difs = [...new Set([...a.keys(), ...b.keys()])]
+      .map(k => ({ nombre: (a.get(k) || b.get(k)).nombre, dif: ((a.get(k) || {}).monto || 0) - ((b.get(k) || {}).monto || 0) }))
+      .filter(d => Math.abs(d.dif) >= 1).sort((x, y) => Math.abs(y.dif) - Math.abs(x.dif)).slice(0, 3);
+    let html = `<p>Contra ${ant.label}: hiciste <strong>${r.cantVentas}</strong> ${r.cantVentas === 1 ? 'venta' : 'ventas'} (antes ${ra.cantVentas}), y cada venta fue de ${tikiPlata(promedio(r))} en promedio (antes ${tikiPlata(promedio(ra))}).</p>`;
+    if(difs.length) html += `<p>Lo que más cambió:</p><ul class="tiki-list">${difs.map(d => `<li class="${d.dif > 0 ? 'bien' : 'urgente'}"><span>${escapeHtml(d.nombre)}: <span class="${d.dif > 0 ? 'tiki-pos' : 'tiki-neg'}">${d.dif > 0 ? '+' : ''}${tikiPlata(d.dif)}</span></span></li>`).join('')}</ul>`;
+    return { html };
+  }
+  if(c.tema === 'cierre' || c.tema === 'cierreAbierto'){
+    const f = c.fecha;
+    const ef = tikiMovs(f, f).filter(e => e.metodoPago === 'Efectivo');
+    const suma = (arr) => arr.reduce((s, e) => s + (Number(e.monto) || 0), 0);
+    const ventasEf = ef.filter(e => e.tipo === 'Venta'), gastosEf = ef.filter(e => e.tipo === 'Gasto');
+    let html = `<p>El efectivo esperado ${tikiDeDia(f)} es lo que entró en efectivo (${tikiPlata(suma(ventasEf))}) menos lo que pagaste con plata de la caja (${tikiPlata(suma(gastosEf))}): <strong>${tikiPlata(suma(ventasEf) - suma(gastosEf))}</strong>.</p>`;
+    if(c.dif <= -1){
+      html += '<p>Cuando falta plata, lo más común es:</p><ul class="tiki-list"><li><span>un vuelto mal dado,</span></li><li><span>una venta cobrada con tarjeta, QR o transferencia pero cargada como efectivo,</span></li><li><span>o algo pagado con plata de la caja que no se cargó como gasto.</span></li></ul>';
+    } else if(c.dif >= 1){
+      html += '<p>Cuando sobra, casi siempre es una venta en efectivo que no se cargó, o un gasto cargado como efectivo que en realidad se pagó de otra forma.</p>';
+    }
+    if(gastosEf.length) html += `<p class="tiki-soft">Gastos en efectivo de ese día: ${tikiListaNombres(gastosEf.map(g => `${escapeHtml(g.descripcion || 'sin nombre')} ${tikiPlata(g.monto)}`), true, 4)}.</p>`;
+    return { html };
+  }
+  if(c.tema === 'stock'){
+    const p = (c.prods || [])[0];
+    if(p && c.prods.length === 1){
+      const rate = ventaDiariaDe(p), stock = Number(p.stock_actual) || 0;
+      if(rate > 0) return { html: `<p>En las últimas 2 semanas vendiste unas ${tikiNum(rate * 14)} unidades de ${escapeHtml(p.nombre)}, o sea ~${tikiNum(rate)} por día. Con ${tikiNum(stock)} en stock, eso da ${stock > 0 ? `~${Math.floor(stock / rate)} días` : 'cero días'}.</p>` };
+    }
+    return { html: '<p>Para cada producto miro cuánto vendiste en las últimas 2 semanas, saco cuánto vendés por día y lo comparo con el stock que te queda. Lo que te digo de reponer es lo que necesitás para cubrir otras 2 semanas.</p>' };
+  }
+  if(c.tema === 'mes'){
+    const r = c.r;
+    return { html: `<p>Lo del mes sale de sumar todo lo cargado desde el 1: vendiste ${tikiPlata(r.ventas)}, la mercadería te costó ${tikiPlata(r.costoMerc)} y gastaste ${tikiPlata(r.gastos)}. La ganancia real es la resta: <strong>${tikiPlata(r.ganancia)}</strong>.</p>${r.gastos > r.ventas - r.costoMerc ? '<p>Por eso da negativa: los gastos del mes son más grandes que lo que te deja la mercadería vendida.</p>' : ''}` };
+  }
+  const textos = {
+    dias: 'Para cada día de la semana sumo lo que vendiste en las últimas 8 semanas y lo divido por la cantidad de veces que hubo ese día. Los días que me dijiste que no abrís no cuentan.',
+    horas: 'Sumo las ventas de cada hora según la hora en que se cargaron. Si cargás las ventas todas juntas al final del día, esto no va a ser exacto.',
+    deudas: 'Sumo los pedidos que anotaste en Proveedores y todavía no marcaste como pagados.',
+    ranking: 'Sumo lo que vendiste de cada producto, agrupando por el nombre con el que se cargó la venta.',
+    gastos: 'Sumo los gastos cargados en ese período, agrupados por la categoría que elegiste al cargarlos.',
+    plan: 'Lo armo con lo que tenés cargado: cajas sin cerrar, productos que se agotan, deudas, gastos fijos del mes pasado que todavía no cargaste, feriados y precios por debajo del costo.',
+    producto: 'El margen es precio menos costo, dividido el precio. El stock y las ventas salen del catálogo y de lo que vendiste en los últimos 30 días.'
+  };
+  return { html: `<p>${textos[c.tema] || 'Todo lo que te digo sale de lo que cargaste en Tikera: no uso datos de afuera ni estimo números que no tengo.'}</p>` };
+}
+
+// "¿Y eso es bueno?": siempre contra la propia historia del comercio.
+function tikiEvaluar(c){
+  const hoy = todayStr();
+  if(c.tema === 'ventas' && c.foco !== 'ganancia'){
+    const { p, r } = c;
+    if(p.dia){
+      const enCurso = p.desde === hoy;
+      const { prom, n } = tikiPromedioMismoDia(p.desde, enCurso ? tikiMinutosAhora() : undefined);
+      const dia = TIKI_DIAS_PLURAL[tikiParse(p.desde).getDay()];
+      if(n < 3 || !prom) return { html: `<p>Todavía tengo pocos ${dia} con ventas para comparar (${n}). En unas semanas te lo puedo decir.</p>` };
+      const pct = Math.round((r.ventas - prom) / prom * 100);
+      const comparado = enCurso ? `A esta hora, un ${tikiDiaSemana(p.desde)} normal llevás unos ${tikiPlata(prom)}; hoy` : `Un ${tikiDiaSemana(p.desde)} normal vendés unos ${tikiPlata(prom)}; esta vez`;
+      const veredicto = pct >= 10 ? `<strong>Sí, ${enCurso ? 'vas bien' : 'fue un buen día'}</strong>` : pct <= -10 ? `<strong>${enCurso ? 'Vas un poco abajo de lo normal' : 'Estuvo abajo de lo normal'}</strong>` : `<strong>${enCurso ? 'Vas normal' : 'Fue un día normal'}</strong>`;
+      return { html: `<p>${veredicto}. ${comparado} ${enCurso ? 'llevás' : 'vendiste'} ${tikiPlata(r.ventas)} (${pct > 0 ? '+' : ''}${pct}%).</p><p class="tiki-soft">Lo comparo con los últimos ${n} ${dia} con ventas.</p>` };
+    }
+    const ant = tikiPeriodoAnterior(p);
+    const ra = tikiResumen(ant.desde, ant.hasta);
+    if(!ra.ventas) return { html: `<p>No tengo ventas de ${ant.label} para comparar.</p>` };
+    const pct = Math.round((r.ventas - ra.ventas) / ra.ventas * 100);
+    return { html: `<p><strong>${pct >= 5 ? 'Sí' : pct <= -5 ? 'No tanto' : 'Normal'}</strong>: contra ${ant.label} vendiste ${pct > 0 ? '+' : ''}${pct}% (${tikiPlata(r.ventas)} contra ${tikiPlata(ra.ventas)}).</p>` };
+  }
+  if(c.tema === 'ventas' || c.tema === 'mes'){
+    const r = c.r;
+    if(!r.ventas) return { html: '<p>Sin ventas no te puedo decir cómo viene la ganancia.</p>' };
+    const margen = Math.round(r.ganancia / r.ventas * 100);
+    const finPrev = new Date(tikiParse(hoy).getFullYear(), tikiParse(hoy).getMonth(), 0);
+    const rp = tikiResumen(tikiFecha(new Date(finPrev.getFullYear(), finPrev.getMonth(), 1)), tikiFecha(finPrev));
+    const margenPrev = rp.ventas ? Math.round(rp.ganancia / rp.ventas * 100) : null;
+    let html = `<p>De cada $100 que vendés, te quedan <strong>${tikiPlata(margen)}</strong> de ganancia real.</p>`;
+    if(margenPrev !== null) html += `<p>${margen >= margenPrev ? 'Está igual o mejor que' : 'Está peor que'} el mes pasado completo, cuando te quedaban ${tikiPlata(margenPrev)}.</p>`;
+    return { html };
+  }
+  if(c.tema === 'cierre'){
+    if(Math.abs(c.dif) < 1) return { html: '<p><strong>Sí</strong>: dio justo, que es lo mejor que puede pasar.</p>' };
+    const ultimos = [...cierresCaja].filter(x => x && x.fecha <= c.fecha).sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 30);
+    const conDif = ultimos.filter(x => Math.abs(Number(x.diferencia) || 0) >= 1);
+    const promAbs = conDif.length ? conDif.reduce((s, x) => s + Math.abs(Number(x.diferencia) || 0), 0) / conDif.length : 0;
+    return { html: `<p><strong>No es lo ideal</strong>: ${c.dif < 0 ? 'faltaron' : 'sobraron'} ${tikiPlata(Math.abs(c.dif))}. En tus últimos ${ultimos.length} cierres hubo diferencia ${conDif.length} ${conDif.length === 1 ? 'vez' : 'veces'}, de ${tikiPlata(promAbs)} en promedio, así que esta ${Math.abs(c.dif) > promAbs * 1.2 ? 'es más grande de lo habitual' : 'está dentro de lo que te suele pasar'}.</p>` };
+  }
+  if(c.tema === 'producto' && c.prod){
+    const conMargen = products.filter(x => Number(x.precio_venta) > 0 && Number(x.costo_unitario) > 0);
+    const m = (x) => (Number(x.precio_venta) - Number(x.costo_unitario)) / Number(x.precio_venta) * 100;
+    if(!(Number(c.prod.precio_venta) > 0 && Number(c.prod.costo_unitario) > 0) || conMargen.length < 2) return { html: '<p>Para decirte si el margen es bueno necesito el precio y el costo cargados, en este y en otros productos.</p>' };
+    const prom = conMargen.reduce((s, x) => s + m(x), 0) / conMargen.length;
+    const este = m(c.prod);
+    return { html: `<p>Este producto te deja ${Math.round(este)}% y el promedio de tu catálogo es ${Math.round(prom)}%: ${este >= prom ? '<strong>está por encima</strong>' : '<strong>está por debajo</strong>'} de tus otros productos.</p>` };
+  }
+  if(c.tema === 'deudas'){
+    const viejo = tikiDeudasLista().map(d => d.desde).filter(Boolean).sort()[0];
+    if(!viejo) return { html: '<p>Estás al día con todos, así que sí, muy bien.</p>' };
+    const dias = Math.round((tikiParse(hoy) - tikiParse(viejo)) / 86400000);
+    return { html: dias > 30 ? `<p><strong>Ojo</strong>: el pedido sin pagar más viejo es de hace ${dias} días. Conviene ponerse al día antes de que el proveedor te corte el crédito.</p>` : `<p>Son pedidos recientes (el más viejo es de hace ${dias} ${dias === 1 ? 'día' : 'días'}): nada raro.</p>` };
+  }
+  return { html: '<p>Para decirte si es bueno necesito compararlo con algo. ¿Querés que veamos cómo venís este mes contra el pasado?</p>', sugerencia: { texto: '', pregunta: '¿Cómo vengo este mes?' } };
+}
+
+// "¿Y que hago?": pasos concretos, con los datos del propio negocio.
+function tikiRecomendar(c){
+  const lista = (items) => `<ul class="tiki-list">${items.map(x => `<li><span>${x}</span></li>`).join('')}</ul>`;
+  if(c.tema === 'cierre' && c.dif <= -1){
+    return { html: `<p>Te diría, en este orden:</p>${lista(['Volver a contar la caja, sin apuro.', `Revisar en Historial las ventas ${tikiDeDia(c.fecha)} cargadas como efectivo: ¿alguna se cobró con tarjeta, QR o transferencia?`, 'Anotar como gasto cualquier cosa que se haya pagado con plata de la caja.', 'Si se repite, contar la caja en cada cambio de turno para saber en qué turno pasa.'])}`, acciones: [{ label: 'Ir a Historial', view: 'historial' }] };
+  }
+  if(c.tema === 'cierreAbierto') return { html: '<p>Cerrá la caja contando el efectivo: así cualquier diferencia se detecta hoy y no dentro de una semana.</p>', acciones: [{ label: `Cerrar la caja ${tikiDeDia(c.fecha)}`, view: 'caja', fecha: c.fecha }] };
+  if(c.tema === 'stock'){
+    const urgentes = tikiParaReponer().filter(r => r.dias !== null && r.dias <= 2);
+    if(!urgentes.length) return { html: '<p>No hay nada urgente: podés juntar lo que haga falta para el próximo pedido.</p>' };
+    return { html: `<p>Pedí hoy ${tikiListaNombres(urgentes.map(r => `<strong>${escapeHtml(r.nombre)}</strong>`), true, 4)}: ${urgentes.length === 1 ? 'se termina' : 'se terminan'} en un par de días. Lo demás puede ir en el próximo pedido.</p>` };
+  }
+  if(c.tema === 'deudas'){
+    const lista2 = tikiDeudasLista().filter(d => d.desde).sort((a, b) => a.desde.localeCompare(b.desde));
+    if(!lista2.length) return { html: '<p>No le debés a nadie, así que nada que hacer por acá.</p>' };
+    return { html: `<p>Pagale primero a <strong>${escapeHtml(lista2[0].p.nombre)}</strong>: tiene el pedido sin pagar más viejo (del ${tikiFechaCorta(lista2[0].desde)}). Y cuando pagues, marcalo como pagado en Proveedores así la cuenta queda al día.</p>`, acciones: [{ label: 'Ver proveedores', view: 'catalogo', tab: 'proveedores' }] };
+  }
+  if(c.tema === 'ranking' && c.menos){
+    const top = tikiTopNombres(2);
+    return { html: `<p>Algunas ideas para moverlos:</p>${lista([top.length ? `Armar un combo con algo que sí sale${top.length ? ` (${tikiListaNombres(top)})` : ''}.` : 'Armar un combo con algo que sí sale.', 'Ponerlos a la vista, cerca de la caja.', 'Bajarles un poco el precio para recuperar la plata.', 'No volver a pedirlos hasta que se terminen.'])}` };
+  }
+  if(c.tema === 'ventas' || c.tema === 'dias' || c.tema === 'horas' || c.tema === 'ranking'){
+    const horas = tikiTopHoras(2), top = tikiTopNombres(3);
+    const items = [];
+    if(horas.length) items.push(`Tus horas fuertes son ${horas.map(h => `las ${h}`).join(' y ')} hs: que a esa hora no falte ${top.length ? tikiListaNombres(top) : 'lo que más sale'}.`);
+    const prom = tikiPromediosPorDia();
+    if(prom){
+      const cerrados = (tikiRecuerda('dias_cerrado') || { dias: [] }).dias;
+      const orden = prom.filter(x => x.promedio > 0 && !cerrados.includes(x.dia)).sort((a, b) => b.promedio - a.promedio);
+      if(orden.length >= 3) items.push(`Reforzá el stock antes de los ${TIKI_DIAS_PLURAL[orden[0].dia]} (tu mejor día) y usá los ${TIKI_DIAS_PLURAL[orden[orden.length - 1].dia]} para ordenar y hacer pedidos.`);
+    }
+    items.push('Lo que no se mueve, ponelo a la vista o armá un combo con lo que más sale.');
+    return { html: `<p>Con lo que veo en tus números:</p>${lista(items)}` };
+  }
+  if(c.tema === 'mes' && c.r && c.r.ganancia < 0){
+    const porCat = {};
+    tikiMovs(todayStr().slice(0, 8) + '01', todayStr(), 'Gasto').forEach(e => { const k = e.categoria || 'Sin categoría'; porCat[k] = (porCat[k] || 0) + (Number(e.monto) || 0); });
+    const grandes = Object.entries(porCat).sort((a, b) => b[1] - a[1]).slice(0, 2);
+    return { html: `<p>Este mes los gastos son más grandes que lo que te deja la mercadería. Lo primero a mirar son los gastos más grandes${grandes.length ? `: ${grandes.map(([k, v]) => `${escapeHtml(k)} (${tikiPlata(v)})`).join(' y ')}` : ''}. Ojo que los fijos (alquiler, sueldos) suelen caer a principio de mes y se compensan a medida que vendés.</p>` };
+  }
+  return tikiPlanDelDia();
+}
+
+// "Contame mas": la misma respuesta, con mas detalle.
+function tikiMas(c){
+  if(c.tema === 'ventas'){
+    const { p, r } = c;
+    const top = tikiAgruparVentas(r.lista).sort((a, b) => b.monto - a.monto).slice(0, 5);
+    const porMetodo = {};
+    r.lista.forEach(e => { const m = e.metodoPago || 'Otro'; porMetodo[m] = (porMetodo[m] || 0) + (Number(e.monto) || 0); });
+    let html = `<p>${tikiCap(p.label)}, en detalle:</p>`;
+    if(top.length) html += tikiBarras(top.map((g, i) => ({ label: g.nombre, valor: g.monto, texto: tikiPlata(g.monto), top: i === 0 })), true);
+    const metodos = Object.entries(porMetodo).sort((a, b) => b[1] - a[1]);
+    if(metodos.length) html += `<p class="tiki-soft">Cobrado: ${metodos.map(([m, v]) => `${escapeHtml(m === m.toUpperCase() ? m : m.toLowerCase())} ${tikiPlata(v)}`).join(', ')}.</p>`;
+    return { html };
+  }
+  if(c.tema === 'ranking') return tikiTopProductos(c.p, c.criterio, c.menos, 10);
+  if(c.tema === 'deudas'){
+    const pend = pedidosProveedor.filter(x => x && !x.pagado).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))).slice(0, 8);
+    if(!pend.length) return { html: '<p>No hay pedidos sin pagar.</p>' };
+    const nombre = (id) => (proveedores.find(p => String(p.id) === String(id)) || {}).nombre || 'Proveedor';
+    return { html: `<p>Pedidos sin pagar, del más viejo al más nuevo:</p><ul class="tiki-list">${pend.map(x => `<li class="pronto"><span>${x.fecha ? tikiFechaCorta(x.fecha) : 'sin fecha'} · <strong>${escapeHtml(nombre(x.proveedor_id))}</strong>${x.descripcion ? ` (${escapeHtml(x.descripcion)})` : ''}: ${tikiPlata(x.monto)}</span></li>`).join('')}</ul>` };
+  }
+  if(c.tema === 'cierre' || c.tema === 'cierreAbierto'){
+    const ultimos = [...cierresCaja].filter(Boolean).sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 5);
+    if(!ultimos.length) return tikiExplicar(c);
+    return { html: `<p>Tus últimos cierres:</p><ul class="tiki-list">${ultimos.map(x => { const d = Number(x.diferencia) || 0; return `<li class="${Math.abs(d) < 1 ? 'bien' : d < 0 ? 'urgente' : 'pronto'}"><span>${tikiCap(tikiLabelDia(x.fecha))}: ${Math.abs(d) < 1 ? 'justo' : `${d < 0 ? 'faltaron' : 'sobraron'} ${tikiPlata(Math.abs(d))}`}</span></li>`; }).join('')}</ul>` };
+  }
+  if(c.tema === 'stock') return tikiReponer();
+  return tikiExplicar(c);
+}
+
+// Si el usuario no dijo que quiere saber de una fecha, se lo pregunta.
+function tikiAclararPeriodo(p){
+  const del = p.dia ? tikiDeDia(p.desde) : p.label;
+  return {
+    html: `<p>¿Qué querés ver de ${p.label}?</p>`,
+    acciones: [
+      { label: 'Las ventas', pregunta: `¿Cuánto vendí ${p.label}?` },
+      { label: 'Los gastos', pregunta: `¿Cuánto gasté ${p.label}?` },
+      { label: p.dia ? 'El cierre' : 'Los cierres', pregunta: p.dia ? `¿Cómo fue el cierre ${del}?` : `¿Cómo fueron los cierres ${p.label}?` }
+    ]
+  };
+}
+
+// Repreguntas sobre la respuesta anterior. Devuelve null si no es una.
+function tikiSeguimiento(t, sugerida){
+  if(tikiPendiente) return null; // un "si" pendiente es para la memoria
+  const palabras = t.split(' ').length;
+  if(sugerida && /^(si|sii+|dale|ok|okey|obvio|claro|de una|bueno|si dale|si mostrame|mostrame|a ver|si por favor|porfa|si porfa)$/.test(t)){
+    const tt = tikiCorregir(tikiNorm(sugerida.pregunta));
+    return tikiSeguimiento(tt, null) || tikiRutear(sugerida.pregunta, tt);
+  }
+  if(sugerida && /^(no|nah|nop|no gracias|despues|mas tarde|dejalo|deja|no por ahora)$/.test(t)) return { html: '<p>Dale. Cuando quieras, preguntame otra cosa.</p>' };
+  const c = tikiCtx;
+  if(!c || palabras > 6) return null;
+  if(/^(y )?(por que|porque|como es eso|como asi|explicame|explicamelo|a que se debe|de donde sale|como lo calculas|como se calcula)( eso)?$/.test(t)) return tikiExplicar(c);
+  if(/^(y )?(eso )?(es|esta|fue|estuvo|viene|va) (bueno|bien|malo|mal|mucho|poco|normal)( o (malo|mal|bueno|bien|poco|mucho))?( eso)?$|^(y )?(es )?normal( eso)?$|^(y )?(como lo ves|que opinas|que te parece)$/.test(t)) return tikiEvaluar(c);
+  if(/^(y )?(entonces )?(que (hago|puedo hacer|me recomendas|me aconsejas|harias|deberia hacer|hacemos|hago con eso)|alguna (idea|recomendacion)|ideas?|consejos?|recomendaciones?)( entonces| con eso| ahora)?$/.test(t)) return tikiRecomendar(c);
+  if(/^(y )?(mas|contame mas|mas detalle|detalle|detallame|ampliame|mostrame mas|que mas|algo mas|mas info)$/.test(t)) return tikiMas(c);
+  // "¿y la coca?" / "¿y Arcor?": la misma pregunta, sobre otra cosa.
+  if(/^y /.test(t) || palabras <= 3){
+    const claves = tikiSobrantes(t).map(tikiRaiz);
+    if(!claves.length) return null;
+    if(c.tema === 'stock' || c.tema === 'producto'){
+      const m = tikiBuscar(claves, products, p => p.nombre);
+      if(m.length) return c.tema === 'stock' ? tikiStock(m) : (m.length === 1 ? tikiProducto(m[0]) : tikiVariosProductos(m));
+    }
+    if(c.tema === 'ventasProducto'){
+      const nombres = tikiBuscar(claves, tikiNombresVendidos(), x => x);
+      if(nombres.length) return tikiVentasProducto(nombres, c.p);
+    }
+    if(c.tema === 'deudas'){
+      const pv = tikiBuscar(claves, proveedores, p => p.nombre);
+      if(pv.length) return tikiDeudas(pv);
+    }
+  }
+  return null;
+}
+
+// Despues de cada respuesta: anota de que se hablo y ofrece el paso siguiente.
+function tikiCerrarRespuesta(r){
+  if(!r) return r;
+  if(r.ctx) tikiCtx = { ...r.ctx, ts: Date.now() };
+  if(r.sugerencia && r.sugerencia.pregunta){
+    tikiSugerencia = { ...r.sugerencia, ts: Date.now() };
+    if(r.sugerencia.texto) r.html += `<p class="tiki-sugerencia">${r.sugerencia.texto}</p>`;
+    r.acciones = (r.acciones || []).concat([{ label: r.sugerencia.boton || 'Sí, mostrame', pregunta: r.sugerencia.pregunta }]).slice(0, 4);
+  }
+  delete r.ctx;
+  delete r.sugerencia;
+  return r;
+}
+
 // ---------- Que quiso preguntar ----------
 async function tikiConfirmarGuardado(clave, valor){
   const ok = await tikiGuardarMemoria(clave, valor);
@@ -1123,9 +1469,20 @@ async function tikiConfirmarGuardado(clave, valor){
 // que "obedezca" -- las palabras solo eligen que cuenta hacer.
 async function tikiResponder(texto){
   const raw = String(texto || '').slice(0, 300);
-  const t = tikiNorm(raw);
+  const t = tikiCorregir(tikiNorm(raw));
   if(!t) return tikiNoEntendi();
   await tikiCargarMemoria();
+  if(tikiCtx && Date.now() - tikiCtx.ts > TIKI_CONTEXTO_MS) tikiCtx = null;
+  const sugerida = tikiSugerencia && Date.now() - tikiSugerencia.ts <= TIKI_CONTEXTO_MS ? tikiSugerencia : null;
+  tikiSugerencia = null; // la oferta vale solo para la respuesta siguiente
+  // Los limites van primero, antes que cualquier repregunta.
+  if(TIKI_RE_META.test(t)) return tikiCerrarRespuesta(tikiFueraDeAlcance('meta', t));
+  if(TIKI_RE_AJENO.test(t)) return tikiCerrarRespuesta(tikiFueraDeAlcance('ajeno', t));
+  const seguimiento = await tikiSeguimiento(t, sugerida);
+  return tikiCerrarRespuesta(seguimiento || await tikiRutear(raw, t));
+}
+
+async function tikiRutear(raw, t){
   const periodo = tikiPeriodo(t);
   const sobrantes = tikiSobrantes(t);
   const claves = sobrantes.map(tikiRaiz);
@@ -1158,11 +1515,24 @@ async function tikiResponder(texto){
   if(mem) return mem;
   if(TIKI_RE_ACCION.test(t)) return tikiFueraDeAlcance('accion', t);
 
-  if(nPalabras <= 4 && /^(gracias|muchas gracias|genial|joya|buenisimo|barbaro|dale|ok|okey|perfecto|listo|buenisimo gracias)\b/.test(t)){
-    return { html: '<p>De nada. Cuando quieras, preguntame otra cosa.</p>' };
+  if(nPalabras <= 4 && /^(gracias|muchas gracias|mil gracias|gracias tiki|buenisimo gracias|genio|crack|grande|sos un genio)\b/.test(t)){
+    return { html: `<p>${tikiUnaDe(['De nada.', '¡De nada!', 'Para eso estoy.'])} Cuando quieras, preguntame otra cosa.</p>` };
   }
-  if(nPalabras <= 5 && /^(hola|buen dia|buenos dias|buenas|buenas tardes|buenas noches|que tal|como andas|como estas|hey)\b/.test(t)){
+  if(nPalabras <= 3 && /^(ok|okey|oka|dale|listo|joya|genial|buenisimo|barbaro|perfecto|ah|aha|ya|entiendo|entendi|ya veo|mira vos|uh|uf|uff|si|no)$/.test(t)){
+    return { html: `<p>${tikiUnaDe(['Dale.', 'Joya.', 'Listo.'])} Si necesitás algo más, preguntame.</p>` };
+  }
+  if(nPalabras <= 5 && /^(como (estas|andas|te va|va)|todo bien|que tal)\b/.test(t)){
+    return { html: `<p>${tikiUnaDe(['Bien, acá con tus números.', 'Todo bien, acá firme con la caja.'])}</p>`, sugerencia: { texto: '¿Querés que te cuente cómo viene el día?', pregunta: '¿Cuánto vendí hoy?' } };
+  }
+  if(nPalabras <= 5 && /^(hola|buen dia|buenos dias|buenas|buenas tardes|buenas noches|hey|hola tiki)\b/.test(t)){
     return { html: `<p>${tikiSaludo()}. ¿En qué te ayudo?</p>`, acciones: tikiEjemplos().slice(0, 3).map(q => ({ label: q, pregunta: q })) };
+  }
+  if(nPalabras <= 5 && /^(chau|chao|adios|nos vemos|hasta (manana|luego|despues|la proxima)|me voy|me fui)\b/.test(t)){
+    const hoy = todayStr();
+    if(tikiMovs(hoy, hoy).length && !cierreDeFecha(hoy) && new Date().getHours() >= 17){
+      return { html: `<p>¡Chau! Antes de irte, acordate de cerrar la caja: tendría que haber <strong>${tikiPlata(efectivoEsperadoDe(hoy))}</strong> en efectivo.</p>`, acciones: [{ label: 'Cerrar la caja de hoy', view: 'caja', fecha: hoy }] };
+    }
+    return { html: `<p>${tikiUnaDe(['¡Chau! Cualquier cosa, acá estoy.', '¡Nos vemos! Que venga bien la venta.'])}</p>` };
   }
   if(/\b(ayuda|quien sos|que sos|que (podes|sabes|puedo) (hacer|preguntar|preguntarte|responder)|que sabes|como funciona\w*)\b/.test(t)) return tikiAyuda();
   if(/\b(que|q) (hacemos|hago|hacer|tengo que hacer|hay que hacer|hay para hacer)\b|\bpendientes?\b|\btareas?\b|\bpor donde (arranco|empiezo)\b|\bplan del dia\b/.test(t)){
@@ -1213,7 +1583,7 @@ async function tikiResponder(texto){
   if(m.length > 1) return tikiVariosProductos(m);
   const pv = provs();
   if(pv.length) return tikiDeudas(pv);
-  if(periodo) return tikiSeguir ? tikiSeguir(periodo) : tikiVentas(periodo, 'ventas');
+  if(periodo) return tikiSeguir ? tikiSeguir(periodo) : tikiAclararPeriodo(periodo);
   return tikiNoEntendi();
 }
 
@@ -1233,6 +1603,8 @@ function resetTiki(){
   tikiIniciado = false;
   tikiOcupado = false;
   tikiSeguir = null;
+  tikiCtx = null;
+  tikiSugerencia = null;
   tikiPendiente = null;
   tikiMemoria = {};
   tikiMemoriaDe = null;
@@ -1275,7 +1647,7 @@ function tikiAgregarMensaje(rol, contenido){
   } else {
     const acciones = contenido.acciones || [];
     row.innerHTML = `<div class="tiki-avatar" aria-hidden="true">${TIKI_ICON}</div>
-      <div class="tiki-msg tiki-msg-tiki">${contenido.html}${acciones.length ? `<div class="tiki-actions">${acciones.map((a,i) => `<button type="button" class="tiki-action" data-i="${i}">${escapeHtml(a.label)}</button>`).join('')}</div>` : ''}</div>`;
+      <div class="tiki-msg tiki-msg-tiki tiki-entra">${contenido.html}${acciones.length ? `<div class="tiki-actions">${acciones.map((a,i) => `<button type="button" class="tiki-action" data-i="${i}">${escapeHtml(a.label)}</button>`).join('')}</div>` : ''}</div>`;
     row.querySelectorAll('.tiki-action').forEach(btn => btn.addEventListener('click', () => {
       const a = acciones[Number(btn.dataset.i)];
       // Guardar/olvidar se puede tocar una sola vez por mensaje: sin esto,
@@ -1325,7 +1697,10 @@ async function tikiConPausa(fn){
     console.error(err);
     r = { html: '<p>Uy, algo falló haciendo esa cuenta. Probá preguntarlo de otra forma.</p>' };
   }
-  const resto = 380 - (Date.now() - inicio);
+  // Una respuesta larga "tarda" un poco mas en escribirse que una corta,
+  // como en una charla de verdad (pero nunca mas de un segundo).
+  const largo = String((r && r.html) || '').replace(/<[^>]+>/g, '').length;
+  const resto = Math.min(950, 350 + largo * 1.5) - (Date.now() - inicio);
   if(resto > 0) await tikiEsperar(resto);
   if(gen !== tikiGen) return;
   typing.remove();

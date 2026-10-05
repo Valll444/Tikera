@@ -46,6 +46,35 @@ El "router" (`tikiResponder`) decide en este orden:
 5. Preguntas del negocio: plan del día, stock, deudas, cierre, mejor día y
    hora, precios, ranking, cómo vengo, actividad, gastos, ventas.
 
+### Cómo conversa (sin IA)
+
+Para que se sienta como una charla y no como un formulario
+(`tikiResponder` → `tikiSeguimiento` → `tikiRutear` → `tikiCerrarRespuesta`):
+
+- **Sigue el hilo** (`tikiCtx`, vence a los 10 minutos): después de una
+  respuesta entiende "¿por qué?" (`tikiExplicar`, de dónde sale el número),
+  "¿y eso es bueno?" (`tikiEvaluar`, siempre contra la propia historia del
+  comercio: el mismo día de la semana, el período anterior, el margen
+  promedio del catálogo), "¿y qué hago?" (`tikiRecomendar`, pasos concretos
+  con sus datos), "contame más" (`tikiMas`) y "¿y la coca?" / "¿y Arcor?"
+  (la misma pregunta sobre otra cosa).
+- **Ofrece el paso siguiente** (`tikiSugerencia`): termina con una pregunta
+  ("¿Querés ver qué fue lo que más vendiste?") que se acepta tocando el
+  botón o escribiendo "sí". Vale solo para la respuesta siguiente.
+- **Reacciona solo si los números lo justifican**: "¡Buen día!" o "Fue un día
+  flojo" aparecen únicamente si ese día se vendió un 15% más o menos que el
+  promedio de ese mismo día de la semana (con al menos 3 semanas para
+  comparar).
+- **Pregunta cuando le falta algo**: "ayer" solo → "¿Qué querés ver de ayer:
+  las ventas, los gastos o el cierre?".
+- **Entiende errores de tipeo** (`tikiCorregir`) solo cuando la palabra suena
+  exactamente igual a una palabra clave ("bendi", "sierre", "aller",
+  "provedor"). Nunca cambia una palabra por otra parecida ni toca nombres de
+  productos o proveedores.
+- **Charla corta**: saludo, "¿cómo andás?", gracias, "chau" (si la caja de hoy
+  no se cerró, lo recuerda). Las frases alternan para no sonar repetidas,
+  siempre en el mismo orden, así que los tests son estables.
+
 Existe además una Edge Function con Claude
 ([`supabase/functions/ai-agent`](../supabase/functions/ai-agent)) para una
 **etapa 2**. Hoy **no está deployada** ni conectada a la app (verificado con
@@ -346,7 +375,7 @@ respuestas abiertas pero multiplica ese costo: es una decisión de negocio.
 
 | Qué | Cómo | Resultado |
 |---|---|---|
-| Tiki y la app (51 tests): carga paginada, aislamiento entre cuentas, cola sin conexión, pedidos ajenos y de manipulación, que no escriba datos, texto malicioso en los datos, consistencia entre formas de preguntar, datos viejos y nuevos, sin datos, datos rotos, hábitos con evidencia, memoria, contexto, plan del día | `cd tests && npm test` | 51/51 |
+| Tiki y la app (65 tests): carga paginada, aislamiento entre cuentas, cola sin conexión, pedidos ajenos y de manipulación, que no escriba datos, texto malicioso en los datos, consistencia entre formas de preguntar, datos viejos y nuevos, sin datos, datos rotos, hábitos con evidencia, memoria, contexto, plan del día, conversación (repreguntas, paso siguiente, tipeo, charla corta) | `cd tests && npm test` | 65/65 |
 | Base de datos (6 tests): migraciones en Postgres real (PGlite), RLS entre cuentas en todas las tablas, constraints de la memoria, cupo atómico | incluido en `npm test` | 6/6 |
 | `ai-agent` (8 tests): system prompt fijo, datos que no pueden cerrar el bloque, historial saneado, respuestas cortadas o rechazadas | `deno test supabase/functions/ai-agent/` + `deno check` | 8/8 |
 | Navegador: sección Tiki en oscuro y claro, celular y escritorio, flujo de memoria contra el Supabase real (sin la tabla, falla sin fingir) | vista previa | OK |

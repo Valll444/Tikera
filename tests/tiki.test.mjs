@@ -377,7 +377,9 @@ describe('Tiki: contexto de la charla', () => {
     await e.preguntar('¿Cómo fue el cierre?');
     assert.match((await e.preguntar('¿y ayer?')).texto, /Ayer todavía no cerraste la caja/);
     e.adelantarReloj(11 * 60 * 1000);
-    assert.match((await e.preguntar('¿y ayer?')).texto, /^Ayer vendiste/);
+    const r = await e.preguntar('¿y ayer?');
+    assert.match(r.texto, /¿Qué querés ver de ayer\?/);
+    assert.deepEqual(r.acciones.map(a => a.label), ['Las ventas', 'Los gastos', 'El cierre']);
   });
   test('una pregunta que no entiende lo dice, en vez de inventar', async () => {
     const { e } = await conKiosco();
@@ -405,4 +407,120 @@ describe('Tiki: qué hacemos hoy', () => {
     const { e } = await conKiosco({ hoy: '2026-10-10' });
     assert.match(textoPlano((await e.run('tikiPlanDelDia()')).html), /es feriado \(Día del Respeto/);
   });
+});
+
+describe('Tiki: conversación', () => {
+  test('ofrece el paso siguiente y "sí" lo hace', async () => {
+    const { e } = await conKiosco();
+    const r = await e.preguntar('¿Cuánto vendí ayer?');
+    assert.match(r.texto, /¿Querés ver qué fue lo que más vendiste\?$/);
+    assert.ok(r.acciones.some(a => a.pregunta === '¿Qué fue lo que más vendí ayer?'));
+    assert.match((await e.preguntar('sí')).texto, /^Lo que más facturó ayer:/);
+    // la oferta vale una sola vez
+    assert.doesNotMatch((await e.preguntar('sí')).texto, /Lo que más facturó/);
+  });
+
+  test('"no" a la oferta no hace nada raro', async () => {
+    const { e } = await conKiosco();
+    await e.preguntar('¿Cuánto vendí ayer?');
+    assert.match((await e.preguntar('no')).texto, /Cuando quieras/);
+  });
+
+  test('"¿por qué?" explica la respuesta anterior con datos', async () => {
+    const { e } = await conKiosco();
+    await e.preguntar('¿Cuánto vendí ayer?');
+    const r = await e.preguntar('¿por qué?');
+    assert.match(r.texto, /Contra el sábado anterior: hiciste \d+ ventas \(antes \d+\)/);
+    assert.match(r.texto, /Lo que más cambió/);
+  });
+
+  test('"¿por qué?" después de un faltante explica el efectivo esperado', async () => {
+    const { e } = await conKiosco();
+    await e.preguntar('¿Cómo fue el cierre?');
+    const r = await e.preguntar('¿por qué?');
+    assert.match(r.texto, /El efectivo esperado del viernes 2\/10 es lo que entró en efectivo/);
+    assert.match(r.texto, /un vuelto mal dado/);
+  });
+
+  test('"¿y eso es bueno?" compara contra la propia historia', async () => {
+    const { e } = await conKiosco();
+    await e.preguntar('¿Cuánto vendí ayer?');
+    const r = await e.preguntar('¿y eso es bueno?');
+    assert.match(r.texto, /Un sábado normal vendés unos \$[\d.]+/);
+    assert.match(r.texto, /Lo comparo con los últimos \d sábados con ventas/);
+  });
+
+  test('"¿qué hago?" da pasos concretos según de qué se hablaba', async () => {
+    const { e } = await conKiosco();
+    await e.preguntar('¿Cuánto le debo a los proveedores?');
+    assert.match((await e.preguntar('¿y qué hago?')).texto, /Pagale primero a Arcor/);
+    await e.preguntar('¿Cómo fue el cierre?');
+    assert.match((await e.preguntar('¿qué me recomendás?')).texto, /Volver a contar la caja/);
+  });
+
+  test('"contame más" amplía la respuesta anterior', async () => {
+    const { e } = await conKiosco();
+    await e.preguntar('¿Cuánto le debo a los proveedores?');
+    assert.match((await e.preguntar('contame más')).texto, /Pedidos sin pagar, del más viejo al más nuevo/);
+  });
+
+  test('sigue el hilo cuando cambia el producto o el proveedor', async () => {
+    const { e } = await conKiosco();
+    await e.preguntar('¿Cuánto me queda de coca cola 500ml?');
+    assert.match((await e.preguntar('¿y los alfajores?')).texto, /Alfajor Jorgito/);
+    await e.preguntar('¿Cuánto le debo a Arcor?');
+    assert.match((await e.preguntar('¿y a Coca-Cola?')).texto, /A Coca-Cola FEMSA le debés/);
+  });
+
+  test('las repreguntas vencen y no se mezclan con otra charla', async () => {
+    const { e } = await conKiosco();
+    await e.preguntar('¿Cuánto vendí ayer?');
+    e.adelantarReloj(11 * 60 * 1000);
+    assert.doesNotMatch((await e.preguntar('¿por qué?')).texto, /Contra el sábado anterior/);
+  });
+
+  test('entiende errores de tipeo que suenan igual', async () => {
+    const { e, k } = await conKiosco();
+    const esperado = plata(sumaVentas(k, '2026-10-03', '2026-10-03'));
+    assert.ok((await e.preguntar('cuanto bendi aller')).texto.includes(esperado));
+    assert.match((await e.preguntar('como fue el sierre de caja')).texto, /cierre del viernes 2\/10/);
+    assert.match((await e.preguntar('cuanto le devo al provedor arcor')).texto, /A Arcor le debés/);
+    // y no "corrige" palabras validas parecidas
+    assert.match((await e.preguntar('cierro a las 21')).texto, /¿Querés que me acuerde/);
+  });
+
+  test('una fecha sola, sin contexto, pregunta qué querés ver', async () => {
+    const { e } = await conKiosco();
+    const r = await e.preguntar('el sábado');
+    assert.match(r.texto, /¿Qué querés ver de el sábado 3\/10\?|¿Qué querés ver de ayer\?/);
+    assert.equal(r.acciones.length, 3);
+  });
+
+  test('charla corta: saludo, cómo estás, gracias y chau', async () => {
+    const { e } = await conKiosco({ hora: '20:30' });
+    assert.match((await e.preguntar('¿cómo andás?')).texto, /¿Querés que te cuente cómo viene el día\?/);
+    assert.match((await e.preguntar('gracias!')).texto, /De nada|Para eso estoy/);
+    const chau = await e.preguntar('chau, me voy');
+    assert.match(chau.texto, /acordate de cerrar la caja/);
+    assert.ok(chau.acciones.some(a => a.view === 'caja'));
+  });
+
+  test('un día bueno o flojo se nota en la respuesta, solo si los números lo justifican', async () => {
+    const { e } = await conKiosco();
+    const textos = [];
+    for(let i = 1; i <= 14; i++){
+      const f = new Date(2026, 9, 4 - i);
+      const fecha = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
+      textos.push((await e.preguntar(`¿Cuánto vendí el ${f.getDate()}/${f.getMonth() + 1}?`)).texto + ' ' + fecha);
+    }
+    const conReaccion = textos.filter(t => /^(¡Buen día!|Fue un buen día\.|Fue un día flojo\.|Vino más tranquilo)/.test(t));
+    assert.ok(conReaccion.length < textos.length, 'reacciona en todos los días: no es por los datos');
+    for(const t of textos) assert.match(t, /vendiste \$[\d.]+/);
+  });
+});
+
+test('la memoria se pide a la base una sola vez por sesión, no en cada pregunta', async () => {
+  const { e } = await conKiosco();
+  for(const q of ['hola', '¿Cuánto vendí ayer?', '¿por qué?', '¿Qué hacemos hoy?', 'cierro a las 21', 'no']) await e.preguntar(q);
+  assert.equal(e.sb.estado.llamadas.filter(l => l.tabla === 'tiki_memoria' && l.op === 'select').length, 1);
 });
