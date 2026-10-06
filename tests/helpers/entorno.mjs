@@ -12,6 +12,16 @@ import { fileURLToPath } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+const DOLAR = [
+  { casa: 'oficial', nombre: 'Oficial', compra: 980, venta: 1000, fechaActualizacion: '2026-10-04T12:00:00Z' },
+  { casa: 'blue', nombre: 'Blue', compra: 1180, venta: 1200, fechaActualizacion: '2026-10-04T12:00:00Z' },
+  { casa: 'mayorista', nombre: 'Mayorista', compra: 975, venta: 985, fechaActualizacion: '2026-10-04T12:00:00Z' },
+  { casa: 'tarjeta', nombre: 'Tarjeta', compra: 0, venta: 1600, fechaActualizacion: '2026-10-04T12:00:00Z' }
+];
+const INFLACION = [
+  { fecha: '2026-08-01', valor: 2.1 },
+  { fecha: '2026-09-01', valor: 1.8 }
+];
 const FERIADOS = [
   { fecha: '2026-10-12', tipo: 'trasladable', nombre: 'Día del Respeto a la Diversidad Cultural' },
   { fecha: '2026-11-23', tipo: 'trasladable', nombre: 'Día de la Soberanía Nacional' },
@@ -186,7 +196,10 @@ export function crearEntorno({ hoy = '2026-10-04', hora = '18:30' } = {}){
     sessionStorage: almacenamiento(),
     supabase: { createClient: () => sb.cliente },
     fetch: async (url) => {
-      if(String(url).includes('argentinadatos.com/v1/feriados')) return { ok: true, json: async () => FERIADOS };
+      const u = String(url);
+      if(u.includes('argentinadatos.com/v1/feriados')) return { ok: true, json: async () => FERIADOS };
+      if(u.includes('dolarapi.com/v1/dolares')) return { ok: true, json: async () => DOLAR };
+      if(u.includes('/indices/inflacion')) return { ok: true, json: async () => INFLACION };
       throw new TypeError('Failed to fetch');
     },
     alert(){}, confirm: () => true, prompt: () => null,

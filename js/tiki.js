@@ -38,7 +38,7 @@ const TIKI_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const TIKI_DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const TIKI_DIAS_PLURAL = ['domingos','lunes','martes','miércoles','jueves','viernes','sábados'];
 const TIKI_MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const TIKI_CHIPS = ['¿Qué hacemos hoy?', '¿Cómo fue el cierre?', '¿Cómo vengo este mes?', '¿Qué tengo que reponer?', '¿Cuánto le debo a los proveedores?', '¿Qué producto me deja más?', '¿Qué día vendo más?'];
+const TIKI_CHIPS = ['¿Qué hacemos hoy?', '¿Algo para revisar?', '¿Cómo fue el cierre?', '¿Cómo vengo este mes?', '¿Dónde pierdo plata?', '¿Cuál es mi punto de equilibrio?', '¿Qué tengo que reponer?', '¿Cuánto le debo a los proveedores?', '¿Qué producto me deja más?', '¿Cómo me afecta el dólar?', '¿Qué día vendo más?'];
 
 // Palabras de la pregunta que nunca son el nombre de un producto,
 // proveedor o gasto (ya sin tildes, como quedan despues de tikiNorm).
@@ -305,6 +305,81 @@ async function tikiProximoFeriado(){
   }
   return (tikiFeriadosCache || []).find(f => f.fecha >= hoy) || null;
 }
+
+// ---------- Contexto económico argentino (dólar e inflación) ----------
+// Mismas fuentes públicas que la sección Noticias. Separa el HECHO (el dato
+// real, con fuente y fecha) del ANÁLISIS (cómo PODRÍA afectar al comercio),
+// que se presenta como estimación, nunca como certeza. No inventa noticias:
+// si no hay conexión, lo dice.
+let tikiDolarCache = null, tikiInflacionCache = null;
+async function tikiFetchJson(url, ms = 2500){
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try{
+    const res = await fetch(url, { signal: ctrl.signal });
+    const data = res && res.ok ? await res.json() : null;
+    clearTimeout(timer);
+    return data;
+  }catch(err){ clearTimeout(timer); return null; }
+}
+const TIKI_ECO_TTL = 10 * 60 * 1000; // la cotización no se queda pegada todo el día
+async function tikiDatoDolar(){
+  if(tikiDolarCache && Date.now() - tikiDolarCache.ts < TIKI_ECO_TTL) return tikiDolarCache;
+  const data = await tikiFetchJson('https://dolarapi.com/v1/dolares');
+  if(!Array.isArray(data)) return null;
+  const blue = data.find(d => d.casa === 'blue'), oficial = data.find(d => d.casa === 'oficial'), tarjeta = data.find(d => d.casa === 'tarjeta');
+  if(!blue || !(blue.venta > 0)) return null;
+  tikiDolarCache = {
+    blue: blue.venta, oficial: oficial ? oficial.venta : null, tarjeta: tarjeta ? tarjeta.venta : null,
+    brechaPct: oficial && oficial.venta > 0 ? (blue.venta - oficial.venta) / oficial.venta * 100 : null,
+    fecha: blue.fechaActualizacion || null, ts: Date.now()
+  };
+  return tikiDolarCache;
+}
+async function tikiDatoInflacion(){
+  if(tikiInflacionCache && Date.now() - tikiInflacionCache.ts < TIKI_ECO_TTL) return tikiInflacionCache;
+  const data = await tikiFetchJson('https://api.argentinadatos.com/v1/finanzas/indices/inflacion');
+  if(!Array.isArray(data) || !data.length) return null;
+  const ultimo = data[data.length - 1], anterior = data[data.length - 2];
+  if(!ultimo || typeof ultimo.valor !== 'number') return null;
+  const [y, m] = String(ultimo.fecha).split('-');
+  tikiInflacionCache = {
+    valor: ultimo.valor,
+    difPts: anterior && typeof anterior.valor === 'number' ? ultimo.valor - anterior.valor : null,
+    mes: (y && m) ? `${TIKI_MESES[Number(m) - 1]} ${y}` : '', fecha: ultimo.fecha, ts: Date.now()
+  };
+  return tikiInflacionCache;
+}
+function tikiFmtHora(iso){
+  const d = iso ? new Date(iso) : null;
+  if(!d || isNaN(d)) return '';
+  return `actualizado ${d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })} hs`;
+}
+async function tikiDolar(){
+  const d = await tikiDatoDolar();
+  if(!d) return { html: '<p>No pude traer la cotización del dólar ahora (puede ser la conexión). Probá de nuevo en un rato, o miralo en la sección Noticias.</p>', acciones: [{ label: 'Ir a Noticias', view: 'noticias' }] };
+  let hecho = `<p>El dólar <strong>blue</strong> está a <strong>${tikiPlata(d.blue)}</strong>`;
+  if(d.brechaPct !== null) hecho += ` (un ${Math.abs(Math.round(d.brechaPct))}% ${d.brechaPct >= 0 ? 'por encima' : 'por debajo'} del oficial, que está ${tikiPlata(d.oficial)})`;
+  hecho += `.</p>`;
+  const analisis = `<p><span class="tiki-soft">Esto es un análisis, no una certeza:</span> si el dólar se mueve fuerte, lo primero que lo siente son los productos importados o atados al dólar (electrónica, pilas, algunas bebidas o cigarrillos premium): los proveedores suelen actualizar las listas y te sube el costo de reposición. Lo que comprás en pesos a proveedores locales se mueve más despacio. Conviene mirar tus precios de reposición antes de volver a comprar.</p>`;
+  return { html: hecho + analisis + `<p class="tiki-soft">Fuente: dolarapi.com${d.fecha ? ', ' + tikiFmtHora(d.fecha) : ''}.</p>`, ctx: { tema: 'dolar' } };
+}
+async function tikiInflacion(){
+  const i = await tikiDatoInflacion();
+  if(!i) return { html: '<p>No pude traer el dato de inflación ahora (puede ser la conexión). Probá de nuevo en un rato, o miralo en la sección Noticias.</p>', acciones: [{ label: 'Ir a Noticias', view: 'noticias' }] };
+  const hecho = `<p>La inflación de <strong>${i.mes}</strong> fue <strong>${i.valor.toFixed(1).replace('.', ',')}%</strong>${i.difPts !== null ? ` (${i.difPts >= 0 ? '↑' : '↓'} ${Math.abs(i.difPts).toFixed(1).replace('.', ',')} puntos contra el mes anterior)` : ''}.</p>`;
+  const analisis = `<p><span class="tiki-soft">Para tu negocio:</span> con esa inflación, mes a mes tus costos de reposición suben más o menos en esa proporción. Si no vas acomodando los precios, el margen se te va comiendo de a poco. La idea es ajustar seguido y de a poco, en vez de un salto grande que espante al cliente. Para las cuentas finas (y los impuestos), un contador.</p>`;
+  return { html: hecho + analisis + `<p class="tiki-soft">Fuente: INDEC vía argentinadatos.com.</p>`, ctx: { tema: 'inflacion' } };
+}
+async function tikiEconomia(){
+  const d = await tikiDatoDolar(), i = await tikiDatoInflacion();
+  if(!d && !i) return { html: '<p>No pude traer los datos económicos ahora (puede ser la conexión). Están en la sección Noticias cuando vuelva.</p>', acciones: [{ label: 'Ir a Noticias', view: 'noticias' }] };
+  const partes = [];
+  if(i) partes.push(`la inflación de ${i.mes} fue ${i.valor.toFixed(1).replace('.', ',')}%`);
+  if(d) partes.push(`el dólar blue está a ${tikiPlata(d.blue)}`);
+  return { html: `<p>En lo que puedo ver: ${partes.join(' y ')}.</p><p class="tiki-soft">Si querés, te cuento cómo puede pegar en tu negocio.</p>`, ctx: { tema: 'economia' }, sugerencia: { texto: '¿Cómo me afecta?', pregunta: '¿Cómo me afecta la inflación?' } };
+}
+
 // Ejemplos con datos reales del negocio (un producto y un proveedor suyos).
 function tikiEjemplos(){
   const top = tikiAgruparVentas(tikiMovs(tikiSumarDias(todayStr(), -29), todayStr(), 'Venta')).sort((a,b) => b.monto - a.monto)[0];
@@ -317,8 +392,9 @@ function tikiEjemplos(){
     prov ? `¿Cuánto le debo a ${prov}?` : '¿Cuánto le debo a los proveedores?',
     '¿Cuánto gasté en servicios este mes?',
     '¿Cómo fue el cierre de ayer?',
-    '¿A qué hora vendo más?',
-    '¿Qué no se vende?'
+    '¿Dónde estoy perdiendo plata?',
+    '¿Algo para revisar?',
+    '¿Cuál es mi punto de equilibrio?'
   ];
 }
 function tikiBarras(filas, ancho){
@@ -863,6 +939,53 @@ function tikiCategoriaCrece(){
   if(baja !== sube && baja.pct < -0.05) html += `<p>La que más <span class="tiki-neg">cae</span> es <strong>${escapeHtml(baja.cat)}</strong>: ${tikiPlata(baja.prev)} → ${tikiPlata(baja.act)} (${Math.round(baja.pct * 100)}%).</p>`;
   if(!html) html = '<p>Tus categorías están bastante estables: ninguna subió ni bajó de forma marcada contra los 30 días anteriores.</p>';
   return { html, ctx: { tema: 'categorias' } };
+}
+
+// ---------- Conceptos explicados con los números del usuario ----------
+// Definición corta y en criollo, y cuando se puede, con el número real del
+// negocio como ejemplo. No reemplaza a un contador para temas formales.
+function tikiConcepto(cual){
+  const p = tikiUltimos30();
+  const r = tikiResumen(p.desde, p.hasta);
+  const ej = (txt) => `<p class="tiki-soft">En tu caso: ${txt}</p>`;
+  switch(cual){
+    case 'margen': {
+      const m = tikiMargenContrib(30);
+      return { html: `<p>El <strong>margen</strong> es lo que te queda de cada venta después de pagar la mercadería, en porcentaje. Si comprás algo a $60 y lo vendés a $100, tu margen es 40%.</p>${m.pct !== null ? ej(`de cada $100 que vendés te quedan unos $${Math.round(m.pct * 100)} (margen de ${Math.round(m.pct * 100)}%), según tus ventas con costo cargado.`) : 'Para calcular el tuyo necesito que las ventas tengan el costo cargado.'}`, ctx: { tema: 'concepto' } };
+    }
+    case 'markup':
+      return { html: `<p>El <strong>markup</strong> es al revés del margen: cuánto le recargás al costo para poner el precio. Si te cuesta $60 y lo vendés a $100, el markup es 67% (le sumaste $40 sobre $60). El margen de esa misma venta es 40%.</p><p class="tiki-soft">La diferencia importa: un markup del 100% es un margen del 50%.</p>`, ctx: { tema: 'concepto' } };
+    case 'ganancia_bruta':
+      return { html: `<p>La <strong>ganancia bruta</strong> es lo que te queda después de pagar solo la mercadería: ventas menos costo de lo vendido, sin contar alquiler, sueldos ni servicios.</p>${r.cantVentas ? ej(`en los últimos 30 días fue ${tikiPlata(r.ventas - r.costoMerc)} (vendiste ${tikiPlata(r.ventas)} y la mercadería te costó ${tikiPlata(r.costoMerc)}).`) : ''}`, ctx: { tema: 'concepto' } };
+    case 'ganancia_neta':
+      return { html: `<p>La <strong>ganancia neta</strong> (o real) es lo que de verdad te queda: ventas menos la mercadería menos todos los gastos (alquiler, servicios, sueldos, impuestos). Es la que importa para saber cuánto ganaste.</p>${r.cantVentas ? ej(`en los últimos 30 días fue ${tikiPlata(r.ganancia)}.`) : ''}<p class="tiki-soft">Para los números finos (impuestos, aportes) conviene un contador.</p>`, ctx: { tema: 'concepto' } };
+    case 'punto_equilibrio':
+      return { html: `<p>El <strong>punto de equilibrio</strong> es cuánto tenés que vender para no perder ni ganar: lo justo para cubrir todos tus gastos. Vendiendo por encima, empezás a ganar.</p>`, sugerencia: { texto: '¿Querés que calcule el tuyo?', pregunta: '¿Cuál es mi punto de equilibrio?' }, ctx: { tema: 'concepto' } };
+    case 'ticket_promedio': {
+      const tp = r.cantVentas ? r.ventas / r.cantVentas : null;
+      return { html: `<p>El <strong>ticket promedio</strong> es lo que gasta en promedio cada cliente por compra: las ventas totales divididas por la cantidad de operaciones.</p>${tp ? ej(`en los últimos 30 días fue ${tikiPlata(tp)} (${tikiPlata(r.ventas)} en ${r.cantVentas} ventas).`) : ''}`, ctx: { tema: 'concepto' } };
+    }
+    case 'rotacion':
+      return { html: `<p>La <strong>rotación</strong> es qué tan rápido se vende un producto. Alta rotación = se vende seguido (bebidas, cigarrillos); baja rotación = queda en la estantería y te inmoviliza plata.</p>`, sugerencia: { texto: '¿Querés ver qué tenés parado?', pregunta: '¿Qué no se vende?' }, ctx: { tema: 'concepto' } };
+    case 'rentabilidad':
+      return { html: `<p>La <strong>rentabilidad</strong> es cuánto ganás en relación a lo que movés: no es lo mismo facturar mucho que ganar mucho. Un producto puede vender un montón y dejarte poco, y otro vender poco pero dejar bien.</p>`, sugerencia: { texto: '¿Querés ver qué te deja más?', pregunta: '¿Qué producto me deja más ganancia?' }, ctx: { tema: 'concepto' } };
+    case 'capital_trabajo':
+      return { html: `<p>El <strong>capital de trabajo</strong> es la plata que necesitás para que el negocio funcione día a día: comprar mercadería, pagar gastos y aguantar hasta cobrar. Si tenés mucho stock parado, buena parte de tu capital está ahí quieto en vez de circulando.</p>`, ctx: { tema: 'concepto' } };
+    default:
+      return null;
+  }
+}
+function tikiConceptoEnTexto(t){
+  if(/\bpunto de equilibrio\b/.test(t)) return 'punto_equilibrio';
+  if(/\bmarkup\b/.test(t)) return 'markup';
+  if(/\bmargen\b|\bmargenes\b/.test(t)) return 'margen';
+  if(/\bganancia (bruta|bruto)\b|\bbruto\b/.test(t)) return 'ganancia_bruta';
+  if(/\bganancia (neta|real)\b|\bneto\b|\bneta\b/.test(t)) return 'ganancia_neta';
+  if(/\bticket promedio\b|\bticket medio\b/.test(t)) return 'ticket_promedio';
+  if(/\brotacion\b|\brota\b/.test(t)) return 'rotacion';
+  if(/\brentabilidad\b|\brentable\b/.test(t)) return 'rentabilidad';
+  if(/\bcapital de trabajo\b/.test(t)) return 'capital_trabajo';
+  return null;
 }
 
 // ---------- Detección de anomalías ----------
@@ -2055,9 +2178,19 @@ async function tikiRutear(raw, t){
     if(/^(no|nah|nop|deja|dejalo|no gracias|mejor no|no guardes nada)$/.test(t)) return { html: '<p>Listo, no guardo nada.</p>' };
   }
 
+  // Conceptos ("¿qué es el margen?"). Va antes del cálculo de equilibrio
+  // para que "qué es el punto de equilibrio" explique en vez de calcular.
+  if(/\b(que (es|son|significa\w*|quiere decir|seria|serian)|que quiere decir|a que se refiere|no se que (es|son)|me explicas que es|explicame (que es )?|definicion de|que entendes por)\b/.test(t)){
+    const concepto = tikiConceptoEnTexto(t);
+    if(concepto) return tikiConcepto(concepto);
+  }
+  // Contexto económico (dólar, inflación). Datos reales de fuentes públicas.
+  if(/\b(dolar|blue|el verde|cotizacion|divisa)\b/.test(t)) return await tikiDolar();
+  if(/\binflacion\b|\bipc\b|\bindec\b|\bcuanto aumento todo\b|\b(los )?precios (subieron|aumentaron|estan por las nubes)\b/.test(t)) return await tikiInflacion();
+  if(/\bcomo (esta|viene|anda) la economia\b|\bla macro\b|\bcomo esta el pais\b|\bnoticias economicas\b|\bque (esta )?pasa\w* (con|en) la economia\b/.test(t)) return await tikiEconomia();
+
   // Punto de equilibrio y objetivo de GANANCIA (distinto de la meta de
-  // ventas de la memoria): va antes de la memoria para que "quiero ganar X"
-  // no se guarde como meta de ventas.
+  // ventas de la memoria): "quiero ganar X" no se guarda como meta.
   if(/\bpunto de equilibrio\b|\b(cuanto|que).{0,30}\bvender\b.{0,20}\b(cubrir|cubra|tapar|empatar|no perder)\b|\bpara (cubrir|tapar) (mis |los |el )?(gastos|costos)\b|\bcubrir (mis |los )?(gastos|costos)\b|\bcuanto.{0,20}(para no perder|para empatar|para estar en cero)\b/.test(t)){
     return tikiEquilibrio();
   }

@@ -220,3 +220,59 @@ describe('Analista: detección de anomalías', () => {
     assert.match((await e.preguntar('¿algo raro?')).texto, /no veo nada raro/i);
   });
 });
+
+describe('Analista: conceptos', () => {
+  test('explica el margen con el número real del usuario', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿qué es el margen?');
+    assert.match(texto, /lo que te queda de cada venta/);
+    assert.match(texto, /En tu caso.*margen de \d+%/);
+  });
+  test('markup lo distingue del margen', async () => {
+    const e = await conKiosco();
+    assert.match((await e.preguntar('¿qué es el markup?')).texto, /al revés del margen|recargás al costo/);
+  });
+  test('"qué es el punto de equilibrio" explica y ofrece calcularlo', async () => {
+    const e = await conKiosco();
+    const r = await e.preguntar('¿qué es el punto de equilibrio?');
+    assert.match(r.texto, /para no perder ni ganar/);
+    assert.ok((r.acciones || []).some(a => /punto de equilibrio/i.test(a.pregunta || '')));
+  });
+  test('"cuál es mi punto de equilibrio" calcula, no explica', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cuál es mi punto de equilibrio?');
+    assert.match(texto, /necesitás vender alrededor de/);
+    assert.doesNotMatch(texto, /para no perder ni ganar/);
+  });
+});
+
+describe('Analista: contexto económico (dólar e inflación)', () => {
+  test('dólar: hecho + análisis marcado + fuente', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿a cuánto está el dólar?');
+    assert.match(texto, /El dólar blue está a \$1\.200/);          // dato de la fuente simulada
+    assert.match(texto, /20% por encima del oficial/);
+    assert.match(texto, /un análisis, no una certeza/);            // separa hecho de análisis
+    assert.match(texto, /Fuente: dolarapi\.com/);
+  });
+  test('"cómo me afecta el dólar" responde con impacto', async () => {
+    const e = await conKiosco();
+    assert.match((await e.preguntar('¿cómo me afecta el dólar?')).texto, /costo de reposición/);
+  });
+  test('inflación: valor real + impacto + fuente INDEC', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cómo viene la inflación?');
+    assert.match(texto, /inflación de septiembre 2026 fue 1,8%/);
+    assert.match(texto, /Para tu negocio/);
+    assert.match(texto, /INDEC/);
+    assert.doesNotMatch(texto, /\d\.\d puntos/);                   // decimales con coma, no punto
+  });
+  test('sin conexión no inventa: lo dice y manda a Noticias', async () => {
+    const e = crearEntorno({ hoy: HOY });
+    e.ctx.fetch = async () => { throw new TypeError('Failed to fetch'); };
+    e.login(A); await e.cargar();
+    const { texto, acciones } = await e.preguntar('¿a cuánto está el dólar?');
+    assert.match(texto, /No pude traer la cotización/);
+    assert.ok((acciones || []).some(a => a.view === 'noticias'));
+  });
+});
