@@ -783,6 +783,180 @@ function tikiObjetivo(montoMensual){
   return { html, ctx: { tema: 'objetivo', montoMensual, ventasNec }, sugerencia: { texto: '¿Querés ver qué producto te deja más para enfocarte ahí?', pregunta: '¿Qué producto me deja más ganancia?' } };
 }
 
+// ---------- Categorías ----------
+// Las ventas guardan el nombre, no la categoría: se cruza el nombre con el
+// catálogo para saber a qué categoría pertenece cada venta. Lo que no
+// matchea un producto del catálogo no entra (se avisa si es mucho).
+function tikiMapaCategorias(){
+  const m = new Map();
+  products.forEach(p => { const k = tikiNorm(p.nombre); const c = (p.categoria || '').trim(); if(k && c) m.set(k, c); });
+  return m;
+}
+function tikiMetricasCategorias(desde, hasta){
+  const mapa = tikiMapaCategorias();
+  const cats = new Map();
+  let sinCat = 0, totalVentas = 0;
+  tikiMovs(desde, hasta, 'Venta').forEach(e => {
+    const monto = Number(e.monto) || 0;
+    totalVentas += monto;
+    const c = mapa.get(tikiNorm(e.descripcion));
+    if(!c){ sinCat += monto; return; }
+    const g = cats.get(c) || { ventas: 0, costo: 0, unidades: 0, conCosto: 0, n: 0 };
+    g.ventas += monto;
+    g.unidades += Number(e.cantidad) || 1;
+    if(parseFloat(e.costoTotal) > 0){ g.costo += parseFloat(e.costoTotal); g.conCosto += monto; }
+    g.n++;
+    cats.set(c, g);
+  });
+  return { cats, sinCat, totalVentas, catList: [...cats.entries()].map(([nombre, g]) => ({ nombre, ...g, margenPct: g.conCosto > 0 ? (g.conCosto - g.costo) / g.conCosto : null })) };
+}
+function tikiCategoriasPresentes(){
+  return [...new Set(products.map(p => (p.categoria || '').trim()).filter(Boolean))];
+}
+function tikiCategorias(periodo){
+  const p = periodo || tikiUltimos30();
+  if(!products.length || !tikiCategoriasPresentes().length) return { html: '<p>Para analizar por categoría necesito que tus productos del catálogo tengan una categoría asignada (Bebidas, Golosinas, etc.).</p>', acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }] };
+  const r = tikiMetricasCategorias(p.desde, p.hasta);
+  if(!r.catList.length) return { html: `<p>${tikiCap(p.label)} no pude agrupar ventas por categoría (las ventas no coinciden con productos del catálogo que tengan categoría).</p>` };
+  const orden = r.catList.sort((a,b) => b.ventas - a.ventas);
+  let html = `<p>${tikiCap(p.label)}, por categoría:</p>${tikiBarras(orden.map((c,i) => ({ label: c.nombre, valor: c.ventas, texto: c.margenPct !== null ? `${tikiPlata(c.ventas)} · ${Math.round(c.margenPct * 100)}%` : tikiPlata(c.ventas), top: i === 0 })), true)}`;
+  const conMargen = orden.filter(c => c.margenPct !== null);
+  if(conMargen.length > 1){
+    const mejor = [...conMargen].sort((a,b) => b.margenPct - a.margenPct)[0];
+    html += `<p class="tiki-soft">La que mejor margen te deja es <strong>${escapeHtml(mejor.nombre)}</strong> (${Math.round(mejor.margenPct * 100)}%).</p>`;
+  }
+  if(r.sinCat > r.totalVentas * 0.25) html += `<p class="tiki-soft">Ojo: ${Math.round(r.sinCat / r.totalVentas * 100)}% de lo que vendiste no está en el catálogo con categoría, así que quedó afuera.</p>`;
+  return { html, ctx: { tema: 'categorias', p }, sugerencia: { texto: '¿Querés ver qué categoría está creciendo?', pregunta: '¿Qué categoría está creciendo?' } };
+}
+// Una categoría del catálogo nombrada en la pregunta (singular/plural simple).
+function tikiCategoriaEnTexto(t){
+  for(const c of tikiCategoriasPresentes()){
+    const n = tikiNorm(c);
+    if(new RegExp('\\b' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + 's?\\b').test(t)) return c;
+  }
+  return null;
+}
+function tikiVentasCategoria(cat, periodo){
+  const p = periodo || tikiUltimos30();
+  const g = tikiMetricasCategorias(p.desde, p.hasta).cats.get(cat);
+  if(!g || !g.ventas) return { html: `<p>${tikiCap(p.label)} no registré ventas de <strong>${escapeHtml(cat)}</strong> (según los productos del catálogo que tienen esa categoría).</p>` };
+  let html = `<p>${tikiCap(p.label)} vendiste <strong>${tikiPlata(g.ventas)}</strong> en ${escapeHtml(cat)} (${g.n} ${g.n === 1 ? 'venta' : 'ventas'})`;
+  if(g.conCosto > 0){ const margen = (g.conCosto - g.costo) / g.conCosto; html += `, con un margen de <strong>${Math.round(margen * 100)}%</strong>`; }
+  html += '.</p>';
+  return { html, ctx: { tema: 'categorias', p } };
+}
+function tikiCategoriaCrece(){
+  if(!tikiCategoriasPresentes().length) return tikiCategorias();
+  const hoy = todayStr();
+  const act = tikiMetricasCategorias(tikiSumarDias(hoy, -29), hoy).cats;
+  const prev = tikiMetricasCategorias(tikiSumarDias(hoy, -59), tikiSumarDias(hoy, -30)).cats;
+  const difs = [];
+  act.forEach((g, c) => {
+    const antes = prev.get(c);
+    if(antes && antes.ventas > 0) difs.push({ cat: c, pct: (g.ventas - antes.ventas) / antes.ventas, act: g.ventas, prev: antes.ventas });
+  });
+  if(difs.length < 1) return { html: '<p>Todavía no tengo dos meses de ventas por categoría para comparar cómo evolucionan.</p>' };
+  difs.sort((a,b) => b.pct - a.pct);
+  const sube = difs[0], baja = difs[difs.length - 1];
+  let html = '';
+  if(sube.pct > 0.05) html += `<p>La que más <span class="tiki-pos">crece</span> es <strong>${escapeHtml(sube.cat)}</strong>: ${tikiPlata(sube.prev)} → ${tikiPlata(sube.act)} (${sube.pct > 0 ? '+' : ''}${Math.round(sube.pct * 100)}%) contra los 30 días anteriores.</p>`;
+  if(baja !== sube && baja.pct < -0.05) html += `<p>La que más <span class="tiki-neg">cae</span> es <strong>${escapeHtml(baja.cat)}</strong>: ${tikiPlata(baja.prev)} → ${tikiPlata(baja.act)} (${Math.round(baja.pct * 100)}%).</p>`;
+  if(!html) html = '<p>Tus categorías están bastante estables: ninguna subió ni bajó de forma marcada contra los 30 días anteriores.</p>';
+  return { html, ctx: { tema: 'categorias' } };
+}
+
+// ---------- Detección de anomalías ----------
+// No es adivinar: son comparaciones de los últimos 30 días contra los 30
+// anteriores, con tus datos. Devuelve lo más relevante primero.
+function tikiUnidadesPorNombre(desde, hasta){
+  const m = new Map();
+  tikiMovs(desde, hasta, 'Venta').forEach(e => { const k = tikiNorm(e.descripcion); if(k) m.set(k, (m.get(k) || 0) + (Number(e.cantidad) || 1)); });
+  return m;
+}
+function tikiContribPctDe(desde, hasta){
+  const v = tikiMovs(desde, hasta, 'Venta').filter(e => parseFloat(e.costoTotal) > 0);
+  const vm = v.reduce((s,e) => s + (Number(e.monto) || 0), 0);
+  const cm = v.reduce((s,e) => s + parseFloat(e.costoTotal), 0);
+  return vm > 0 ? (vm - cm) / vm : null;
+}
+function tikiAnomalias(){
+  const hoy = todayStr();
+  const a = { desde: tikiSumarDias(hoy, -29), hasta: hoy };
+  const b = { desde: tikiSumarDias(hoy, -59), hasta: tikiSumarDias(hoy, -30) };
+  const ra = tikiResumen(a.desde, a.hasta), rb = tikiResumen(b.desde, b.hasta);
+  if(ra.cantVentas < 5 || rb.cantVentas < 5) return { html: '<p>Todavía no tengo suficientes datos de los últimos dos meses para comparar y detectar cosas raras. En unas semanas sí.</p>' };
+  const hallazgos = [];
+  // 1. Vendés más pero el margen bajó.
+  const ma = tikiContribPctDe(a.desde, a.hasta), mb = tikiContribPctDe(b.desde, b.hasta);
+  if(ma !== null && mb !== null){
+    if(ra.ventas > rb.ventas * 1.05 && ma < mb - 0.03){
+      hallazgos.push({ nivel: 'urgente', html: `Estás vendiendo <strong>más</strong> (${tikiPlata(rb.ventas)} → ${tikiPlata(ra.ventas)}) pero tu <strong>margen bajó</strong> de ${Math.round(mb * 100)}% a ${Math.round(ma * 100)}%: vendés más y te queda proporcionalmente menos.` });
+    } else if(ma < mb - 0.04){
+      hallazgos.push({ nivel: 'pronto', html: `Tu margen bajó de ${Math.round(mb * 100)}% a ${Math.round(ma * 100)}% respecto del mes anterior.` });
+    }
+  }
+  // 2. Ventas en caída.
+  if(ra.ventas < rb.ventas * 0.9){
+    hallazgos.push({ nivel: 'urgente', html: `Tus ventas <strong>cayeron</strong> ${Math.round((1 - ra.ventas / rb.ventas) * 100)}%: ${tikiPlata(rb.ventas)} → ${tikiPlata(ra.ventas)} contra los 30 días anteriores.` });
+  }
+  // 3. Categoría que se desplomó.
+  if(tikiCategoriasPresentes().length){
+    const ca = tikiMetricasCategorias(a.desde, a.hasta).cats, cb = tikiMetricasCategorias(b.desde, b.hasta).cats;
+    let peor = null;
+    cb.forEach((g, c) => { const act = (ca.get(c) || { ventas: 0 }).ventas; if(g.ventas > 0){ const pct = (act - g.ventas) / g.ventas; if(pct < -0.2 && (!peor || pct < peor.pct)) peor = { c, pct, prev: g.ventas, act }; } });
+    if(peor) hallazgos.push({ nivel: 'pronto', html: `La categoría <strong>${escapeHtml(peor.c)}</strong> cayó ${Math.round(-peor.pct * 100)}% (${tikiPlata(peor.prev)} → ${tikiPlata(peor.act)}).` });
+  }
+  // 4. Un producto que vendías y dejó de venderse.
+  const ua = tikiUnidadesPorNombre(a.desde, a.hasta), ub = tikiUnidadesPorNombre(b.desde, b.hasta);
+  let frenado = null;
+  ub.forEach((u, k) => { if(u >= 10 && (ua.get(k) || 0) <= u * 0.2){ const prod = products.find(p => tikiNorm(p.nombre) === k); if(!frenado || u > frenado.u) frenado = { nombre: prod ? prod.nombre : k, u, ahora: ua.get(k) || 0 }; } });
+  if(frenado) hallazgos.push({ nivel: 'pronto', html: `<strong>${escapeHtml(frenado.nombre)}</strong> se frenó: pasaste de ${tikiNum(frenado.u)} a ${frenado.ahora === 0 ? 'cero' : tikiNum(frenado.ahora)} unidades. ¿Te quedaste sin stock o cambió algo?` });
+  // 5. Faltantes de caja repetidos.
+  const cierres = [...cierresCaja].sort((x,y) => y.fecha.localeCompare(x.fecha)).slice(0, 10);
+  const faltantes = cierres.filter(c => (Number(c.diferencia) || 0) <= -1).length;
+  if(cierres.length >= 5 && faltantes >= cierres.length * 0.5) hallazgos.push({ nivel: 'pronto', html: `En ${faltantes} de tus últimos ${cierres.length} cierres faltó plata en la caja. Vale la pena revisar el vuelto o ventas sin cargar.` });
+
+  if(!hallazgos.length) return { html: '<p>Miré tus ventas, márgenes, categorías, stock y cierres de los últimos dos meses y <strong>no veo nada raro</strong>. Todo dentro de lo normal.</p>' };
+  const orden = { urgente: 0, pronto: 1 };
+  hallazgos.sort((x, y) => orden[x.nivel] - orden[y.nivel]);
+  return {
+    html: `<p>${hallazgos.length === 1 ? 'Hay una cosa para mirar:' : 'Encontré algunas cosas para mirar:'}</p><ul class="tiki-list">${hallazgos.slice(0, 4).map(h => `<li class="${h.nivel}"><span>${h.html}</span></li>`).join('')}</ul>`,
+    ctx: { tema: 'anomalias' },
+    sugerencia: { texto: '¿Querés ver dónde estás perdiendo margen?', pregunta: '¿Dónde estoy perdiendo plata?' }
+  };
+}
+
+// ---------- Proyección de cierre de mes ----------
+// Estimación lineal: al ritmo de lo que va del mes, cuánto cerraría. Siempre
+// marcada como estimación, nunca como certeza.
+function tikiProyeccionMes(){
+  const hoy = todayStr();
+  const d = tikiParse(hoy);
+  const inicio = hoy.slice(0, 8) + '01';
+  const dia = d.getDate();
+  const diasMes = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const r = tikiResumen(inicio, hoy);
+  if(!r.cantVentas) return { html: '<p>Este mes todavía no hay ventas cargadas, así que no puedo proyectar el cierre.</p>', acciones: [{ label: 'Cargar una venta', view: 'cargar' }] };
+  if(dia < 5) return { html: `<p>Todavía es muy pronto para proyectar el mes (van ${dia} ${dia === 1 ? 'día' : 'días'}). En unos días te lo estimo mejor. Por ahora llevás ${tikiPlata(r.ventas)}.</p>` };
+  const factor = diasMes / dia;
+  const proyVentas = r.ventas * factor;
+  const proyGanancia = r.ganancia * factor;
+  const mes = TIKI_MESES[d.getMonth()];
+  let html = `<p>Al ritmo de lo que va de ${mes}, si seguís así cerrarías el mes alrededor de <strong>${tikiPlata(proyVentas)}</strong> en ventas`;
+  if(r.sinCosto < r.cantVentas) html += ` y una ganancia real cerca de <strong class="${proyGanancia >= 0 ? 'tiki-pos' : 'tiki-neg'}">${tikiPlata(proyGanancia)}</strong>`;
+  html += `.</p><p class="tiki-soft">Es una estimación: llevás ${tikiPlata(r.ventas)} en ${dia} días y la proyecto a los ${diasMes} del mes. Si cambia el ritmo, cambia el número.</p>`;
+  // Contra el mes pasado completo.
+  const finPrev = new Date(d.getFullYear(), d.getMonth(), 0);
+  const rp = tikiResumen(tikiFecha(new Date(finPrev.getFullYear(), finPrev.getMonth(), 1)), tikiFecha(finPrev));
+  if(rp.ventas > 0){
+    const v = tikiVariacion(proyVentas, rp.ventas);
+    if(v) html += `<p>Eso sería ${v} el total de ${TIKI_MESES[finPrev.getMonth()]} (${tikiPlata(rp.ventas)}).</p>`;
+  }
+  const meta = tikiRecuerda('meta_venta_diaria');
+  if(meta){ const metaMes = meta.monto * tikiDiasAbiertosMes(); html += `<p>${proyVentas >= metaMes ? 'Vas camino a' : 'Quedarías por debajo de'} tu meta (${tikiPlata(metaMes)} en el mes).</p>`; }
+  return { html, ctx: { tema: 'proyeccion', proyVentas, proyGanancia }, sugerencia: { texto: '¿Querés ver cuánto necesitás para una meta de ganancia?', pregunta: '¿Cuánto tengo que vender para ganar 500000 por mes?' } };
+}
+
 // ---------- Rentabilidad cruzada por producto ----------
 // Para cada producto del catálogo: margen % (del catálogo, precio vs costo),
 // unidades vendidas y monto de los últimos N días. Sirve para cruzar "vende
@@ -1896,6 +2070,21 @@ async function tikiRutear(raw, t){
       return tikiObjetivo(mensual);
     }
     return { html: '<p>¿Cuánto querés ganar? Decime algo como «quiero ganar 500.000 por mes» y te calculo cuánto deberías vender.</p>' };
+  }
+
+  // Detección de anomalías ("¿algo raro?", "¿qué mirar?").
+  if(/\b(algo raro|algo (que|para) (mirar|revisar|prestar atencion|ver)|que (deberia|tengo que|hay que) (mirar|revisar)|hay algo (raro|mal|para revisar)|anomal\w*|algo extraño|algo que no (cuadre|cierre)|como (esta|anda|viene) (el|mi) negocio)\b/.test(t)) return tikiAnomalias();
+  // Proyección de cierre de mes.
+  if(/\b(proyecc\w*|proyecta\w*|estima\w*)\b.{0,15}\bmes\b|\b(como (voy a|vas a)|en cuanto|cuanto) (cerra|termina|termino|cierro|voy a cerrar|voy a terminar)\w*\b|\bsi (sigo|seguis|seguimos) (asi|a este ritmo)\b|\b(a este ritmo|al ritmo).{0,20}(mes|cierro|termino)\b|\bcuanto voy a (vender|hacer|facturar) (este |el )?mes\b|\bcomo (voy a|va a) (cerrar|terminar) el mes\b/.test(t)) return tikiProyeccionMes();
+  // Categorías.
+  if(/\b(que|cual|cuales) categoria\b|\bcategoria (crece|creciendo|sub\w*|baj\w*|cae|cayo)\b/.test(t)) return tikiCategoriaCrece();
+  if(/\b(categoria|categorias|rubro|rubros|por rubro)\b/.test(t)){
+    if(/\b(crece|creciendo|sub\w*|baj\w*|cae|cayo|evolucion\w*)\b/.test(t)) return tikiCategoriaCrece();
+    return seguir(tikiCategorias);
+  }
+  const catNombrada = tikiCategoriaEnTexto(t);
+  if(catNombrada && /\b(vend\w*|factur\w*|gan\w*|deja|margen|como (va|viene|anda)|cuanto)\b/.test(t) && !tikiBuscar(claves, products, p => p.nombre).length){
+    return seguir(p => tikiVentasCategoria(catNombrada, p));
   }
 
   const esPregunta = tikiEsPreguntaDeHabito(raw, t);

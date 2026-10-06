@@ -143,3 +143,80 @@ describe('Analista: rentabilidad cruzada por producto', () => {
     assert.match(texto, /no veo productos que estés vendiendo a pérdida|no estás perdiendo plata/i);
   });
 });
+
+describe('Analista: categorías', () => {
+  test('desglose por categoría con margen', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cómo vienen mis categorías?');
+    assert.match(texto, /por categoría/);
+    assert.match(texto, /Bebidas/);
+    assert.match(texto, /mejor margen te deja es/);
+  });
+  test('qué categoría crece: compara contra los 30 días anteriores', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿qué categoría está creciendo?');
+    assert.match(texto, /crece|cae|estables/);
+    assert.match(texto, /contra los 30 días anteriores|estables/);
+  });
+  test('categoría nombrada: responde solo de esa', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cuánto vendí en bebidas?');
+    assert.match(texto, /en Bebidas/);
+    assert.match(texto, /margen de \d+%/);
+  });
+  test('sin categorías en el catálogo, lo dice', async () => {
+    const e = crearEntorno({ hoy: HOY });
+    e.sembrar({ products: [{ id: 1, user_id: A.id, nombre: 'Coca', precio_venta: 1000, costo_unitario: 600, stock_actual: 5 }], movements: [{ id: 'v1', user_id: A.id, fecha: '2026-09-15', hora: '10:00', tipo: 'Venta', descripcion: 'Coca', cantidad: 1, monto: 1000, costo_total: 600, metodo_pago: 'Efectivo', created_at: '2026-09-15T13:00:00Z' }] });
+    e.login(A); await e.cargar();
+    assert.match((await e.preguntar('¿cómo vienen mis categorías?')).texto, /categoría asignada/i);
+  });
+});
+
+describe('Analista: proyección de cierre de mes', () => {
+  async function kioscoAl(hoy){ const e = crearEntorno({ hoy, hora: '18:30' }); e.sembrar(generarKiosco({ hoy, horaActual: 18, userId: A.id })); e.login(A); await e.cargar(); return e; }
+  test('proyecta el mes a mitad de mes, marcado como estimación', async () => {
+    const e = await kioscoAl('2026-10-20');
+    const { texto } = await e.preguntar('¿en cuánto voy a cerrar el mes?');
+    assert.match(texto, /cerrarías el mes alrededor de \$[\d.]+/);
+    assert.match(texto, /estimación/);
+    assert.match(texto, /llevás \$[\d.]+ en 20 días/);
+    assert.doesNotMatch(texto, /NaN|undefined/);
+  });
+  test('a principio de mes avisa que es pronto, no proyecta', async () => {
+    const e = await kioscoAl('2026-10-02');
+    const { texto } = await e.preguntar('¿cómo voy a cerrar el mes?');
+    assert.match(texto, /muy pronto para proyectar/);
+    assert.doesNotMatch(texto, /cerrarías el mes alrededor/);
+  });
+});
+
+describe('Analista: detección de anomalías', () => {
+  test('vendés más pero el margen bajó (caso estrella)', async () => {
+    const e = crearEntorno({ hoy: '2026-10-20' });
+    const movs = [];
+    const push = (f, monto, costo) => movs.push({ id: 'm' + movs.length, user_id: A.id, fecha: f, hora: '10:00', tipo: 'Venta', descripcion: 'Coca', cantidad: 1, monto, costo_total: costo, metodo_pago: 'Efectivo', created_at: f + 'T13:00:00Z' });
+    for(let i = 30; i <= 59; i++){ const f = new Date(2026, 9, 20); f.setDate(f.getDate() - i); const fs = f.toISOString().slice(0, 10); for(let j = 0; j < 5; j++) push(fs, 1000, 500); } // 50% margen
+    for(let i = 0; i <= 29; i++){ const f = new Date(2026, 9, 20); f.setDate(f.getDate() - i); const fs = f.toISOString().slice(0, 10); for(let j = 0; j < 8; j++) push(fs, 1000, 800); } // 20% margen, más ventas
+    e.sembrar({ movements: movs });
+    e.login(A); await e.cargar();
+    const { texto } = await e.preguntar('¿algo raro?');
+    assert.match(texto, /vendiendo.*más/i);
+    assert.match(texto, /margen bajó de 50% a 20%/);
+  });
+
+  test('con pocos datos no inventa anomalías', async () => {
+    const e = crearEntorno({ hoy: '2026-10-20' });
+    e.sembrar({ movements: [{ id: 'v1', user_id: A.id, fecha: '2026-10-18', hora: '10:00', tipo: 'Venta', descripcion: 'Coca', cantidad: 1, monto: 1000, costo_total: 600, metodo_pago: 'Efectivo', created_at: '2026-10-18T13:00:00Z' }] });
+    e.login(A); await e.cargar();
+    assert.match((await e.preguntar('¿algo raro para revisar?')).texto, /no tengo suficientes datos/i);
+  });
+
+  test('negocio estable: dice que no ve nada raro', async () => {
+    const e = crearEntorno({ hoy: '2026-10-20' });
+    const movs = [];
+    for(let i = 0; i <= 59; i++){ const f = new Date(2026, 9, 20); f.setDate(f.getDate() - i); const fs = f.toISOString().slice(0, 10); for(let j = 0; j < 5; j++) movs.push({ id: `m${i}_${j}`, user_id: A.id, fecha: fs, hora: '10:00', tipo: 'Venta', descripcion: 'Coca', cantidad: 1, monto: 1000, costo_total: 600, metodo_pago: 'Efectivo', created_at: fs + 'T13:00:00Z' }); }
+    e.sembrar({ movements: movs });
+    e.login(A); await e.cargar();
+    assert.match((await e.preguntar('¿algo raro?')).texto, /no veo nada raro/i);
+  });
+});
