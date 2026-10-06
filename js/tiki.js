@@ -697,6 +697,92 @@ function tikiComoVengo(){
   return { html, ctx: { tema: 'mes', r }, sugerencia: { texto: '¿Te muestro qué día de la semana vendés más?', pregunta: '¿Qué día vendo más?' } };
 }
 
+// ---------- Punto de equilibrio y objetivos ----------
+// Dos piezas:
+//  - Margen de contribución %: lo que deja cada $100 de venta después de
+//    pagar la mercadería, medido sobre las ventas que TIENEN costo cargado
+//    (ventas - costo) / ventas. Si pocas ventas tienen costo, se avisa.
+//  - Gastos operativos del mes: alquiler, servicios, sueldos, impuestos,
+//    otros -- TODO menos "Mercadería" (esa compra ya está en el costo de
+//    cada venta; contarla de nuevo sería doble). Se toma el último mes
+//    completo como referencia; si no hay, el mes en curso.
+// Punto de equilibrio = gastos operativos / margen de contribución.
+// Objetivo de ganancia X por mes: ventas = (X + gastos operativos) / margen.
+function tikiMargenContrib(dias = 30){
+  const hasta = todayStr();
+  const desde = tikiSumarDias(hasta, -(dias - 1));
+  const ventas = tikiMovs(desde, hasta, 'Venta');
+  const conCosto = ventas.filter(e => parseFloat(e.costoTotal) > 0);
+  const vMed = conCosto.reduce((s,e) => s + (Number(e.monto) || 0), 0);
+  const cMed = conCosto.reduce((s,e) => s + (parseFloat(e.costoTotal) || 0), 0);
+  const vTot = ventas.reduce((s,e) => s + (Number(e.monto) || 0), 0);
+  return {
+    pct: vMed > 0 ? (vMed - cMed) / vMed : null,  // 0..1, o null si no hay con qué medir
+    cobertura: vTot > 0 ? vMed / vTot : 0,         // qué parte de las ventas tenía costo
+    hayVentas: vTot > 0
+  };
+}
+function tikiGastosOperativosMes(){
+  const hoy = todayStr();
+  const d = tikiParse(hoy);
+  const sumaOperativos = (desde, hasta) => tikiMovs(desde, hasta, 'Gasto')
+    .filter(e => (e.categoria || '') !== 'Mercadería')
+    .reduce((s,e) => s + (Number(e.monto) || 0), 0);
+  // Mes anterior completo como referencia estable; si no hay nada, el mes en curso.
+  const iniPrev = tikiFecha(new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const finPrev = tikiFecha(new Date(d.getFullYear(), d.getMonth(), 0));
+  const prev = sumaOperativos(iniPrev, finPrev);
+  const esteMes = sumaOperativos(hoy.slice(0, 8) + '01', hoy);
+  if(prev > 0) return { monto: prev, ref: `de ${TIKI_MESES[tikiParse(iniPrev).getMonth()]}`, completo: true };
+  if(esteMes > 0) return { monto: esteMes, ref: 'de este mes (todavía incompleto)', completo: false };
+  return { monto: 0, ref: null, completo: false };
+}
+function tikiDiasAbiertosMes(){
+  const cerrados = (tikiRecuerda('dias_cerrado') || { dias: [] }).dias.length;
+  return Math.max(1, Math.round(30 - cerrados * 30 / 7));
+}
+// Falta algún dato para calcular equilibrio/objetivo: devuelve el aviso, o null.
+function tikiFaltaParaEquilibrio(margen, gastos){
+  if(!margen.hayVentas) return { html: '<p>Para eso necesito tus ventas cargadas. Cuando registres unos días de ventas, te lo calculo.</p>', acciones: [{ label: 'Cargar una venta', view: 'cargar' }] };
+  if(margen.pct === null) return { html: '<p>Para calcular el punto de equilibrio necesito saber cuánto te deja cada venta, y para eso las ventas tienen que tener el costo cargado. Se completa solo cuando el producto del catálogo tiene su costo.</p>', acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }] };
+  if(margen.pct <= 0) return { html: '<p>Con los datos de este último mes estás vendiendo <strong>al costo o por debajo</strong> (no te queda margen después de pagar la mercadería), así que no hay un punto de equilibrio posible: primero habría que recuperar margen subiendo algún precio o bajando costos.</p>', sugerencia: { texto: '¿Querés ver qué productos te dejan menos?', pregunta: '¿Qué producto me deja menos?' } };
+  if(!gastos.monto) return { html: '<p>Para calcular cuánto necesitás vender para cubrir tus gastos, primero cargá tus gastos del mes (alquiler, servicios, sueldos, impuestos). Sin eso solo puedo decirte el margen, no el punto de equilibrio.</p>', acciones: [{ label: 'Cargar un gasto', view: 'cargar', tipo: 'Gasto' }] };
+  return null;
+}
+function tikiEquilibrio(){
+  const margen = tikiMargenContrib(30);
+  const gastos = tikiGastosOperativosMes();
+  const falta = tikiFaltaParaEquilibrio(margen, gastos);
+  if(falta) return falta;
+  const ventasEq = gastos.monto / margen.pct;
+  const dias = tikiDiasAbiertosMes();
+  const porDia = ventasEq / dias;
+  let html = `<p>Para cubrir tus gastos necesitás vender alrededor de <strong>${tikiPlata(ventasEq)}</strong> por mes, o sea unos <strong>${tikiPlata(porDia)}</strong> por día abierto.</p>`;
+  html += `<p class="tiki-soft">Lo calculo así: de cada $100 que vendés te quedan ${tikiPlata(Math.round(margen.pct * 100))} después de pagar la mercadería, y tus gastos ${gastos.ref} suman ${tikiPlata(gastos.monto)} (sin contar la compra de mercadería, que ya está en el costo de cada venta). Es una estimación con tus números de las últimas semanas.</p>`;
+  if(margen.cobertura < 0.6) html += `<p class="tiki-soft">Ojo: muchas de tus ventas no tienen el costo cargado, así que el margen puede ser menos preciso.</p>`;
+  return { html, ctx: { tema: 'equilibrio', margen, gastos, ventasEq }, sugerencia: { texto: '¿Querés que lo calcule para una meta de ganancia?', pregunta: '¿Cuánto tengo que vender para ganar 500000 por mes?' } };
+}
+function tikiObjetivo(montoMensual){
+  const margen = tikiMargenContrib(30);
+  const gastos = tikiGastosOperativosMes();
+  const falta = tikiFaltaParaEquilibrio(margen, gastos);
+  if(falta) return falta;
+  const ventasNec = (montoMensual + gastos.monto) / margen.pct;
+  const dias = tikiDiasAbiertosMes();
+  const porDia = ventasNec / dias;
+  let html = `<p>Para ganar <strong>${tikiPlata(montoMensual)}</strong> limpios en el mes, tendrías que vender alrededor de <strong>${tikiPlata(ventasNec)}</strong>, o sea unos <strong>${tikiPlata(porDia)}</strong> por día abierto.</p>`;
+  html += `<p class="tiki-soft">Sale de sumar tu objetivo (${tikiPlata(montoMensual)}) más tus gastos ${gastos.ref} (${tikiPlata(gastos.monto)}), dividido tu margen de ${tikiPlata(Math.round(margen.pct * 100))} por cada $100. Es una estimación.</p>`;
+  // ¿Cómo viene contra el ritmo actual?
+  const r30 = tikiResumen(tikiSumarDias(todayStr(), -29), todayStr());
+  if(r30.ventas > 0){
+    const ritmoMensual = r30.ventas; // ~30 días
+    const v = tikiVariacion(ritmoMensual, ventasNec);
+    if(ritmoMensual >= ventasNec) html += `<p>Buena noticia: al ritmo de los últimos 30 días (${tikiPlata(ritmoMensual)}) ya estarías llegando.</p>`;
+    else html += `<p>Hoy venís a un ritmo de ${tikiPlata(ritmoMensual)} por mes, así que te faltaría vender un poco más para llegar.</p>`;
+  }
+  return { html, ctx: { tema: 'objetivo', montoMensual, ventasNec }, sugerencia: { texto: '¿Querés ver qué producto te deja más para enfocarte ahí?', pregunta: '¿Qué producto me deja más ganancia?' } };
+}
+
 const TIKI_CATEGORIAS = { alquiler: 'Alquiler', servicio: 'Servicios', sueldo: 'Sueldos', empleado: 'Sueldos', impuesto: 'Impuestos', monotributo: 'Impuestos', mercaderia: 'Mercadería' };
 const TIKI_SERVICIOS = ['luz', 'gas', 'agua', 'internet', 'telefono', 'celular', 'wifi', 'cable'];
 function tikiGastos(periodo, claves){
@@ -1440,6 +1526,9 @@ function tikiExplicar(c){
     const r = c.r;
     return { html: `<p>Lo del mes sale de sumar todo lo cargado desde el 1: vendiste ${tikiPlata(r.ventas)}, la mercadería te costó ${tikiPlata(r.costoMerc)} y gastaste ${tikiPlata(r.gastos)}. La ganancia real es la resta: <strong>${tikiPlata(r.ganancia)}</strong>.</p>${r.gastos > r.ventas - r.costoMerc ? '<p>Por eso da negativa: los gastos del mes son más grandes que lo que te deja la mercadería vendida.</p>' : ''}` };
   }
+  if(c.tema === 'equilibrio' || c.tema === 'objetivo'){
+    return { html: '<p>Lo calculo con dos cosas tuyas: cuánto te deja cada $100 de venta después de pagar la mercadería (tu margen, medido sobre las ventas que tienen el costo cargado), y tus gastos del mes sin contar la compra de mercadería. El punto de equilibrio es gastos dividido margen; para una meta de ganancia, le sumo esa meta a los gastos antes de dividir. Es una estimación con tus números recientes.</p>' };
+  }
   const textos = {
     dias: 'Para cada día de la semana sumo lo que vendiste en las últimas 8 semanas y lo divido por la cantidad de veces que hubo ese día. Los días que me dijiste que no abrís no cuentan.',
     horas: 'Sumo las ventas de cada hora según la hora en que se cargaron. Si cargás las ventas todas juntas al final del día, esto no va a ser exacto.',
@@ -1703,6 +1792,23 @@ async function tikiRutear(raw, t){
     tikiPendiente = null; // cualquier otra respuesta hace caducar la oferta
     if(/^(si|sii+|dale|ok|okey|obvio|claro|guardalo|acordate|perfecto|de una|si dale|si acordate)$/.test(t)) return await tikiConfirmarGuardado(pend.clave, pend.valor);
     if(/^(no|nah|nop|deja|dejalo|no gracias|mejor no|no guardes nada)$/.test(t)) return { html: '<p>Listo, no guardo nada.</p>' };
+  }
+
+  // Punto de equilibrio y objetivo de GANANCIA (distinto de la meta de
+  // ventas de la memoria): va antes de la memoria para que "quiero ganar X"
+  // no se guarde como meta de ventas.
+  if(/\bpunto de equilibrio\b|\b(cuanto|que).{0,30}\bvender\b.{0,20}\b(cubrir|cubra|tapar|empatar|no perder)\b|\bpara (cubrir|tapar) (mis |los |el )?(gastos|costos)\b|\bcubrir (mis |los )?(gastos|costos)\b|\bcuanto.{0,20}(para no perder|para empatar|para estar en cero)\b/.test(t)){
+    return tikiEquilibrio();
+  }
+  if(/\b(ganar|ganarme|llevarme|que me queden|quedarme con|sacar limpio|ganancia de)\b/.test(t) && /\b(por mes|al mes|mensual|por dia|al dia|diario|por semana|semanal|en el mes|mes)\b/.test(t)){
+    const monto = tikiLeerMonto(raw);
+    if(monto){
+      let mensual = monto;
+      if(/\b(por dia|al dia|diario|por jornada)\b/.test(t)) mensual = monto * tikiDiasAbiertosMes();
+      else if(/\b(por semana|semanal)\b/.test(t)) mensual = Math.round(monto * 30 / 7);
+      return tikiObjetivo(mensual);
+    }
+    return { html: '<p>¿Cuánto querés ganar? Decime algo como «quiero ganar 500.000 por mes» y te calculo cuánto deberías vender.</p>' };
   }
 
   const esPregunta = tikiEsPreguntaDeHabito(raw, t);
