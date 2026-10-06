@@ -140,14 +140,19 @@
   .nav-link:hover{color:var(--text);}
 
   .btn-primary{
+    position:relative;overflow:hidden;
     background:var(--brand-gradient);
     color:#fff;
     font-weight:700;
-    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
-    box-shadow:0 6px 20px -6px rgba(62,86,112,0.5);
+    transition:transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, filter .22s ease;
+    box-shadow:0 6px 20px -6px rgba(62,86,112,0.5), inset 0 1px 0 rgba(255,255,255,0.14);
   }
-  .btn-primary:hover{filter:brightness(1.12);transform:translateY(-1px);box-shadow:0 10px 28px -6px rgba(62,86,112,0.7);}
+  /* Brillo que barre al pasar el mouse (feel tipo Linear/Vercel). */
+  .btn-primary::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,0.28) 50%,transparent 80%);transform:translateX(-120%);transition:transform .6s ease;pointer-events:none;}
+  .btn-primary:hover{filter:brightness(1.08);transform:translateY(-2px);box-shadow:0 16px 36px -8px rgba(62,86,112,0.72), inset 0 1px 0 rgba(255,255,255,0.18);}
+  .btn-primary:hover::before{transform:translateX(120%);}
   .btn-primary:active{transform:translateY(0);}
+  @media(prefers-reduced-motion:reduce){ .btn-primary::before{display:none;} }
   /* El foco queda en verde a propósito: es el color de mayor contraste de la paleta,
      y el foco es un indicador funcional de accesibilidad, no una afirmación de marca. */
   .btn-primary:focus-visible{outline:2px solid var(--green);outline-offset:3px;}
@@ -155,16 +160,19 @@
   .btn-ghost{
     color:var(--text);
     border:1px solid var(--hairline-strong);
-    transition:border-color .2s ease, background-color .2s ease;
+    transition:border-color .2s ease, background-color .2s ease, transform .22s cubic-bezier(.2,.7,.2,1);
   }
-  .btn-ghost:hover{border-color:var(--text-dim);background:var(--hairline);}
+  .btn-ghost:hover{border-color:var(--text-dim);background:var(--hairline);transform:translateY(-2px);}
   .btn-ghost:focus-visible{outline:2px solid var(--text-dim);outline-offset:3px;}
 
   /* Reveal: visible por defecto. Solo se oculta si JS confirma que el elemento
      esta fuera de pantalla al cargar (evita que quede invisible si el CDN de
      Tailwind o el observer tardan en correr). */
-  .reveal.will-animate{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);}
-  .reveal.will-animate.is-in{opacity:1;transform:translateY(0);}
+  .reveal.will-animate{opacity:0;transform:translateY(26px) scale(.986);transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);}
+  .reveal.will-animate.is-in{opacity:1;transform:none;}
+  /* Las tarjetas de una misma fila entran escalonadas, no todas de golpe. */
+  #funcionalidades .grid > .reveal:nth-child(3n+2){transition-delay:.08s;}
+  #funcionalidades .grid > .reveal:nth-child(3n){transition-delay:.16s;}
   @media(prefers-reduced-motion:reduce){
     .reveal{opacity:1!important;transform:none!important;transition:none!important;}
     html{scroll-behavior:auto;}
@@ -303,9 +311,9 @@
     transition:border-color .25s ease, transform .25s ease, background-color .35s ease, box-shadow .25s ease;
   }
   .bento-card:hover{
-    border-color:var(--hairline-strong);
-    transform:translateY(-4px);
-    box-shadow:0 16px 32px -20px rgba(0,0,0,0.45);
+    border-color:rgba(76,175,128,0.35);
+    transform:translateY(-5px);
+    box-shadow:0 20px 40px -22px rgba(0,0,0,0.5), 0 0 0 1px rgba(76,175,128,0.12);
   }
   @media(prefers-reduced-motion:reduce){ .bento-card:hover{transform:none;} }
   .bento-hero-card{
