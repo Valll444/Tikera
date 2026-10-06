@@ -80,6 +80,45 @@ Existe además una Edge Function con Claude
 **etapa 2**. Hoy **no está deployada** ni conectada a la app (verificado con
 `supabase functions list`).
 
+### Capacidades de análisis (sin IA)
+
+Además de las consultas directas (ventas, gastos, stock, cierres, deudas),
+Tiki hace análisis de negocio, todo con cuentas sobre los datos reales,
+marcando lo que es estimación y pidiendo el dato cuando falta:
+
+1. **Punto de equilibrio y objetivos.** "¿Cuánto vender para cubrir mis
+   gastos?" = gastos operativos del mes / margen de contribución. "Quiero
+   ganar $X por mes/día" = (X + gastos) / margen. El margen sale de las
+   ventas con costo cargado; los gastos **no** cuentan la compra de
+   mercadería (ya está en el costo de cada venta).
+2. **Rentabilidad cruzada por producto.** "Vende mucho pero deja poco"
+   (volumen alto + margen bajo el promedio), "buen margen pero no rota"
+   (margen alto + casi sin ventas + stock), "dónde pierdo plata" (venta al
+   costo o por debajo, márgenes negativos), "qué deja menos".
+3. **Categorías.** Desglose con margen, "qué categoría crece/cae" (30 vs 30
+   días anteriores) y categoría nombrada ("cuánto vendí en bebidas").
+4. **Proyección de cierre de mes.** Estimación lineal al ritmo del mes, con
+   la base explícita y guarda de principio de mes.
+5. **Detección de anomalías.** Compara los últimos 30 días contra los 30
+   anteriores: vendés más pero el margen bajó, ventas en caída, una
+   categoría que se desploma, un producto que se frenó, faltantes de caja
+   repetidos. Con pocos datos no inventa.
+6. **Conceptos.** "¿Qué es el margen / markup / ganancia neta / ticket
+   promedio / rotación / punto de equilibrio?" → definición en criollo + el
+   número real del usuario. Distingue "qué es" (explica) de "cuál es el mío"
+   (calcula).
+7. **Contexto económico.** Dólar (dolarapi.com) e inflación (INDEC vía
+   argentinadatos.com): el dato real con fuente y fecha (**hecho**),
+   separado del impacto para el comercio (**análisis**, marcado como
+   estimación). Caché de 10 minutos; sin conexión lo dice. No interpreta
+   noticias arbitrarias: eso queda para la etapa 2.
+
+Lo que **no** hace el motor propio (necesita la etapa 2 con Claude): charla
+libre sobre cualquier tema, interpretar noticias arbitrarias y la adaptación
+fina al nivel del usuario con razonamiento. Esas cuentas son justo las
+herramientas de solo lectura que el modelo usaría en la etapa 2. Tests:
+`tests/analista.test.mjs`.
+
 ## 2. Modelo de amenazas y aislamiento
 
 **La garantía de que una cuenta no ve datos de otra no la da Tiki ni ningún
