@@ -101,3 +101,45 @@ describe('Analista: punto de equilibrio y objetivos', () => {
     assert.match(texto, /al costo o por debajo/i);
   });
 });
+
+describe('Analista: rentabilidad cruzada por producto', () => {
+  test('"vende mucho pero deja poco": alto volumen, margen bajo el promedio', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿qué vendo mucho pero me deja poco?');
+    assert.match(texto, /menos que tu promedio/);
+    assert.match(texto, /Marlboro Box 20/);           // alto volumen, 12% margen
+    assert.doesNotMatch(texto, /NaN|undefined/);
+  });
+
+  test('"buen margen pero no rota": margen alto, casi sin ventas, con stock', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿qué tiene buen margen pero no rota?');
+    assert.match(texto, /buen margen pero casi no rotan/);
+    assert.match(texto, /Pilas Duracell AA|Caramelos Sugus/);
+  });
+
+  test('"dónde pierdo plata": detecta venta al costo o por debajo', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿dónde estoy perdiendo plata?');
+    assert.match(texto, /al costo o por debajo/);
+    assert.match(texto, /Cerveza Quilmes 1L/);        // precio 2900 <= costo 3000
+  });
+
+  test('"deja menos": ranking de ganancia invertido', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿qué producto me deja menos?');
+    assert.match(texto, /menos ganancia/);
+    // el primero debe ser el de menor ganancia (la cerveza, negativa)
+    assert.match(texto.split('\n')[0] + texto, /Cerveza Quilmes 1L/);
+  });
+
+  test('sin productos a pérdida, lo dice (no inventa)', async () => {
+    const e = crearEntorno({ hoy: HOY });
+    const movs = [];
+    for(let i = 0; i < 15; i++){ const f = `2026-09-${String(10 + i).padStart(2, '0')}`; movs.push({ id: 'v' + i, user_id: A.id, fecha: f, hora: '10:00', tipo: 'Venta', descripcion: 'Coca', cantidad: 1, monto: 1000, costo_total: 600, metodo_pago: 'Efectivo', created_at: f + 'T13:00:00Z' }); }
+    e.sembrar({ movements: movs, products: [{ id: 1, user_id: A.id, nombre: 'Coca', precio_venta: 1000, costo_unitario: 600, stock_actual: 10, categoria: 'Bebidas' }] });
+    e.login(A); await e.cargar();
+    const { texto } = await e.preguntar('¿dónde estoy perdiendo plata?');
+    assert.match(texto, /no veo productos que estés vendiendo a pérdida|no estás perdiendo plata/i);
+  });
+});

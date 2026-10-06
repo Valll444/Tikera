@@ -783,6 +783,92 @@ function tikiObjetivo(montoMensual){
   return { html, ctx: { tema: 'objetivo', montoMensual, ventasNec }, sugerencia: { texto: '¿Querés ver qué producto te deja más para enfocarte ahí?', pregunta: '¿Qué producto me deja más ganancia?' } };
 }
 
+// ---------- Rentabilidad cruzada por producto ----------
+// Para cada producto del catálogo: margen % (del catálogo, precio vs costo),
+// unidades vendidas y monto de los últimos N días. Sirve para cruzar "vende
+// mucho" con "deja poco", o "buen margen" con "no rota".
+function tikiMetricasProductos(dias = 30){
+  const hasta = todayStr();
+  const desde = tikiSumarDias(hasta, -(dias - 1));
+  const ventas = tikiMovs(desde, hasta, 'Venta');
+  const porNombre = new Map();
+  ventas.forEach(e => {
+    const k = tikiNorm(e.descripcion);
+    if(!k) return;
+    const g = porNombre.get(k) || { monto: 0, unidades: 0 };
+    g.monto += Number(e.monto) || 0;
+    g.unidades += Number(e.cantidad) || 1;
+    porNombre.set(k, g);
+  });
+  return products.map(p => {
+    const precio = Number(p.precio_venta) || 0, costo = Number(p.costo_unitario) || 0;
+    const v = porNombre.get(tikiNorm(p.nombre)) || { monto: 0, unidades: 0 };
+    return {
+      nombre: p.nombre, precio, costo, stock: Number(p.stock_actual) || 0,
+      margenPct: precio > 0 && costo > 0 ? (precio - costo) / precio : null,
+      gananciaUnit: precio > 0 && costo > 0 ? precio - costo : null,
+      monto: v.monto, unidades: v.unidades
+    };
+  });
+}
+function tikiMargenPromedio(ms){
+  const con = ms.filter(m => m.margenPct !== null);
+  return con.length ? con.reduce((s,m) => s + m.margenPct, 0) / con.length : null;
+}
+function tikiPctTexto(pct){ return Math.round(pct * 100) + '%'; }
+
+function tikiMuchoVendePocoMargen(){
+  if(!products.length) return { html: '<p>Para eso necesito tu catálogo con precios y costos.</p>', acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }] };
+  const ms = tikiMetricasProductos(30).filter(m => m.margenPct !== null && m.monto > 0);
+  if(ms.length < 2) return { html: '<p>Todavía tengo pocos productos con precio, costo y ventas cargados para comparar el margen.</p>', acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }] };
+  const prom = tikiMargenPromedio(ms);
+  // Los que más facturan y, de esos, los que dejan menos que tu promedio.
+  const flojos = ms.filter(m => m.margenPct < prom).sort((a,b) => b.monto - a.monto).slice(0, 5);
+  if(!flojos.length) return { html: `<p>Buenas noticias: lo que más vendés también te deja un margen parejo o por encima de tu promedio (${tikiPctTexto(prom)}). No hay un producto que venda mucho y te deje poco.</p>` };
+  let html = `<p>Estos venden bien pero te dejan <strong>menos que tu promedio</strong> (${tikiPctTexto(prom)} de margen):</p>`;
+  html += `<ul class="tiki-list">${flojos.map(m => `<li class="pronto"><span><strong>${escapeHtml(m.nombre)}</strong>: ${tikiPlata(m.monto)} vendidos, pero solo <span class="tiki-neg">${tikiPctTexto(m.margenPct)}</span> de margen</span></li>`).join('')}</ul>`;
+  html += `<p class="tiki-soft">Son candidatos a revisar el precio o el costo: mueven plata pero rinden poco.</p>`;
+  return { html, ctx: { tema: 'ranking' }, sugerencia: { texto: '¿Querés ver cuáles te dejan más?', pregunta: '¿Qué producto me deja más ganancia?' } };
+}
+function tikiBuenMargenPocaRotacion(){
+  if(!products.length) return { html: '<p>Para eso necesito tu catálogo con precios, costos y stock.</p>', acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }] };
+  const ms = tikiMetricasProductos(30).filter(m => m.margenPct !== null);
+  if(ms.length < 2) return { html: '<p>Todavía tengo pocos productos con precio y costo cargados para comparar.</p>', acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }] };
+  const prom = tikiMargenPromedio(ms);
+  const unidadProm = ms.reduce((s,m) => s + m.unidades, 0) / ms.length;
+  // Buen margen (sobre el promedio) y casi sin ventas, con stock parado.
+  const joyas = ms.filter(m => m.margenPct >= prom && m.unidades <= Math.max(1, unidadProm * 0.4) && m.stock > 0)
+    .sort((a,b) => b.margenPct - a.margenPct).slice(0, 5);
+  if(!joyas.length) return { html: `<p>No encontré productos de buen margen que estén parados: lo que más te deja también se va vendiendo. Bien ahí.</p>` };
+  let html = `<p>Estos te dejan <strong>buen margen</strong> pero casi no rotan, así que tenés plata quieta ahí:</p>`;
+  html += `<ul class="tiki-list">${joyas.map(m => `<li class="pronto"><span><strong>${escapeHtml(m.nombre)}</strong>: <span class="tiki-pos">${tikiPctTexto(m.margenPct)}</span> de margen, pero ${m.unidades === 0 ? 'no vendiste ninguno' : `vendiste solo ${tikiNum(m.unidades)}`} en 30 días (quedan ${tikiNum(m.stock)})</span></li>`).join('')}</ul>`;
+  html += `<p class="tiki-soft">Si los ponés más a la vista o los sumás a un combo, pueden rendir bien.</p>`;
+  return { html, ctx: { tema: 'ranking' } };
+}
+function tikiDondePierdoPlata(){
+  const ms = tikiMetricasProductos(30);
+  const aPerdida = products.filter(p => Number(p.precio_venta) > 0 && Number(p.costo_unitario) > 0 && Number(p.precio_venta) <= Number(p.costo_unitario));
+  const ventasPerdida = tikiMovs(tikiSumarDias(todayStr(), -29), todayStr(), 'Venta')
+    .filter(e => parseFloat(e.costoTotal) > 0 && parseFloat(e.costoTotal) >= (Number(e.monto) || 0));
+  const bloques = [];
+  if(aPerdida.length){
+    bloques.push(`<p>Estás vendiendo <strong>al costo o por debajo</strong> ${aPerdida.length === 1 ? 'este producto' : 'estos'}:</p><ul class="tiki-list">${aPerdida.slice(0, 6).map(p => `<li class="urgente"><span><strong>${escapeHtml(p.nombre)}</strong>: lo vendés a ${tikiPlata(p.precio_venta)} y te cuesta ${tikiPlata(p.costo_unitario)}</span></li>`).join('')}</ul>`);
+  }
+  if(ventasPerdida.length){
+    const total = ventasPerdida.reduce((s,e) => s + (parseFloat(e.costoTotal) - (Number(e.monto) || 0)), 0);
+    if(!aPerdida.length) bloques.push(`<p>En los últimos 30 días hubo ${ventasPerdida.length} ${ventasPerdida.length === 1 ? 'venta' : 'ventas'} donde cobraste menos que lo que te costó la mercadería${total > 0 ? ` (unos ${tikiPlata(total)} de diferencia)` : ''}.</p>`);
+  }
+  const flojos = ms.filter(m => m.margenPct !== null && m.monto > 0 && m.margenPct < 0.1).sort((a,b) => b.monto - a.monto).slice(0, 4);
+  if(flojos.length){
+    bloques.push(`<p>Y estos dejan un margen muy finito (menos del 10%) moviendo bastante plata:</p><ul class="tiki-list">${flojos.map(m => `<li class="pronto"><span>${escapeHtml(m.nombre)}: ${tikiPctTexto(m.margenPct)} de margen sobre ${tikiPlata(m.monto)} vendidos</span></li>`).join('')}</ul>`);
+  }
+  const sinCosto = products.filter(p => !(Number(p.costo_unitario) > 0)).length;
+  if(!bloques.length){
+    return { html: `<p>No veo productos que estés vendiendo a pérdida ni con margen negativo. ${sinCosto ? `Eso sí, ${sinCosto} ${sinCosto === 1 ? 'producto no tiene' : 'productos no tienen'} el costo cargado, así que de esos no puedo saberlo.` : 'Por donde miro, no estás perdiendo plata en productos.'}</p>`, acciones: sinCosto ? [{ label: 'Ir al catálogo', view: 'catalogo' }] : undefined };
+  }
+  return { html: bloques.join(''), ctx: { tema: 'ranking' }, sugerencia: { texto: '¿Querés que veamos cuáles te dejan más para compensar?', pregunta: '¿Qué producto me deja más ganancia?' } };
+}
+
 const TIKI_CATEGORIAS = { alquiler: 'Alquiler', servicio: 'Servicios', sueldo: 'Sueldos', empleado: 'Sueldos', impuesto: 'Impuestos', monotributo: 'Impuestos', mercaderia: 'Mercadería' };
 const TIKI_SERVICIOS = ['luz', 'gas', 'agua', 'internet', 'telefono', 'celular', 'wifi', 'cable'];
 function tikiGastos(periodo, claves){
@@ -825,7 +911,7 @@ function tikiGastos(periodo, claves){
   return { html, ctx: { tema: 'gastos', p }, sugerencia: { texto: '¿Querés ver cuánto te quedó de ganancia real?', pregunta: `¿Cuánto gané ${p.label}?` } };
 }
 
-function tikiTopProductos(periodo, criterio, menos, cuantos = 5){
+function tikiTopProductos(periodo, criterio, menos, cuantos = 5, invertido = false){
   const p = periodo || tikiUltimos30();
   if(menos){
     if(!products.length) return { html: '<p>Para decirte qué no se vende necesito tu catálogo de productos con su stock.</p>', acciones: [{ label: 'Ir al catálogo', view: 'catalogo' }] };
@@ -855,7 +941,8 @@ function tikiTopProductos(periodo, criterio, menos, cuantos = 5){
     campo = 'monto';
     titulo = 'Lo que más facturó';
   }
-  grupos.sort((a,b) => b[campo] - a[campo]);
+  grupos.sort((a,b) => invertido ? a[campo] - b[campo] : b[campo] - a[campo]);
+  if(invertido) titulo = criterio === 'ganancia' ? 'Lo que menos ganancia te dejó' : criterio === 'cantidad' ? 'Lo que menos unidades vendiste' : 'Lo que menos facturó';
   const filas = grupos.slice(0, cuantos).map((g,i) => ({ label: g.nombre, valor: g[campo], texto: campo === 'cantidad' ? `${tikiNum(g.cantidad)} u.` : tikiPlata(g[campo]), top: i === 0 }));
   return {
     html: `<p>${titulo} ${p.label}:</p>${tikiBarras(filas, true)}`,
@@ -1864,6 +1951,11 @@ async function tikiRutear(raw, t){
     if(m.length === 1) return tikiProducto(m[0]);
     if(m.length > 1) return tikiVariosProductos(m);
   }
+  // Rentabilidad cruzada (van antes del ranking simple).
+  if(/\bdonde (estoy )?(pierdo|perdiendo|perd[ií])\b|\bpierdo plata\b|\bvend\w* a perdida\b|\bperdida\b|\ben que (estoy )?perd/.test(t)) return tikiDondePierdoPlata();
+  if(/\b(vend\w*|sale|sal[ei]n)\b.{0,30}\b(poc[oa]|poquito)\b.{0,20}\bmargen\b|\bmucho\b.{0,20}\b(poc[oa] (ganancia|margen|rentab)|me deja poco|dejan poco)\b|\bmucha venta\b.{0,20}\bpoc[oa]\b|\b(vend\w*|sale) mucho (pero|y) (deja|rinde|me deja) poco\b/.test(t)) return tikiMuchoVendePocoMargen();
+  if(/\b(buen|lindo|alto) margen\b.{0,30}\b(no (se )?(vend|muev|rot)|poca (rotacion|venta|salida)|casi no|parad|no rot)\w*|\b(no (se )?(vend\w*|mueve\w*|rota\w*)|parado\w*|poca rotacion)\b.{0,30}\b(buen|lindo|alto)? ?margen\b|\bbuen margen pero\b/.test(t)) return tikiBuenMargenPocaRotacion();
+  if(/\b(que|cual) (producto|cosa)?.{0,20}\b(deja|rinde) menos\b|\b(peor|menor) margen\b|\bmenos (ganancia|margen|rentab\w*)\b|\bmenos me deja\b/.test(t)) return seguir(p => tikiTopProductos(p, 'ganancia', false, 5, true));
   const menos = /\bmenos vend\w*|\bno (se )?(vend\w*|mueve\w*)\b|\bparados?\b|\bclavados?\b/.test(t);
   if(menos || /\bmas (vend\w*|sale|salio|se vende|me deja|deja|ganancia|rentable|factur\w*)\b|\b(me )?deja(n)? mas\b|\bmejor(es)? productos?\b|\b(que|cual|cuales) (es el |son los )?productos?\b|\btop\b|\branking\b|\bque se vende\b/.test(t)){
     const criterio = /\b(deja|dejan|dejo|ganancia|ganancias|rentable|gano|ganar|margen)\b/.test(t) ? 'ganancia'
