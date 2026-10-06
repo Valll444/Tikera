@@ -529,7 +529,7 @@ async function tikiPlanDelDia(){
   const acciones = [];
   tareas.forEach(t => { if(t.accion && !acciones.some(a => a.label === t.accion.label)) acciones.push(t.accion); });
   return {
-    html: `<p>${tareas.length === 1 ? 'Para hoy hay una sola cosa:' : `Para hoy hay ${tareas.length} cosas, de la más urgente a la menos:`}</p>
+    html: `<p>${tareas.length === 1 ? tikiUnaDe(['Para hoy hay una sola cosa:', 'Hoy, una sola cosa para encarar:', 'Para hoy tenés una cosa:']) : `${tikiUnaDe(['Para hoy hay', 'Hoy tenés', 'Para encarar hoy hay'])} ${tareas.length} cosas, de la más urgente a la menos:`}</p>
       <ul class="tiki-list">${tareas.map(t => `<li class="${t.nivel}"><span>${t.html}</span></li>`).join('')}</ul>`,
     acciones: acciones.slice(0, 3),
     ctx: { tema: 'plan' }
