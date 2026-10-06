@@ -39,7 +39,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root{
@@ -105,7 +105,7 @@
   }
   /* Deja lugar abajo en mobile para que el CTA fijo no tape el final de cada seccion */
   @media(max-width:767px){ main{padding-bottom:88px;} }
-  .font-display{font-family:'Manrope',ui-sans-serif,system-ui,sans-serif;}
+  .font-display{font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;}
   ::selection{background:var(--slate-soft);color:var(--text);}
   /* Saca el contorno de foco por defecto que algunos navegadores/webviews
      dibujan al TOCAR un link o boton y dejan pegado (un recuadro feo en cada
@@ -224,7 +224,7 @@
   .dash-replica-navicon.active{background:rgba(76,175,128,0.16);color:var(--green);}
   .dash-replica-inner{position:relative;z-index:1;flex:1;min-width:0;padding:18px 18px 20px;}
   .dash-replica-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-  .dash-replica-title{font-family:'Manrope';font-weight:800;font-size:15px;color:var(--text);}
+  .dash-replica-title{font-family:'Space Grotesk';font-weight:700;font-size:15px;color:var(--text);}
   .dash-replica-today{font-size:11px;color:var(--text-faint);background:rgba(244,242,237,0.05);border-radius:999px;padding:4px 10px;}
   .dash-replica-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
   .hero-callout{
@@ -236,6 +236,32 @@
     font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;
   }
   .hero-callout .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+  /* Hero editorial: tipografia protagonista y movimiento medido en los
+     elementos que cuentan la historia de caja, sin sumar colores nuevos. */
+  .hero-title{font-size:clamp(3.2rem,7vw,6rem);line-height:.94;letter-spacing:-.08em;max-width:760px;}
+  .hero-title-accent{position:relative;display:block;width:fit-content;color:var(--green);}
+  .hero-title-accent::after{content:"";position:absolute;left:0;right:.04em;bottom:-.08em;height:.09em;border-radius:999px;background:var(--green);opacity:.72;transform:scaleX(0);transform-origin:left;animation:heroUnderline .8s cubic-bezier(.2,.8,.2,1) .8s forwards;}
+  .hero-section .hero-kicker,.hero-section .hero-title,.hero-section .hero-lead,.hero-section .hero-actions,.hero-section .hero-note{animation:heroRise .75s cubic-bezier(.2,.7,.2,1) both;}
+  .hero-section .hero-kicker{animation-delay:.04s;}
+  .hero-section .hero-title{animation-delay:.16s;}
+  .hero-section .hero-lead{animation-delay:.3s;}
+  .hero-section .hero-actions{animation-delay:.42s;}
+  .hero-section .hero-note{animation-delay:.52s;}
+  .hero-section .hero-product{animation:heroFloat 7s ease-in-out .6s infinite;max-width:540px;width:100%;justify-self:end;margin-top:38px;}
+  .hero-callout{animation:calloutFloat 4s ease-in-out 1s infinite;}
+  .dash-replica-bar{transform:scaleY(.25);transform-origin:bottom;animation:barArrive .7s cubic-bezier(.2,.8,.2,1) both;}
+  .dash-replica-bar:nth-child(1){animation-delay:.55s}.dash-replica-bar:nth-child(2){animation-delay:.64s}.dash-replica-bar:nth-child(3){animation-delay:.73s}.dash-replica-bar:nth-child(4){animation-delay:.82s}.dash-replica-bar:nth-child(5){animation-delay:.91s}.dash-replica-bar:nth-child(6){animation-delay:1s}.dash-replica-bar:nth-child(7){animation-delay:1.09s}
+  @keyframes heroRise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes heroUnderline{to{transform:scaleX(1)}}
+  @keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @keyframes calloutFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes barArrive{to{transform:scaleY(1)}}
+  @media(min-width:768px) and (max-width:1023px){.hero-section .hero-product{max-width:680px;justify-self:start;margin-top:12px;}}
+  @media(max-width:767px){.hero-title{font-size:clamp(3rem,12vw,4.2rem);}.hero-section .hero-product{animation-duration:8s;justify-self:center;margin-top:12px}.hero-callout{right:10px;font-size:11px;padding:7px 10px;}}
+  @media(prefers-reduced-motion:reduce){
+    .hero-section .hero-kicker,.hero-section .hero-title,.hero-section .hero-lead,.hero-section .hero-actions,.hero-section .hero-note,.hero-section .hero-product,.hero-callout,.dash-replica-bar{animation:none!important;opacity:1!important;transform:none!important;}
+    .hero-title-accent::after{animation:none;transform:scaleX(1);}
+  }
   .dash-replica-tile{background:var(--bg-card);border:1px solid rgba(244,242,237,0.06);border-radius:12px;padding:10px 11px;}
   .dash-replica-tile-accent{background:rgba(76,175,128,0.08);border-color:rgba(76,175,128,0.25);}
   .dash-replica-tile-label{font-size:10px;color:var(--text-faint);margin-bottom:5px;}
@@ -313,7 +339,7 @@
   .faq-item[open]{border-color:rgba(76,175,128,0.4);}
   .faq-item summary{
     list-style:none;cursor:pointer;padding:21px 34px 21px 0;position:relative;
-    font-family:'Manrope';font-weight:700;font-size:16.5px;color:var(--text);
+    font-family:'Space Grotesk';font-weight:700;font-size:16.5px;color:var(--text);
   }
   .faq-item summary::-webkit-details-marker{display:none;}
   .faq-item summary::after{
@@ -412,38 +438,38 @@
 <main id="top">
 
 <!-- HERO -->
-<section class="glow-host pt-16 md:pt-24 pb-16 md:pb-28">
+<section class="glow-host hero-section pt-16 md:pt-24 pb-16 md:pb-28">
   <div class="section-glow section-glow-a"></div>
   <div class="section-glow section-glow-b"></div>
-  <div class="container-w grid lg:grid-cols-[1.05fr_1fr] gap-14 lg:gap-10 items-center">
+  <div class="container-w grid lg:grid-cols-[1.2fr_.8fr] gap-12 lg:gap-10 items-start">
     <div>
-      <div class="reveal chip mb-6 border border-[var(--slate)] rounded-full px-4 py-2 w-fit" style="background:rgba(62,86,112,0.14);">
+      <div class="reveal hero-kicker chip mb-6 border border-[var(--slate)] rounded-full px-4 py-2 w-fit" style="background:rgba(62,86,112,0.14);">
         <span class="w-2 h-2 rounded-full bg-[var(--slate)]"></span>
         Para kioscos, almacenes y pequeños comercios
       </div>
 
-      <h1 class="reveal font-display font-extrabold leading-[1.04] tracking-tight text-[42px] sm:text-[52px] lg:text-[58px]">
-        Controlá la caja de tu negocio
-        <span class="block text-[var(--green)] mt-1">y sabé cuánto ganás de verdad.</span>
+      <h1 class="reveal hero-title font-display font-bold">
+        Vender mucho
+        <span class="hero-title-accent mt-1">no siempre es ganar.</span>
       </h1>
 
-      <p class="reveal mt-6 text-[17px] leading-relaxed text-[var(--text-dim)] max-w-[480px]">
-        Tikera te muestra cuánto vendés, cuánto gastás y cuál es tu ganancia real, sin planillas complicadas y sin hacer cuentas a mano.
+      <p class="reveal hero-lead mt-6 text-[17px] leading-relaxed text-[var(--text-dim)] max-w-[480px]">
+        Cerrá el día sabiendo qué entró, qué salió y cuánto quedó. Tikera ordena las cuentas de tu comercio mientras vos atendés.
       </p>
 
-      <div class="reveal mt-8 flex flex-wrap items-center gap-3">
+      <div class="reveal hero-actions mt-8 flex flex-wrap items-center gap-3">
         <a href="precios.html" class="btn-primary rounded-lg px-6 py-3.5 text-[15px]">Probar Tikera gratis</a>
         <a href="#demo" class="btn-ghost rounded-lg px-6 py-3.5 text-[15px]">Ver cómo funciona</a>
       </div>
 
-      <p class="reveal mt-5 text-[13px] text-[var(--text-faint)]">Cargá tu primera venta en menos de 1 minuto</p>
+      <p class="reveal hero-note mt-5 text-[13px] text-[var(--text-faint)]">De la primera venta al cierre de caja, en un mismo lugar.</p>
     </div>
 
     <!-- Replica visual estatica del resumen real de la app (no interactiva
          a proposito: un iframe en vivo permitiria operar una cuenta real
          desde la landing). Muestra el dashboard "por dentro" en vez del
          login -- es mas atractivo para alguien que todavia no conoce Tikera. -->
-    <div class="reveal mockup-shell p-3 sm:p-4 relative">
+    <div class="reveal hero-product mockup-shell p-3 sm:p-4 relative">
       <div class="reveal hero-callout">
         <span class="dot"></span>Ganancia real: 43% de las ventas
       </div>
@@ -928,16 +954,20 @@
 <section class="glow-host py-20 md:py-28 border-t border-[var(--hairline)]">
   <div class="section-glow section-glow-a"></div>
   <div class="section-glow section-glow-b"></div>
-  <div class="container-w text-center">
-    <h2 class="reveal font-display font-extrabold text-[32px] sm:text-[44px] leading-[1.08] tracking-tight">
-      Tu negocio, ordenado en números reales.
-      <span class="block text-[var(--green)] mt-1">Probalo gratis durante 14 días.</span>
-    </h2>
-    <p class="reveal text-[15px] text-[var(--text-dim)] max-w-[440px] mx-auto mt-5">
-      Cargá tu primera venta en menos de un minuto y mirá cómo queda tu caja, tu stock y tu ganancia, todo junto.
-    </p>
-    <a href="precios.html" class="reveal btn-primary rounded-lg px-8 py-4 text-[15px] inline-block mt-8">Probar Tikera gratis</a>
-    <p class="reveal text-[13px] text-[var(--text-faint)] mt-4">14 días gratis · Acceso completo desde el primer minuto</p>
+  <div class="container-w grid md:grid-cols-[1fr_auto] md:items-end gap-8">
+    <div>
+      <p class="reveal text-[12px] font-semibold tracking-[.16em] uppercase text-[var(--green)] mb-4">El cierre que te faltaba</p>
+      <h2 class="reveal font-display font-bold text-[32px] sm:text-[44px] leading-[1.08] tracking-tight max-w-[680px]">
+        Que la caja cierre. Y que vos sepas por qué.
+      </h2>
+      <p class="reveal text-[15px] text-[var(--text-dim)] max-w-[480px] mt-5">
+        Ventas, gastos, stock y ganancia real, juntos para decidir con claridad cada día.
+      </p>
+    </div>
+    <div class="reveal md:text-right">
+      <a href="precios.html" class="btn-primary rounded-lg px-8 py-4 text-[15px] inline-block">Probar Tikera gratis</a>
+      <p class="text-[13px] text-[var(--text-faint)] mt-4">14 días · Acceso completo desde el primer minuto</p>
+    </div>
   </div>
 </section>
 
