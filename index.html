@@ -238,9 +238,8 @@
   .hero-callout .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
   /* Hero editorial: tipografia protagonista y movimiento medido en los
      elementos que cuentan la historia de caja, sin sumar colores nuevos. */
-  .hero-title{font-size:clamp(3.2rem,7vw,6rem);line-height:.94;letter-spacing:-.08em;max-width:760px;}
-  .hero-title-accent{position:relative;display:block;width:fit-content;color:var(--green);}
-  .hero-title-accent::after{content:"";position:absolute;left:0;right:.04em;bottom:-.08em;height:.09em;border-radius:999px;background:var(--green);opacity:.72;transform:scaleX(0);transform-origin:left;animation:heroUnderline .8s cubic-bezier(.2,.8,.2,1) .8s forwards;}
+  .hero-title{font-size:42px;line-height:1.04;letter-spacing:-.025em;max-width:640px;}
+  .hero-title-accent{display:block;color:var(--green);}
   .hero-section .hero-kicker,.hero-section .hero-title,.hero-section .hero-lead,.hero-section .hero-actions,.hero-section .hero-note{animation:heroRise .75s cubic-bezier(.2,.7,.2,1) both;}
   .hero-section .hero-kicker{animation-delay:.04s;}
   .hero-section .hero-title{animation-delay:.16s;}
@@ -252,15 +251,15 @@
   .dash-replica-bar{transform:scaleY(.25);transform-origin:bottom;animation:barArrive .7s cubic-bezier(.2,.8,.2,1) both;}
   .dash-replica-bar:nth-child(1){animation-delay:.55s}.dash-replica-bar:nth-child(2){animation-delay:.64s}.dash-replica-bar:nth-child(3){animation-delay:.73s}.dash-replica-bar:nth-child(4){animation-delay:.82s}.dash-replica-bar:nth-child(5){animation-delay:.91s}.dash-replica-bar:nth-child(6){animation-delay:1s}.dash-replica-bar:nth-child(7){animation-delay:1.09s}
   @keyframes heroRise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes heroUnderline{to{transform:scaleX(1)}}
   @keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
   @keyframes calloutFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   @keyframes barArrive{to{transform:scaleY(1)}}
   @media(min-width:768px) and (max-width:1023px){.hero-section .hero-product{max-width:680px;justify-self:start;margin-top:12px;}}
-  @media(max-width:767px){.hero-title{font-size:clamp(3rem,12vw,4.2rem);}.hero-section .hero-product{animation-duration:8s;justify-self:center;margin-top:12px}.hero-callout{right:10px;font-size:11px;padding:7px 10px;}}
+  @media(min-width:640px){.hero-title{font-size:52px;}}
+  @media(min-width:1024px){.hero-title{font-size:58px;}}
+  @media(max-width:767px){.hero-section .hero-product{animation-duration:8s;justify-self:center;margin-top:12px}.hero-callout{right:10px;font-size:11px;padding:7px 10px;}}
   @media(prefers-reduced-motion:reduce){
     .hero-section .hero-kicker,.hero-section .hero-title,.hero-section .hero-lead,.hero-section .hero-actions,.hero-section .hero-note,.hero-section .hero-product,.hero-callout,.dash-replica-bar{animation:none!important;opacity:1!important;transform:none!important;}
-    .hero-title-accent::after{animation:none;transform:scaleX(1);}
   }
   .dash-replica-tile{background:var(--bg-card);border:1px solid rgba(244,242,237,0.06);border-radius:12px;padding:10px 11px;}
   .dash-replica-tile-accent{background:rgba(76,175,128,0.08);border-color:rgba(76,175,128,0.25);}
@@ -449,8 +448,8 @@
       </div>
 
       <h1 class="reveal hero-title font-display font-bold">
-        Vender mucho
-        <span class="hero-title-accent mt-1">no siempre es ganar.</span>
+        Controlá la caja de tu negocio
+        <span class="hero-title-accent mt-1">y sabé cuánto ganás de verdad.</span>
       </h1>
 
       <p class="reveal hero-lead mt-6 text-[17px] leading-relaxed text-[var(--text-dim)] max-w-[480px]">
