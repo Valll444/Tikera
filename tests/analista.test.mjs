@@ -307,3 +307,39 @@ describe('Analista: noticias económicas ampliadas', () => {
     assert.match((await e.preguntar('¿hay noticias?')).texto, /Lo que hay de la economía/);
   });
 });
+
+describe('Analista: preguntas rápidas del día', () => {
+  test('cuánto hay en la caja (efectivo esperado de hoy)', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cuánto hay en la caja?');
+    assert.match(texto, /en la caja debería haber \$[\d.]+/);
+    assert.match(texto, /contá la plata/);
+  });
+  test('ticket promedio calculado (no el concepto)', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cuál es mi ticket promedio?');
+    assert.match(texto, /ticket promedio fue de \$[\d.]+/);
+    assert.match(texto, /en \d+ ventas/);
+  });
+  test('cuántas ventas hoy', async () => {
+    const e = await conKiosco();
+    assert.match((await e.preguntar('¿cuántas ventas hice hoy?')).texto, /Hoy hiciste \d+ ventas?/);
+  });
+  test('desglose por método de pago', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cómo me pagaron hoy?');
+    assert.match(texto, /cobraste así/);
+    assert.match(texto, /Transferencia|Efectivo|Tarjeta|QR/);
+  });
+  test('cuánto cobré con un método puntual', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cuánto cobré en efectivo hoy?');
+    assert.match(texto, /cobraste \$[\d.]+ con efectivo/);
+    assert.match(texto, /% de tus ventas/);
+  });
+  test('"cuánto efectivo debería haber el viernes" sigue yendo al cierre (no se pisa)', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cuánto efectivo debería haber el viernes?');
+    assert.match(texto, /efectivo|cierre|caja/i);
+  });
+});

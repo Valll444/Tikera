@@ -819,6 +819,52 @@ function tikiComoVengo(){
   return { html, ctx: { tema: 'mes', r }, sugerencia: { texto: '¿Te muestro qué día de la semana vendés más?', pregunta: '¿Qué día vendo más?' } };
 }
 
+// ---------- Preguntas rápidas del día a día ----------
+function tikiCaja(){
+  const hoy = todayStr();
+  const esperado = efectivoEsperadoDe(hoy);
+  const ventasEf = tikiMovs(hoy, hoy, 'Venta').filter(e => e.metodoPago === 'Efectivo').reduce((s,e) => s + (Number(e.monto) || 0), 0);
+  const gastosEf = tikiMovs(hoy, hoy, 'Gasto').filter(e => e.metodoPago === 'Efectivo').reduce((s,e) => s + (Number(e.monto) || 0), 0);
+  if(!tikiMovs(hoy, hoy).length) return { html: '<p>Hoy todavía no cargaste movimientos, así que no sé cuánto debería haber en la caja.</p>' };
+  let html = `<p>Según lo cargado hoy, en la caja debería haber <strong>${tikiPlata(esperado)}</strong> en efectivo.</p>`;
+  html += `<p class="tiki-soft">Es lo que entró en efectivo (${tikiPlata(ventasEf)})${gastosEf ? ` menos lo que pagaste con plata de la caja (${tikiPlata(gastosEf)})` : ''}. Para confirmarlo, contá la plata y cerrá la caja.</p>`;
+  return { html, ctx: { tema: 'caja' }, acciones: [{ label: 'Cerrar la caja', view: 'caja', fecha: hoy }], sugerencia: { texto: '¿Cerramos la caja?', pregunta: '¿Cómo fue el cierre de hoy?' } };
+}
+function tikiTicketPromedio(periodo){
+  const p = periodo || tikiUltimos30();
+  const r = tikiResumen(p.desde, p.hasta);
+  if(!r.cantVentas) return { html: `<p>${tikiCap(p.label)} no hay ventas cargadas para sacar el ticket promedio.</p>` };
+  const tp = r.ventas / r.cantVentas;
+  let html = `<p>${tikiCap(p.label)} tu <strong>ticket promedio</strong> fue de <strong>${tikiPlata(tp)}</strong> (${tikiPlata(r.ventas)} en ${r.cantVentas} ventas).</p>`;
+  if(!periodo || p.label === 'en los últimos 30 días'){
+    const pPrev = { desde: tikiSumarDias(p.desde, -30), hasta: tikiSumarDias(p.hasta, -30) };
+    const rp = tikiResumen(pPrev.desde, pPrev.hasta);
+    if(rp.cantVentas){ const v = tikiVariacion(tp, rp.ventas / rp.cantVentas); if(v) html += `<p>Cada cliente te gasta ${v} los 30 días anteriores.</p>`; }
+  }
+  return { html, ctx: { tema: 'ticket', p } };
+}
+function tikiCantidadVentas(periodo){
+  const p = periodo || { desde: todayStr(), hasta: todayStr(), label: 'hoy', dia: true };
+  const r = tikiResumen(p.desde, p.hasta);
+  if(!r.cantVentas) return { html: `<p>${tikiCap(p.label)} no registraste ventas${r.gastos ? ', solo gastos' : ' todavía'}.</p>` };
+  return { html: `<p>${tikiCap(p.label)} hiciste <strong>${r.cantVentas}</strong> ${r.cantVentas === 1 ? 'venta' : 'ventas'} por ${tikiPlata(r.ventas)} (ticket promedio ${tikiPlata(r.ventas / r.cantVentas)}).</p>`, ctx: { tema: 'ventas', p, r, foco: 'ventas' } };
+}
+const TIKI_METODOS = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', credito: 'Tarjeta', debito: 'Tarjeta', transferencia: 'Transferencia', transfe: 'Transferencia', qr: 'QR', 'mercado pago': 'QR', mercadopago: 'QR', billetera: 'QR' };
+function tikiPorMetodo(periodo, metodo){
+  const p = periodo || { desde: todayStr(), hasta: todayStr(), label: 'hoy', dia: true };
+  const ventas = tikiMovs(p.desde, p.hasta, 'Venta');
+  if(!ventas.length) return { html: `<p>${tikiCap(p.label)} no hay ventas cargadas.</p>` };
+  const porM = {};
+  ventas.forEach(e => { const m = e.metodoPago || 'Otro'; porM[m] = (porM[m] || 0) + (Number(e.monto) || 0); });
+  const total = Object.values(porM).reduce((s,v) => s + v, 0);
+  if(metodo){
+    const monto = porM[metodo] || 0;
+    return { html: `<p>${tikiCap(p.label)} cobraste <strong>${tikiPlata(monto)}</strong> con ${metodo.toLowerCase()}${total > 0 ? ` (el ${Math.round(monto / total * 100)}% de tus ventas)` : ''}.</p>`, ctx: { tema: 'metodos', p } };
+  }
+  const filas = Object.entries(porM).sort((a,b) => b[1] - a[1]);
+  return { html: `<p>${tikiCap(p.label)} cobraste así:</p>${tikiBarras(filas.map(([m,v],i) => ({ label: m, valor: v, texto: `${tikiPlata(v)} · ${Math.round(v / total * 100)}%`, top: i === 0 })), true)}`, ctx: { tema: 'metodos', p } };
+}
+
 // ---------- Punto de equilibrio y objetivos ----------
 // Dos piezas:
 //  - Margen de contribución %: lo que deja cada $100 de venta después de
@@ -2301,6 +2347,15 @@ async function tikiRutear(raw, t){
   if(/\b(ayuda|quien sos|que sos|que (podes|sabes|puedo) (hacer|preguntar|preguntarte|responder)|que sabes|como funciona\w*)\b/.test(t)) return tikiAyuda();
   if(/\b(que|q) (hacemos|hago|hacer|tengo que hacer|hay que hacer|hay para hacer)\b|\bpendientes?\b|\btareas?\b|\bpor donde (arranco|empiezo)\b|\bplan del dia\b/.test(t)){
     return await tikiPlanDelDia();
+  }
+  // Preguntas rápidas del día a día.
+  if(/\b(cuant[oa]|que)\b.{0,20}\b(hay|tengo|queda|deberia haber)\b.{0,10}\b(en )?(la )?caja\b|\bcuanta plata hay\b|\bplata en (la )?caja\b|\bcuanto hay en caja\b/.test(t)) return tikiCaja();
+  if(/\bticket (promedio|medio)\b|\bcuanto (gasta|gastan|me deja|me gasta) (cada |un |el )?cliente\b|\bpromedio por (venta|cliente|ticket)\b|\bgasto promedio\b/.test(t)) return seguir(tikiTicketPromedio);
+  if(/\bcuantas ventas\b|\bcuantas (operaciones|transacciones)\b|\bcuantas ventas (hice|hicimos|hubo|van)\b|\bcuantos clientes (tuve|hubo|atendi)\b/.test(t)) return seguir(tikiCantidadVentas);
+  if(/\b(como me pagaron|como me pagan|por metodo|metodos? de pago|medios? de pago)\b/.test(t)) return seguir(p => tikiPorMetodo(p));
+  {
+    const met = Object.keys(TIKI_METODOS).find(k => new RegExp('\\b' + k + '\\b').test(t));
+    if(met && /\b(cobre|cobramos|cobrado|cobro|pagaron|me pagaron|recibi|entro|vendi.{0,15}(con|en|por)|cuanto (fue|cobre|vendi|entro))\b/.test(t)) return seguir(p => tikiPorMetodo(p, TIKI_METODOS[met]));
   }
   if(/\b(stock|quedan?|quedo|reponer|repongo|reposicion|agot\w*|faltan?|pedir|comprar)\b/.test(t)){
     const m = prods();
