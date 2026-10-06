@@ -255,12 +255,31 @@
   @keyframes calloutFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   @keyframes barArrive{to{transform:scaleY(1)}}
   @media(min-width:768px) and (max-width:1023px){.hero-section .hero-product{max-width:680px;justify-self:start;margin-top:12px;}}
-  @media(min-width:640px){.hero-title{font-size:52px;}}
-  @media(min-width:1024px){.hero-title{font-size:58px;}}
+  @media(min-width:640px){.hero-title{font-size:56px;}}
+  @media(min-width:1024px){.hero-title{font-size:66px;}}
   @media(max-width:767px){.hero-section .hero-product{animation-duration:8s;justify-self:center;margin-top:12px}.hero-callout{right:10px;font-size:11px;padding:7px 10px;}}
   @media(prefers-reduced-motion:reduce){
     .hero-section .hero-kicker,.hero-section .hero-title,.hero-section .hero-lead,.hero-section .hero-actions,.hero-section .hero-note,.hero-section .hero-product,.hero-callout,.dash-replica-bar{animation:none!important;opacity:1!important;transform:none!important;}
   }
+  /* Hero centrado (patrón go-marz): el usuario entra al título y baja al
+     producto. El hero llena la primera pantalla; la captura queda debajo. */
+  .hero-centered{display:flex;align-items:center;min-height:calc(100svh - 72px);padding:40px 0 64px;}
+  .hero-inner{width:100%;}
+  .hero-copy{text-align:center;max-width:780px;margin:0 auto;display:flex;flex-direction:column;align-items:center;}
+  .hero-centered .hero-title{max-width:860px;}
+  .hero-centered .hero-lead{max-width:540px;margin-left:auto;margin-right:auto;}
+  .hero-scroll{display:inline-flex;flex-direction:column;align-items:center;gap:7px;color:var(--text-faint);font-size:12.5px;letter-spacing:.02em;text-decoration:none;transition:color .2s ease;}
+  .hero-scroll:hover{color:var(--text-dim);}
+  .hero-scroll-chev{display:flex;animation:scrollNudge 1.8s ease-in-out infinite;}
+  @keyframes scrollNudge{0%,100%{transform:translateY(0);opacity:.65}50%{transform:translateY(4px);opacity:1}}
+  /* Sección del producto: captura grande y centrada, con su glow. */
+  .section-kicker{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);background:var(--green-soft);border:1px solid rgba(76,175,128,0.25);border-radius:999px;padding:5px 14px;}
+  .producto-section .hero-product{max-width:860px;width:100%;margin:48px auto 0;justify-self:center;}
+  @media(max-width:767px){
+    .hero-centered{min-height:calc(100svh - 56px);padding-top:24px;}
+    .producto-section .hero-product{margin-top:32px;}
+  }
+  @media(prefers-reduced-motion:reduce){.hero-scroll-chev{animation:none!important;}}
   .dash-replica-tile{background:var(--bg-card);border:1px solid rgba(244,242,237,0.06);border-radius:12px;padding:10px 11px;}
   .dash-replica-tile-accent{background:rgba(76,175,128,0.08);border-color:rgba(76,175,128,0.25);}
   .dash-replica-tile-label{font-size:10px;color:var(--text-faint);margin-bottom:5px;}
@@ -437,12 +456,12 @@
 <main id="top">
 
 <!-- HERO -->
-<section class="glow-host hero-section pt-16 md:pt-24 pb-16 md:pb-28">
+<section class="glow-host hero-section hero-centered">
   <div class="section-glow section-glow-a"></div>
   <div class="section-glow section-glow-b"></div>
-  <div class="container-w grid lg:grid-cols-[1.2fr_.8fr] gap-12 lg:gap-10 items-start">
-    <div>
-      <div class="reveal hero-kicker chip mb-6 border border-[var(--slate)] rounded-full px-4 py-2 w-fit" style="background:rgba(62,86,112,0.14);">
+  <div class="container-w hero-inner">
+    <div class="hero-copy">
+      <div class="reveal hero-kicker chip mb-6 border border-[var(--slate)] rounded-full px-4 py-2" style="background:rgba(62,86,112,0.14);">
         <span class="w-2 h-2 rounded-full bg-[var(--slate)]"></span>
         Para kioscos, almacenes y pequeños comercios
       </div>
@@ -452,22 +471,36 @@
         <span class="hero-title-accent mt-1">y sabé cuánto ganás de verdad.</span>
       </h1>
 
-      <p class="reveal hero-lead mt-6 text-[17px] leading-relaxed text-[var(--text-dim)] max-w-[480px]">
+      <p class="reveal hero-lead mt-6 text-[17px] leading-relaxed text-[var(--text-dim)]">
         Cerrá el día sabiendo qué entró, qué salió y cuánto quedó. Tikera ordena las cuentas de tu comercio mientras vos atendés.
       </p>
 
-      <div class="reveal hero-actions mt-8 flex flex-wrap items-center gap-3">
+      <div class="reveal hero-actions mt-8 flex flex-wrap items-center justify-center gap-3">
         <a href="precios.html" class="btn-primary rounded-lg px-6 py-3.5 text-[15px]">Probar Tikera gratis</a>
         <a href="#demo" class="btn-ghost rounded-lg px-6 py-3.5 text-[15px]">Ver cómo funciona</a>
       </div>
 
       <p class="reveal hero-note mt-5 text-[13px] text-[var(--text-faint)]">De la primera venta al cierre de caja, en un mismo lugar.</p>
-    </div>
 
-    <!-- Replica visual estatica del resumen real de la app (no interactiva
-         a proposito: un iframe en vivo permitiria operar una cuenta real
-         desde la landing). Muestra el dashboard "por dentro" en vez del
-         login -- es mas atractivo para alguien que todavia no conoce Tikera. -->
+      <a href="#producto" class="reveal hero-scroll mt-12" aria-label="Ver Tikera por dentro">
+        <span>Mirá cómo se ve</span>
+        <span class="hero-scroll-chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTO (captura del dashboard, ahora debajo del hero — patrón go-marz:
+     el usuario entra al título y baja para ver el producto). La captura
+     mantiene su aislamiento oscuro (.mockup-shell) pase lo que pase con el tema. -->
+<section id="producto" class="glow-host producto-section py-20 md:py-28 border-t border-[var(--hairline)]">
+  <div class="section-glow section-glow-a"></div>
+  <div class="section-glow section-glow-b flip"></div>
+  <div class="container-w text-center">
+    <div class="reveal section-kicker">Por dentro</div>
+    <h2 class="reveal section-title font-display font-extrabold text-[30px] sm:text-[40px] leading-tight mt-4 max-w-[640px] mx-auto">El Resumen de tu caja, de un vistazo.</h2>
+    <p class="reveal section-sub mt-4 text-[16px] leading-relaxed text-[var(--text-dim)] max-w-[560px] mx-auto">Ventas, costos, gastos y la ganancia real del día, siempre a mano. Así se ve Tikera funcionando, sin planillas ni cuentas a mano.</p>
+
     <div class="reveal hero-product mockup-shell p-3 sm:p-4 relative">
       <div class="reveal hero-callout">
         <span class="dot"></span>Ganancia real: 43% de las ventas
