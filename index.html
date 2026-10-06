@@ -241,13 +241,18 @@
   .hero-title{font-size:clamp(3.2rem,7vw,6rem);line-height:.94;letter-spacing:-.08em;max-width:760px;}
   .hero-title-accent{position:relative;display:block;width:fit-content;color:var(--green);}
   .hero-title-accent::after{content:"";position:absolute;left:0;right:.04em;bottom:-.08em;height:.09em;border-radius:999px;background:var(--green);opacity:.72;transform:scaleX(0);transform-origin:left;animation:heroUnderline .8s cubic-bezier(.2,.8,.2,1) .8s forwards;}
+  .hero-section{min-height:calc(100svh - 64px);display:flex;align-items:center;}
+  .hero-copy{max-width:900px;padding-top:1rem;padding-bottom:1rem;}
+  .hero-scroll-cue{display:flex;width:fit-content;align-items:center;gap:10px;margin-top:2.5rem;color:var(--text-faint);font-size:12px;letter-spacing:.04em;}
+  .hero-scroll-cue svg{color:var(--green);animation:cueNudge 1.8s ease-in-out infinite;}
+  .product-section{padding-top:0;}
   .hero-section .hero-kicker,.hero-section .hero-title,.hero-section .hero-lead,.hero-section .hero-actions,.hero-section .hero-note{animation:heroRise .75s cubic-bezier(.2,.7,.2,1) both;}
   .hero-section .hero-kicker{animation-delay:.04s;}
   .hero-section .hero-title{animation-delay:.16s;}
   .hero-section .hero-lead{animation-delay:.3s;}
   .hero-section .hero-actions{animation-delay:.42s;}
   .hero-section .hero-note{animation-delay:.52s;}
-  .hero-section .hero-product{animation:heroFloat 7s ease-in-out .6s infinite;max-width:540px;width:100%;justify-self:end;margin-top:38px;}
+  .product-section .hero-product{animation:heroFloat 7s ease-in-out .6s infinite;max-width:900px;width:100%;margin:0 auto;}
   .hero-callout{animation:calloutFloat 4s ease-in-out 1s infinite;}
   .dash-replica-bar{transform:scaleY(.25);transform-origin:bottom;animation:barArrive .7s cubic-bezier(.2,.8,.2,1) both;}
   .dash-replica-bar:nth-child(1){animation-delay:.55s}.dash-replica-bar:nth-child(2){animation-delay:.64s}.dash-replica-bar:nth-child(3){animation-delay:.73s}.dash-replica-bar:nth-child(4){animation-delay:.82s}.dash-replica-bar:nth-child(5){animation-delay:.91s}.dash-replica-bar:nth-child(6){animation-delay:1s}.dash-replica-bar:nth-child(7){animation-delay:1.09s}
@@ -256,10 +261,10 @@
   @keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
   @keyframes calloutFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   @keyframes barArrive{to{transform:scaleY(1)}}
-  @media(min-width:768px) and (max-width:1023px){.hero-section .hero-product{max-width:680px;justify-self:start;margin-top:12px;}}
-  @media(max-width:767px){.hero-title{font-size:clamp(3rem,12vw,4.2rem);}.hero-section .hero-product{animation-duration:8s;justify-self:center;margin-top:12px}.hero-callout{right:10px;font-size:11px;padding:7px 10px;}}
+  @keyframes cueNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+  @media(max-width:767px){.hero-title{font-size:clamp(3rem,12vw,4.2rem);}.product-section .hero-product{animation-duration:8s}.hero-callout{right:10px;font-size:11px;padding:7px 10px;}}
   @media(prefers-reduced-motion:reduce){
-    .hero-section .hero-kicker,.hero-section .hero-title,.hero-section .hero-lead,.hero-section .hero-actions,.hero-section .hero-note,.hero-section .hero-product,.hero-callout,.dash-replica-bar{animation:none!important;opacity:1!important;transform:none!important;}
+    .hero-section .hero-kicker,.hero-section .hero-title,.hero-section .hero-lead,.hero-section .hero-actions,.hero-section .hero-note,.hero-scroll-cue svg,.product-section .hero-product,.hero-callout,.dash-replica-bar{animation:none!important;opacity:1!important;transform:none!important;}
     .hero-title-accent::after{animation:none;transform:scaleX(1);}
   }
   .dash-replica-tile{background:var(--bg-card);border:1px solid rgba(244,242,237,0.06);border-radius:12px;padding:10px 11px;}
@@ -441,8 +446,8 @@
 <section class="glow-host hero-section pt-16 md:pt-24 pb-16 md:pb-28">
   <div class="section-glow section-glow-a"></div>
   <div class="section-glow section-glow-b"></div>
-  <div class="container-w grid lg:grid-cols-[1.2fr_.8fr] gap-12 lg:gap-10 items-start">
-    <div>
+  <div class="container-w w-full">
+    <div class="hero-copy">
       <div class="reveal hero-kicker chip mb-6 border border-[var(--slate)] rounded-full px-4 py-2 w-fit" style="background:rgba(62,86,112,0.14);">
         <span class="w-2 h-2 rounded-full bg-[var(--slate)]"></span>
         Para kioscos, almacenes y pequeños comercios
@@ -459,16 +464,32 @@
 
       <div class="reveal hero-actions mt-8 flex flex-wrap items-center gap-3">
         <a href="precios.html" class="btn-primary rounded-lg px-6 py-3.5 text-[15px]">Probar Tikera gratis</a>
-        <a href="#demo" class="btn-ghost rounded-lg px-6 py-3.5 text-[15px]">Ver cómo funciona</a>
+        <a href="#producto" class="btn-ghost rounded-lg px-6 py-3.5 text-[15px]">Ver Tikera por dentro</a>
       </div>
 
       <p class="reveal hero-note mt-5 text-[13px] text-[var(--text-faint)]">De la primera venta al cierre de caja, en un mismo lugar.</p>
+      <a class="hero-scroll-cue" href="#producto">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        Bajá para ver Tikera por dentro
+      </a>
     </div>
+  </div>
+</section>
 
-    <!-- Replica visual estatica del resumen real de la app (no interactiva
-         a proposito: un iframe en vivo permitiria operar una cuenta real
-         desde la landing). Muestra el dashboard "por dentro" en vez del
-         login -- es mas atractivo para alguien que todavia no conoce Tikera. -->
+<!-- VISTA DE PRODUCTO: queda debajo de la primera pantalla para que el
+     mensaje de Tikera sea lo primero que se lea. -->
+<section id="producto" class="glow-host product-section py-14 md:py-20 border-t border-[var(--hairline)]">
+  <div class="section-glow section-glow-a"></div>
+  <div class="section-glow section-glow-b"></div>
+  <div class="container-w">
+    <div class="max-w-[900px] mx-auto mb-8 flex items-end justify-between gap-6">
+      <div>
+        <p class="reveal text-[12px] font-semibold tracking-[.16em] uppercase text-[var(--green)] mb-3">Tikera por dentro</p>
+        <h2 class="reveal font-display font-bold text-[26px] sm:text-[32px] leading-tight">Cada número, en su lugar.</h2>
+      </div>
+      <span class="hidden sm:block text-[13px] text-[var(--text-faint)]">Un vistazo al cierre de hoy</span>
+    </div>
+    <!-- Replica visual estatica del resumen real de la app. -->
     <div class="reveal hero-product mockup-shell p-3 sm:p-4 relative">
       <div class="reveal hero-callout">
         <span class="dot"></span>Ganancia real: 43% de las ventas
