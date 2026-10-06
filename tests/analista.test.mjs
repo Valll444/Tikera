@@ -276,3 +276,34 @@ describe('Analista: contexto económico (dólar e inflación)', () => {
     assert.ok((acciones || []).some(a => a.view === 'noticias'));
   });
 });
+
+describe('Analista: noticias económicas ampliadas', () => {
+  test('resumen de "qué noticias económicas hay" con todos los indicadores reales', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿qué noticias económicas hay?');
+    assert.match(texto, /Dólar blue.*\$1\.200/);
+    assert.match(texto, /Inflación.*1,8%/);
+    assert.match(texto, /Plazo fijo.*36,0% anual/);
+    assert.match(texto, /Riesgo país.*598 puntos/);
+    assert.match(texto, /De noticias puntuales del día no tengo/); // honesto sobre el límite
+  });
+  test('riesgo país: valor + explicación clara + fuente', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿cómo está el riesgo país?');
+    assert.match(texto, /riesgo país.*598 puntos/);
+    assert.match(texto, /no te pega directo/);
+    assert.match(texto, /argentinadatos\.com/);
+  });
+  test('plazo fijo: tasa, comparación con inflación y no es recomendación', async () => {
+    const e = await conKiosco();
+    const { texto } = await e.preguntar('¿conviene poner la plata en un plazo fijo?');
+    assert.match(texto, /36,0% anual/);
+    assert.match(texto, /3,0% por mes/);
+    assert.match(texto, /inflación de septiembre 2026 fue 1,8%/);
+    assert.match(texto, /No es una recomendación de inversión/);
+  });
+  test('"noticias" a secas lleva al resumen económico', async () => {
+    const e = await conKiosco();
+    assert.match((await e.preguntar('¿hay noticias?')).texto, /Lo que hay de la economía/);
+  });
+});

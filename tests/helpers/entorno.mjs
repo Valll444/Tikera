@@ -22,6 +22,15 @@ const INFLACION = [
   { fecha: '2026-08-01', valor: 2.1 },
   { fecha: '2026-09-01', valor: 1.8 }
 ];
+const RIESGO = [
+  { fecha: '2026-09-30', valor: 620 },
+  { fecha: '2026-10-03', valor: 598 }
+];
+const PLAZO = [
+  { entidad: 'Banco A', tnaClientes: 0.36 },
+  { entidad: 'Banco B', tnaClientes: 0.30 },
+  { entidad: 'Banco C', tnaClientes: 0.42 }
+];
 const FERIADOS = [
   { fecha: '2026-10-12', tipo: 'trasladable', nombre: 'Día del Respeto a la Diversidad Cultural' },
   { fecha: '2026-11-23', tipo: 'trasladable', nombre: 'Día de la Soberanía Nacional' },
@@ -200,6 +209,8 @@ export function crearEntorno({ hoy = '2026-10-04', hora = '18:30' } = {}){
       if(u.includes('argentinadatos.com/v1/feriados')) return { ok: true, json: async () => FERIADOS };
       if(u.includes('dolarapi.com/v1/dolares')) return { ok: true, json: async () => DOLAR };
       if(u.includes('/indices/inflacion')) return { ok: true, json: async () => INFLACION };
+      if(u.includes('/indices/riesgo-pais')) return { ok: true, json: async () => RIESGO };
+      if(u.includes('/tasas/plazoFijo')) return { ok: true, json: async () => PLAZO };
       throw new TypeError('Failed to fetch');
     },
     alert(){}, confirm: () => true, prompt: () => null,

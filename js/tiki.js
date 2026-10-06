@@ -311,7 +311,7 @@ async function tikiProximoFeriado(){
 // real, con fuente y fecha) del ANÁLISIS (cómo PODRÍA afectar al comercio),
 // que se presenta como estimación, nunca como certeza. No inventa noticias:
 // si no hay conexión, lo dice.
-let tikiDolarCache = null, tikiInflacionCache = null;
+let tikiDolarCache = null, tikiInflacionCache = null, tikiRiesgoCache = null, tikiPlazoCache = null;
 async function tikiFetchJson(url, ms = 2500){
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
@@ -350,11 +350,31 @@ async function tikiDatoInflacion(){
   };
   return tikiInflacionCache;
 }
+async function tikiDatoRiesgo(){
+  if(tikiRiesgoCache && Date.now() - tikiRiesgoCache.ts < TIKI_ECO_TTL) return tikiRiesgoCache;
+  const data = await tikiFetchJson('https://api.argentinadatos.com/v1/finanzas/indices/riesgo-pais');
+  if(!Array.isArray(data) || !data.length) return null;
+  const ultimo = data[data.length - 1];
+  if(!ultimo || typeof ultimo.valor !== 'number') return null;
+  tikiRiesgoCache = { valor: Math.round(ultimo.valor), fecha: ultimo.fecha, ts: Date.now() };
+  return tikiRiesgoCache;
+}
+async function tikiDatoPlazoFijo(){
+  if(tikiPlazoCache && Date.now() - tikiPlazoCache.ts < TIKI_ECO_TTL) return tikiPlazoCache;
+  const data = await tikiFetchJson('https://api.argentinadatos.com/v1/finanzas/tasas/plazoFijo');
+  if(!Array.isArray(data) || !data.length) return null;
+  const tasas = data.map(b => Number(b.tnaClientes)).filter(t => t > 0);
+  if(!tasas.length) return null;
+  const tna = tasas.reduce((s, t) => s + t, 0) / tasas.length; // fracción anual
+  tikiPlazoCache = { tnaPct: tna * 100, mensualPct: tna / 12 * 100, bancos: tasas.length, ts: Date.now() };
+  return tikiPlazoCache;
+}
 function tikiFmtHora(iso){
   const d = iso ? new Date(iso) : null;
   if(!d || isNaN(d)) return '';
   return `actualizado ${d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })} hs`;
 }
+const tikiSinDatoEco = (que) => ({ html: `<p>No pude traer ${que} ahora (puede ser la conexión). Probá de nuevo en un rato, o miralo en la sección Noticias.</p>`, acciones: [{ label: 'Ir a Noticias', view: 'noticias' }] });
 async function tikiDolar(){
   const d = await tikiDatoDolar();
   if(!d) return { html: '<p>No pude traer la cotización del dólar ahora (puede ser la conexión). Probá de nuevo en un rato, o miralo en la sección Noticias.</p>', acciones: [{ label: 'Ir a Noticias', view: 'noticias' }] };
@@ -371,13 +391,39 @@ async function tikiInflacion(){
   const analisis = `<p><span class="tiki-soft">Para tu negocio:</span> con esa inflación, mes a mes tus costos de reposición suben más o menos en esa proporción. Si no vas acomodando los precios, el margen se te va comiendo de a poco. La idea es ajustar seguido y de a poco, en vez de un salto grande que espante al cliente. Para las cuentas finas (y los impuestos), un contador.</p>`;
   return { html: hecho + analisis + `<p class="tiki-soft">Fuente: INDEC vía argentinadatos.com.</p>`, ctx: { tema: 'inflacion' } };
 }
+async function tikiRiesgoPais(){
+  const r = await tikiDatoRiesgo();
+  if(!r) return tikiSinDatoEco('el riesgo país');
+  return { html: `<p>El <strong>riesgo país</strong> está en <strong>${r.valor} puntos</strong>.</p><p><span class="tiki-soft">Qué es:</span> mide la desconfianza de los inversores en la deuda del país. A tu kiosco no te pega directo, pero sirve de termómetro: cuando sube fuerte, suele venir de la mano de un dólar y una inflación más nerviosos, que sí te tocan los costos. Cuando baja, el clima tiende a estar más tranquilo.</p><p class="tiki-soft">Fuente: argentinadatos.com${r.fecha ? ` (${r.fecha})` : ''}.</p>`, ctx: { tema: 'riesgo' } };
+}
+async function tikiPlazoFijo(){
+  const pf = await tikiDatoPlazoFijo();
+  if(!pf) return tikiSinDatoEco('la tasa de plazo fijo');
+  const i = await tikiDatoInflacion();
+  let html = `<p>La tasa de <strong>plazo fijo</strong> está en promedio en <strong>${pf.tnaPct.toFixed(1).replace('.', ',')}% anual</strong>, que es más o menos <strong>${pf.mensualPct.toFixed(1).replace('.', ',')}% por mes</strong>.</p>`;
+  if(i){
+    const gana = pf.mensualPct >= i.valor;
+    html += `<p><span class="tiki-soft">Para vos:</span> si te sobra plata parada, un plazo fijo rinde cerca de ${pf.mensualPct.toFixed(1).replace('.', ',')}% al mes. La inflación de ${i.mes} fue ${i.valor.toFixed(1).replace('.', ',')}%, así que ${gana ? 'por ahora le estarías <span class="tiki-pos">ganando apenas a los precios</span>' : 'la plata en el plazo fijo <span class="tiki-neg">pierde un poco contra los precios</span>'}. Igual, esa misma plata metida en mercadería que rota rápido suele rendirte más que cualquier plazo fijo.</p>`;
+  }
+  html += `<p class="tiki-soft">Fuente: argentinadatos.com (promedio de ${pf.bancos} bancos). No es una recomendación de inversión.</p>`;
+  return { html, ctx: { tema: 'plazofijo' } };
+}
+// Resumen de noticias económicas: todos los indicadores reales, cada uno con
+// una lectura corta. Es lo más parecido a "¿qué noticias hay?" que se puede
+// hacer sin IA ni un servicio de noticias.
 async function tikiEconomia(){
-  const d = await tikiDatoDolar(), i = await tikiDatoInflacion();
-  if(!d && !i) return { html: '<p>No pude traer los datos económicos ahora (puede ser la conexión). Están en la sección Noticias cuando vuelva.</p>', acciones: [{ label: 'Ir a Noticias', view: 'noticias' }] };
-  const partes = [];
-  if(i) partes.push(`la inflación de ${i.mes} fue ${i.valor.toFixed(1).replace('.', ',')}%`);
-  if(d) partes.push(`el dólar blue está a ${tikiPlata(d.blue)}`);
-  return { html: `<p>En lo que puedo ver: ${partes.join(' y ')}.</p><p class="tiki-soft">Si querés, te cuento cómo puede pegar en tu negocio.</p>`, ctx: { tema: 'economia' }, sugerencia: { texto: '¿Cómo me afecta?', pregunta: '¿Cómo me afecta la inflación?' } };
+  const [d, i, r, pf] = await Promise.all([tikiDatoDolar(), tikiDatoInflacion(), tikiDatoRiesgo(), tikiDatoPlazoFijo()]);
+  if(!d && !i && !r && !pf) return tikiSinDatoEco('los datos económicos');
+  const filas = [];
+  if(d) filas.push(`<li><span><strong>Dólar blue</strong>: ${tikiPlata(d.blue)}${d.brechaPct !== null ? ` (${Math.abs(Math.round(d.brechaPct))}% sobre el oficial)` : ''}</span></li>`);
+  if(i) filas.push(`<li><span><strong>Inflación</strong> (${i.mes}): ${i.valor.toFixed(1).replace('.', ',')}%${i.difPts !== null ? ` (${i.difPts >= 0 ? '↑' : '↓'} contra el mes anterior)` : ''}</span></li>`);
+  if(pf) filas.push(`<li><span><strong>Plazo fijo</strong>: ${pf.tnaPct.toFixed(1).replace('.', ',')}% anual (~${pf.mensualPct.toFixed(1).replace('.', ',')}% mensual)</span></li>`);
+  if(r) filas.push(`<li><span><strong>Riesgo país</strong>: ${r.valor} puntos</span></li>`);
+  return {
+    html: `<p>Lo que hay de la economía, con datos reales:</p><ul class="tiki-list">${filas.join('')}</ul><p class="tiki-soft">Fuentes: dolarapi.com e INDEC/argentinadatos.com. De noticias puntuales del día no tengo, solo estos indicadores.</p>`,
+    ctx: { tema: 'economia' },
+    sugerencia: { texto: '¿Querés que te diga cómo te afecta el dólar?', pregunta: '¿Cómo me afecta el dólar?' }
+  };
 }
 
 // Ejemplos con datos reales del negocio (un producto y un proveedor suyos).
@@ -2184,10 +2230,13 @@ async function tikiRutear(raw, t){
     const concepto = tikiConceptoEnTexto(t);
     if(concepto) return tikiConcepto(concepto);
   }
-  // Contexto económico (dólar, inflación). Datos reales de fuentes públicas.
+  // Contexto económico (dólar, inflación, riesgo país, plazo fijo). Datos
+  // reales de fuentes públicas; de noticias puntuales del día no hay sin IA.
   if(/\b(dolar|blue|el verde|cotizacion|divisa)\b/.test(t)) return await tikiDolar();
   if(/\binflacion\b|\bipc\b|\bindec\b|\bcuanto aumento todo\b|\b(los )?precios (subieron|aumentaron|estan por las nubes)\b/.test(t)) return await tikiInflacion();
-  if(/\bcomo (esta|viene|anda) la economia\b|\bla macro\b|\bcomo esta el pais\b|\bnoticias economicas\b|\bque (esta )?pasa\w* (con|en) la economia\b/.test(t)) return await tikiEconomia();
+  if(/\briesgo pais\b/.test(t)) return await tikiRiesgoPais();
+  if(/\bplazo fijo\b|\b(conviene|me conviene).{0,15}plazo\b|\btasa\b.{0,20}(plazo|banco)\b|\bponer (la )?plata (en el|a) (banco|plazo)\b/.test(t)) return await tikiPlazoFijo();
+  if(/\bnoticias?\b|\bnovedades\b|\bcomo (esta|viene|anda) la economia\b|\bla macro\b|\bcomo esta el pais\b|\bque (esta )?pasa\w* (con|en) (la economia|el pais)\b|\bque hay de (nuevo|la economia)\b/.test(t)) return await tikiEconomia();
 
   // Punto de equilibrio y objetivo de GANANCIA (distinto de la meta de
   // ventas de la memoria): "quiero ganar X" no se guarda como meta.
