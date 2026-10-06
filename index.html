@@ -1181,18 +1181,26 @@
 
   // Anima cada numero desde su valor actual hasta el nuevo, en vez de saltar de golpe.
   const tweenState = new WeakMap();
+  const tweenGuard = new WeakMap();
   function tweenTo(el, target){
-    if (calcReduceMotion) { el.textContent = formatARS(target); return; }
     const from = tweenState.get(el) ?? target;
+    tweenState.set(el, target);
+    // Si no hay animacion posible (reduce-motion, o la pestaña esta en segundo
+    // plano -- ahi el navegador congela requestAnimationFrame), poner el valor
+    // directo. Asi el numero nunca queda "pegado" en un valor viejo.
+    if (calcReduceMotion || document.hidden) { el.textContent = formatARS(target); return; }
     const start = performance.now();
     const duration = 280;
+    // Red de seguridad: si rAF no llega a correr (throttling), setTimeout igual
+    // deja el numero en su valor final.
+    clearTimeout(tweenGuard.get(el));
+    tweenGuard.set(el, setTimeout(() => { el.textContent = formatARS(target); }, duration + 140));
     function step(now){
       const p = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - p, 3);
-      const value = from + (target - from) * eased;
-      el.textContent = formatARS(value);
+      el.textContent = formatARS(from + (target - from) * eased);
       if (p < 1) requestAnimationFrame(step);
-      else tweenState.set(el, target);
+      else clearTimeout(tweenGuard.get(el));
     }
     requestAnimationFrame(step);
   }
