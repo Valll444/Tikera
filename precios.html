@@ -138,6 +138,25 @@
   .feature-row{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;color:var(--text-dim);}
   .feature-check{color:var(--green);flex-shrink:0;margin-top:1px;}
 
+  /* Roadmap "lo que viene": cards sobrias con acento pizarra (no verde, para
+     que no se confundan con lo que ya está incluido). No son un segundo plan:
+     refuerzan que todo entra en el precio único. */
+  .roadmap-card{
+    background:var(--bg-card);border:1px solid var(--hairline);border-radius:18px;
+    padding:20px;display:flex;flex-direction:column;gap:9px;
+    transition:transform .18s ease, border-color .25s ease, background-color .35s ease;
+  }
+  .roadmap-card:hover{transform:translateY(-3px);border-color:var(--slate-bright);}
+  .roadmap-top{display:flex;align-items:center;justify-content:space-between;}
+  .roadmap-ic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:var(--slate-soft);color:var(--slate-bright);}
+  .roadmap-ic svg{width:21px;height:21px;}
+  .roadmap-badge{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--slate-bright);background:var(--slate-soft);border:1px solid var(--slate);
+    border-radius:999px;padding:3px 10px;}
+  .roadmap-title{font-size:15.5px;font-weight:700;color:var(--text);margin-top:2px;}
+  .roadmap-desc{font-size:13.5px;color:var(--text-dim);line-height:1.5;}
+
   /* Mismo resplandor verde + azul pizarra que tienen todas las secciones
      de index.html (ver .section-glow ahi) -- cada pagina publica es
      autocontenida, asi que el patron se repite aca en vez de compartirse. */
@@ -245,13 +264,17 @@
       <div class="font-display font-extrabold text-[52px] leading-none mb-2">14 días</div>
       <p class="text-[14.5px] text-[var(--text-dim)] mb-8">Acceso completo a la app. No pedimos tarjeta para empezar.</p>
 
-      <div class="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-left mb-9 max-w-[440px] mx-auto">
+      <div class="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-left mb-9 max-w-[470px] mx-auto">
         <div class="feature-row"><span class="feature-check">✓</span>Control de caja diario</div>
         <div class="feature-row"><span class="feature-check">✓</span>Ganancia real, no solo facturación</div>
-        <div class="feature-row"><span class="feature-check">✓</span>Catálogo de productos con stock</div>
+        <div class="feature-row"><span class="feature-check">✓</span>Catálogo con stock y alertas de reposición</div>
+        <div class="feature-row"><span class="feature-check">✓</span>Ajuste de precios por inflación en un toque</div>
+        <div class="feature-row"><span class="feature-check">✓</span>Tiki, el asistente que conoce tu negocio</div>
         <div class="feature-row"><span class="feature-check">✓</span>Reportes y exportación</div>
         <div class="feature-row"><span class="feature-check">✓</span>Funciona aunque se corte internet</div>
+        <div class="feature-row"><span class="feature-check">✓</span>Se instala en el celular como app</div>
         <div class="feature-row"><span class="feature-check">✓</span>Uso desde celular y computadora</div>
+        <div class="feature-row"><span class="feature-check">✓</span>Actualizaciones y mejoras sin costo extra</div>
       </div>
 
       <div class="border-t border-[var(--hairline)] pt-8 mb-8">
@@ -263,9 +286,51 @@
       <a href="app.html" class="btn-primary rounded-lg px-8 py-3.5 text-[15px] inline-block">Empezar prueba gratis</a>
     </div>
 
-    <p class="text-center text-[13px] text-[var(--text-faint)] mt-8 max-w-[480px] mx-auto">
-      ¿Facturación electrónica ARCA? Todavía no la tenemos — si tu negocio la necesita, contanos y te avisamos apenas esté.
-    </p>
+    <div class="max-w-[820px] mx-auto mt-20">
+      <div class="text-center max-w-[560px] mx-auto mb-9">
+        <div class="chip mb-5 border border-[var(--slate)] rounded-full px-4 py-2 w-fit mx-auto" style="background:var(--slate-soft);">
+          <span class="w-2 h-2 rounded-full bg-[var(--slate-bright)]"></span>
+          Lo que viene
+        </div>
+        <h2 class="font-display font-extrabold text-[26px] sm:text-[32px] leading-tight tracking-tight mb-3">
+          Lo que viene, también incluido.
+        </h2>
+        <p class="text-[15px] text-[var(--text-dim)] leading-relaxed">
+          Estamos sumando funciones grandes. Cuando salgan, entran en el mismo plan — no te cobramos más por crecer.
+        </p>
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div class="roadmap-card">
+          <div class="roadmap-top">
+            <span class="roadmap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 1 4 4c0 1.5-.8 2.6-1.7 3.5-.6.6-.8 1-.8 1.8v.2H10.5v-.2c0-.8-.2-1.2-.8-1.8C8.8 9.6 8 8.5 8 7a4 4 0 0 1 4-4z"/><path d="M9.5 18h5M10 21h4"/></svg></span>
+            <span class="roadmap-badge">Pronto</span>
+          </div>
+          <strong class="roadmap-title">Tiki con IA avanzada</strong>
+          <p class="roadmap-desc">Respuestas todavía más precisas sobre tu caja, tu stock y tus números.</p>
+        </div>
+        <div class="roadmap-card">
+          <div class="roadmap-top">
+            <span class="roadmap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></span>
+            <span class="roadmap-badge">Pronto</span>
+          </div>
+          <strong class="roadmap-title">Facturación electrónica</strong>
+          <p class="roadmap-desc">Emití tus comprobantes AFIP/ARCA desde la misma venta, sin pasar a otra app.</p>
+        </div>
+        <div class="roadmap-card">
+          <div class="roadmap-top">
+            <span class="roadmap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg></span>
+            <span class="roadmap-badge">Pronto</span>
+          </div>
+          <strong class="roadmap-title">Cobros con medios de pago</strong>
+          <p class="roadmap-desc">Conectá Mercado Pago y que el cobro quede registrado solo en tu caja.</p>
+        </div>
+      </div>
+
+      <p class="text-center text-[13px] text-[var(--text-faint)] mt-9 max-w-[500px] mx-auto">
+        ¿Alguna de estas te urge para tu negocio? Contanos y te avisamos apenas esté lista.
+      </p>
+    </div>
   </div>
 </section>
 </main>
