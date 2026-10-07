@@ -1486,7 +1486,206 @@ function renderCatalog(){
     const usedCats = [...new Set(products.map(p => (p.categoria || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
     catList.innerHTML = usedCats.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
   }
+
+  // Botón de ajuste masivo de precios: solo tiene sentido si hay al menos un
+  // producto con precio cargado (si no, no hay nada que ajustar).
+  const priceBar = document.getElementById('priceToolBar');
+  if(priceBar){
+    const conPrecio = products.filter(p => Number(p.precio_venta) > 0).length;
+    priceBar.style.display = conPrecio > 0 ? 'block' : 'none';
+    const sub = document.getElementById('priceToolSub');
+    if(sub) sub.textContent = conPrecio === 1
+      ? 'Aumentá el precio de 1 producto de una'
+      : `Aumentá los ${conPrecio} precios de tu catálogo de una`;
+  }
 }
+
+// ============================================
+// Ajuste masivo de precios por inflación
+// Sube todos los precios del catálogo de una (un % a mano o la inflación del
+// mes del INDEC), con redondeo prolijo y vista previa antes de aplicar. Toca
+// solo el precio de venta, nunca el costo. Pensado para la Argentina: con
+// inflación alta, re-marcar producto por producto es inviable.
+// ============================================
+const priceAdjust = { pct: 10, round: 10, scope: '__all__', busy: false };
+
+function pctLabel(pct){
+  return (Math.round(pct * 10) / 10).toString().replace('.', ',') + '%';
+}
+
+function roundPrice(value, mode){
+  mode = Number(mode) || 0;
+  if(mode <= 0) return Math.round(value * 100) / 100; // sin redondear: a 2 decimales
+  return Math.round(value / mode) * mode;
+}
+
+function productosEnAlcance(){
+  return products.filter(p => {
+    if(!(Number(p.precio_venta) > 0)) return false;
+    if(priceAdjust.scope === '__all__') return true;
+    return (p.categoria || '').trim() === priceAdjust.scope;
+  });
+}
+
+function openPriceAdjust(){
+  const modal = document.getElementById('priceAdjustModal');
+  if(!modal) return;
+  priceAdjust.pct = 10; priceAdjust.round = 10; priceAdjust.scope = '__all__'; priceAdjust.busy = false;
+  document.getElementById('pmPct').value = '10';
+  document.querySelectorAll('#pmPctChips .pm-chip').forEach(c => c.classList.toggle('active', c.dataset.pct === '10'));
+  document.querySelectorAll('#pmRoundChips .pm-chip').forEach(c => c.classList.toggle('active', c.dataset.round === '10'));
+  const inflaChip = document.getElementById('pmChipInfla');
+  if(inflaChip) inflaChip.innerHTML = `<span class="pm-chip-dot"></span>Inflación del mes`;
+
+  const sel = document.getElementById('pmScope');
+  const cats = [...new Set(products.filter(p => Number(p.precio_venta) > 0).map(p => (p.categoria || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  sel.innerHTML = `<option value="__all__">Todo el catálogo</option>` + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  sel.value = '__all__';
+
+  const off = document.getElementById('pmOffline');
+  const applyBtn = document.getElementById('pmApply');
+  const offline = !navigator.onLine;
+  off.style.display = offline ? 'block' : 'none';
+  applyBtn.disabled = offline;
+  applyBtn.style.opacity = offline ? '.5' : '';
+
+  const apply = document.getElementById('pmApply');
+  if(apply){ apply.classList.remove('pm-apply-busy'); apply.textContent = 'Aplicar'; }
+  renderPricePreview();
+  modal.style.display = 'flex';
+}
+
+function closePriceAdjust(){
+  const modal = document.getElementById('priceAdjustModal');
+  if(modal) modal.style.display = 'none';
+}
+
+function renderPricePreview(){
+  const prev = document.getElementById('pmPreview');
+  const count = document.getElementById('pmCount');
+  const sub = document.getElementById('pmSubtitle');
+  if(!prev) return;
+  const pct = Number(String(document.getElementById('pmPct').value).replace(',', '.')) || 0;
+  priceAdjust.pct = pct;
+  const items = productosEnAlcance();
+  if(count) count.textContent = items.length === 1 ? '1 producto' : `${items.length} productos`;
+  if(sub) sub.textContent = pct > 0
+    ? `Vas a subir ${items.length} ${items.length === 1 ? 'precio' : 'precios'} un ${pctLabel(pct)}`
+    : 'Elegí cuánto aumentar';
+  if(items.length === 0){
+    prev.innerHTML = `<div class="pm-preview-empty">No hay productos con precio en este grupo.</div>`;
+    return;
+  }
+  const factor = 1 + pct / 100;
+  prev.innerHTML = items
+    .sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'))
+    .map(p => {
+      const viejo = Number(p.precio_venta);
+      const nuevo = roundPrice(viejo * factor, priceAdjust.round);
+      return `<div class="pm-prow">
+        <span class="pm-pname">${escapeHtml(p.nombre)}</span>
+        <span class="pm-pprice"><span class="pm-pold">${fmtMoney(viejo)}</span><span>→</span><span class="pm-pnew">${fmtMoney(nuevo)}</span></span>
+      </div>`;
+    }).join('');
+}
+
+async function fillInflacionEnAjuste(){
+  const chip = document.getElementById('pmChipInfla');
+  if(!chip) return;
+  const restore = chip.innerHTML;
+  chip.innerHTML = `<span class="pm-chip-dot"></span>Buscando…`;
+  try{
+    const res = await fetch('https://api.argentinadatos.com/v1/finanzas/indices/inflacion');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(!Array.isArray(data) || data.length === 0) throw new Error('sin datos');
+    const ultimo = data[data.length - 1];
+    const valor = Number(ultimo.valor);
+    if(!(valor > 0)) throw new Error('valor inválido');
+    const [y, m] = ultimo.fecha.split('-');
+    const mesLabel = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('es-AR', {month:'short'});
+    document.getElementById('pmPct').value = String(valor).replace('.', ',');
+    document.querySelectorAll('#pmPctChips .pm-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    chip.innerHTML = `<span class="pm-chip-dot"></span>Inflación ${mesLabel}: ${pctLabel(valor)}`;
+    renderPricePreview();
+  }catch(err){
+    console.error('inflacion ajuste', err);
+    chip.innerHTML = `<span class="pm-chip-dot"></span>No se pudo traer`;
+    setTimeout(()=>{ chip.innerHTML = restore; }, 1800);
+  }
+}
+
+async function aplicarAjusteMasivo(){
+  if(priceAdjust.busy) return;
+  if(!navigator.onLine){ showToast('Sin conexión — probá cuando tengas señal'); return; }
+  const pct = Number(String(document.getElementById('pmPct').value).replace(',', '.')) || 0;
+  if(pct === 0){ showToast('Poné un porcentaje para aumentar'); return; }
+  const items = productosEnAlcance();
+  if(items.length === 0){ showToast('No hay productos para ajustar'); return; }
+  const factor = 1 + pct / 100;
+  const applyBtn = document.getElementById('pmApply');
+  priceAdjust.busy = true;
+  applyBtn.classList.add('pm-apply-busy');
+  applyBtn.textContent = 'Aplicando…';
+
+  const cambios = items.map(p => ({ id: p.id, nuevo: roundPrice(Number(p.precio_venta) * factor, priceAdjust.round) }));
+  let ok = 0, fail = 0;
+  await Promise.all(cambios.map(async c => {
+    try{
+      const { error } = await sb.from('products').update({ precio_venta: c.nuevo }).eq('id', c.id).eq('user_id', currentUserId);
+      if(error){ fail++; console.error(error); return; }
+      const p = products.find(x => String(x.id) === String(c.id));
+      if(p) p.precio_venta = c.nuevo;
+      ok++;
+    }catch(e){ fail++; console.error(e); }
+  }));
+
+  priceAdjust.busy = false;
+  applyBtn.classList.remove('pm-apply-busy');
+  applyBtn.textContent = 'Aplicar';
+  renderCatalog();
+  if(typeof fillProductSelectOptions === 'function') fillProductSelectOptions();
+  closePriceAdjust();
+  if(fail === 0) showToast(ok === 1 ? '1 precio actualizado' : `${ok} precios actualizados`);
+  else showToast(`${ok} ok, ${fail} fallaron — revisá tu conexión`);
+}
+
+(function wirePriceAdjust(){
+  const btn = document.getElementById('priceAdjustBtn');
+  if(btn) btn.addEventListener('click', openPriceAdjust);
+  const cancel = document.getElementById('pmCancel');
+  if(cancel) cancel.addEventListener('click', closePriceAdjust);
+  const apply = document.getElementById('pmApply');
+  if(apply) apply.addEventListener('click', aplicarAjusteMasivo);
+  const overlay = document.getElementById('priceAdjustModal');
+  if(overlay) overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closePriceAdjust(); });
+  const pctInput = document.getElementById('pmPct');
+  if(pctInput) pctInput.addEventListener('input', ()=>{
+    document.querySelectorAll('#pmPctChips .pm-chip').forEach(c => c.classList.remove('active'));
+    renderPricePreview();
+  });
+  document.querySelectorAll('#pmPctChips .pm-chip[data-pct]').forEach(chip => {
+    chip.addEventListener('click', ()=>{
+      document.getElementById('pmPct').value = chip.dataset.pct;
+      document.querySelectorAll('#pmPctChips .pm-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderPricePreview();
+    });
+  });
+  const inflaChip = document.getElementById('pmChipInfla');
+  if(inflaChip) inflaChip.addEventListener('click', fillInflacionEnAjuste);
+  document.querySelectorAll('#pmRoundChips .pm-chip').forEach(chip => {
+    chip.addEventListener('click', ()=>{
+      priceAdjust.round = Number(chip.dataset.round);
+      document.querySelectorAll('#pmRoundChips .pm-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderPricePreview();
+    });
+  });
+  const scope = document.getElementById('pmScope');
+  if(scope) scope.addEventListener('change', ()=>{ priceAdjust.scope = scope.value; renderPricePreview(); });
+})();
 
 function fillProductSelectOptions(){
   const sel = document.getElementById('productoSelect');

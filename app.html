@@ -570,6 +570,13 @@
     </div>
 
     <div id="catalogoProductosPanel">
+    <div id="priceToolBar" style="display:none;margin-top:14px;">
+      <button type="button" id="priceAdjustBtn" class="price-tool-btn">
+        <span class="price-tool-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></span>
+        <span class="price-tool-txt"><strong>Ajustar precios por inflación</strong><small id="priceToolSub">Aumentá todo el catálogo de una</small></span>
+        <span class="price-tool-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+      </button>
+    </div>
     <div id="productForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
       <label for="prodNombre" style="margin-top:0;">Nombre del producto</label>
       <input type="text" id="prodNombre" placeholder="Ej: Gaseosa 500ml">
@@ -888,6 +895,55 @@
     </div>
     <div class="ticket-modal-actions">
       <button type="button" id="proveedorModalCloseBtn" class="settings-btn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="priceAdjustModal" class="ticket-modal-overlay" style="display:none;" role="dialog" aria-label="Ajustar precios del catálogo">
+  <div class="ticket-modal price-modal" style="max-width:460px;">
+    <div class="pm-head">
+      <span class="pm-head-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></span>
+      <div>
+        <h3 class="pm-title">Ajustar precios</h3>
+        <p class="pm-sub" id="pmSubtitle">—</p>
+      </div>
+    </div>
+
+    <label class="pm-label">¿Cuánto querés aumentar?</label>
+    <div class="pm-pct-row">
+      <input type="text" id="pmPct" inputmode="decimal" autocomplete="off" value="10">
+      <span class="pm-pct-sign">%</span>
+    </div>
+    <div class="pm-chips" id="pmPctChips">
+      <button type="button" class="pm-chip" data-pct="5">+5%</button>
+      <button type="button" class="pm-chip" data-pct="10">+10%</button>
+      <button type="button" class="pm-chip" data-pct="15">+15%</button>
+      <button type="button" class="pm-chip" data-pct="20">+20%</button>
+      <button type="button" class="pm-chip pm-chip-infla" id="pmChipInfla"><span class="pm-chip-dot"></span>Inflación del mes</button>
+    </div>
+
+    <label class="pm-label">¿A qué productos?</label>
+    <select id="pmScope" class="pm-select"></select>
+
+    <label class="pm-label">Redondeo <span class="pm-label-hint">(para que queden precios prolijos)</span></label>
+    <div class="pm-chips" id="pmRoundChips">
+      <button type="button" class="pm-chip" data-round="0">Sin redondear</button>
+      <button type="button" class="pm-chip active" data-round="10">a $10</button>
+      <button type="button" class="pm-chip" data-round="50">a $50</button>
+      <button type="button" class="pm-chip" data-round="100">a $100</button>
+    </div>
+
+    <div class="pm-preview-head">
+      <span>Vista previa</span>
+      <span id="pmCount" class="pm-count"></span>
+    </div>
+    <div class="pm-preview" id="pmPreview"></div>
+
+    <div class="pm-offline" id="pmOffline" style="display:none;">Necesitás conexión para actualizar los precios. Volvé a intentar cuando tengas señal.</div>
+
+    <div class="ticket-modal-actions">
+      <button type="button" id="pmCancel" class="settings-btn">Cancelar</button>
+      <button type="button" id="pmApply" class="settings-btn primary">Aplicar</button>
     </div>
   </div>
 </div>
