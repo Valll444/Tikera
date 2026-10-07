@@ -289,6 +289,10 @@
           <h2 style="margin:0;">Reposición sugerida</h2>
         </div>
         <div id="restockBody"></div>
+        <button type="button" id="restockListBtn" class="restock-list-btn" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Armar lista para comprar
+        </button>
       </div>
     </div>
   </div>
@@ -975,6 +979,25 @@
       <button type="button" id="pmCancel" class="settings-btn">Cancelar</button>
       <button type="button" id="pmApply" class="settings-btn primary">Aplicar</button>
     </div>
+  </div>
+</div>
+
+<div id="restockListModal" class="ticket-modal-overlay" style="display:none;" role="dialog" aria-label="Lista de reposición">
+  <div class="ticket-modal" style="max-width:420px;">
+    <div class="rl-head">
+      <span class="rl-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+      <div>
+        <h3 class="rl-title">Lista para comprar</h3>
+        <p class="rl-sub" id="rlSub">—</p>
+      </div>
+    </div>
+    <div class="rl-list" id="rlList"></div>
+    <p class="rl-hint">Copiala o mandásela al proveedor por WhatsApp.</p>
+    <div class="ticket-modal-actions">
+      <button type="button" id="rlCopy" class="settings-btn">Copiar</button>
+      <button type="button" id="rlWhatsapp" class="settings-btn primary">WhatsApp</button>
+    </div>
+    <button type="button" id="rlClose" class="rl-close-link">Cerrar</button>
   </div>
 </div>
 

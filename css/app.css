@@ -690,6 +690,35 @@
   .restock-qty{flex-shrink:0;font-family:'IBM Plex Mono';font-size:12px;color:var(--ink-soft);min-width:74px;text-align:right;}
   .restock-empty{color:var(--ink-soft);font-size:13px;line-height:1.5;padding:6px 0;}
 
+  /* "Armar lista para comprar": convierte la reposición sugerida en una lista
+     accionable para copiar o mandar al proveedor. Acento oliva (--factura),
+     ya en la paleta, para no sumar un color nuevo. */
+  .restock-list-btn{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--factura-bg);border:1px solid rgba(124,154,104,0.32);color:var(--factura-dark);
+    border-radius:11px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer;
+    transition:transform .12s ease,filter .2s ease,border-color .2s ease;}
+  :root[data-theme="light"] .restock-list-btn{color:var(--factura-dark);}
+  .restock-list-btn svg{width:17px;height:17px;}
+  .restock-list-btn:hover{transform:translateY(-1px);border-color:rgba(124,154,104,0.55);}
+  .restock-list-btn:active{transform:translateY(0);}
+
+  /* Modal de la lista de reposición */
+  .rl-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .rl-ic{flex-shrink:0;width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--factura);color:#0e1409;}
+  .rl-ic svg{width:21px;height:21px;}
+  .rl-title{margin:0;font-size:18px;font-weight:700;color:var(--ink);}
+  .rl-sub{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  .rl-list{border:1px solid var(--line);border-radius:12px;background:var(--paper);max-height:260px;overflow-y:auto;}
+  .rl-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 13px;border-bottom:1px solid var(--line-faint);}
+  .rl-row:last-child{border-bottom:none;}
+  .rl-rleft{min-width:0;}
+  .rl-rname{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .rl-rwhy{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+  .rl-rqty{flex-shrink:0;font-family:'IBM Plex Mono';font-size:13px;font-weight:700;color:var(--factura-dark);white-space:nowrap;}
+  .rl-hint{font-size:12px;color:var(--ink-soft);margin:11px 2px 0;text-align:center;}
+  .rl-close-link{display:block;width:100%;margin-top:10px;padding:8px 0;border:none;background:transparent;color:var(--ink-soft);font-size:13px;cursor:pointer;}
+  .rl-close-link:hover{color:var(--ink);}
+
   /* pantalla de acceso */
   #gate{
     min-height:100vh;display:flex;align-items:center;justify-content:center;

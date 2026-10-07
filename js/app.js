@@ -2900,14 +2900,18 @@ function calcularReposicion(){
 function renderRestockPrediction(){
   const wrap = document.getElementById('restockBody');
   if(!wrap) return;
+  const listBtn = document.getElementById('restockListBtn');
+  const ocultarBtn = () => { if(listBtn) listBtn.style.display = 'none'; };
   if(products.length === 0){
     wrap.innerHTML = `<div class="restock-empty">Todavía no cargaste productos en el catálogo.</div>`;
+    ocultarBtn();
     return;
   }
   const predictions = calcularReposicion();
 
   if(predictions.length === 0){
     wrap.innerHTML = `<div class="restock-empty">Con las ventas de las últimas dos semanas, ningún producto se está por quedar sin stock pronto.</div>`;
+    ocultarBtn();
     return;
   }
 
@@ -2922,7 +2926,94 @@ function renderRestockPrediction(){
       </div>
     `;
   }).join('');
+  if(listBtn) listBtn.style.display = 'flex';
 }
+
+// ============================================
+// Lista de reposición para el proveedor
+// Convierte la "Reposición sugerida" en una lista lista para comprar: la misma
+// que ya se muestra en la tarjeta (productos que se van a agotar + cuánto
+// reponer), pero accionable — copiar al portapapeles o mandar al proveedor por
+// WhatsApp. No calcula nada nuevo: reusa calcularReposicion() para que la lista
+// y la tarjeta nunca digan cosas distintas.
+// ============================================
+function textoFilaReposicion(p){
+  const cuando = p.daysLeft < 1 ? 'se agota hoy' : `se agota en ~${Math.floor(p.daysLeft)} ${Math.floor(p.daysLeft) === 1 ? 'día' : 'días'}`;
+  return { reponer: p.suggestedQty, why: cuando };
+}
+
+function buildRestockListText(predictions){
+  const nombreNegocio = (document.getElementById('bizName') && document.getElementById('bizName').value.trim()) || 'Mi negocio';
+  const lineas = predictions.map(p => `• ${p.nombre} — reponer ${p.suggestedQty}`);
+  return `Lista de reposición — ${nombreNegocio} (${fmtFecha(todayStr())})\n\n${lineas.join('\n')}`;
+}
+
+function openRestockList(){
+  const modal = document.getElementById('restockListModal');
+  if(!modal) return;
+  const predictions = calcularReposicion();
+  if(predictions.length === 0){ showToast('No hay nada para reponer por ahora'); return; }
+  const sub = document.getElementById('rlSub');
+  const nombreNegocio = (document.getElementById('bizName') && document.getElementById('bizName').value.trim()) || 'Mi negocio';
+  if(sub) sub.textContent = `${nombreNegocio} · ${fmtFecha(todayStr())} · ${predictions.length} ${predictions.length === 1 ? 'producto' : 'productos'}`;
+  const list = document.getElementById('rlList');
+  if(list){
+    list.innerHTML = predictions.map(p => {
+      const f = textoFilaReposicion(p);
+      return `<div class="rl-row">
+        <span class="rl-rleft"><div class="rl-rname">${escapeHtml(p.nombre)}</div><div class="rl-rwhy">${f.why}</div></span>
+        <span class="rl-rqty">Reponer ${f.reponer}</span>
+      </div>`;
+    }).join('');
+  }
+  modal.dataset.text = buildRestockListText(predictions);
+  modal.style.display = 'flex';
+}
+
+function closeRestockList(){
+  const modal = document.getElementById('restockListModal');
+  if(modal) modal.style.display = 'none';
+}
+
+async function copyRestockList(){
+  const modal = document.getElementById('restockListModal');
+  const text = modal ? (modal.dataset.text || '') : '';
+  if(!text) return;
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast('Lista copiada');
+  }catch(e){
+    // Fallback para navegadores/contextos sin clipboard API
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Lista copiada');
+    }catch(err){ console.error(err); showToast('No se pudo copiar'); }
+  }
+}
+
+function shareRestockWhatsApp(){
+  const modal = document.getElementById('restockListModal');
+  const text = modal ? (modal.dataset.text || '') : '';
+  if(!text) return;
+  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
+}
+
+(function wireRestockList(){
+  const btn = document.getElementById('restockListBtn');
+  if(btn) btn.addEventListener('click', openRestockList);
+  const close = document.getElementById('rlClose');
+  if(close) close.addEventListener('click', closeRestockList);
+  const copy = document.getElementById('rlCopy');
+  if(copy) copy.addEventListener('click', copyRestockList);
+  const wa = document.getElementById('rlWhatsapp');
+  if(wa) wa.addEventListener('click', shareRestockWhatsApp);
+  const overlay = document.getElementById('restockListModal');
+  if(overlay) overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeRestockList(); });
+})();
 
 function renderTicket(){
   const today = todayStr();
