@@ -927,6 +927,21 @@
   .price-tool-arrow{flex-shrink:0;color:var(--gold-dark);display:flex;}
   .price-tool-arrow svg{width:18px;height:18px;}
 
+  /* Barra de "deshacer el último ajuste de precios". Red de seguridad que
+     aparece después de un ajuste masivo; acento azul acero (neutral), distinto
+     del dorado del botón de ajustar. */
+  #priceUndoBar{display:flex;align-items:center;gap:10px;margin-top:10px;
+    padding:10px 13px;border-radius:12px;background:var(--caja-bg);
+    border:1px solid rgba(91,127,166,0.28);animation:cardIn .25s ease;}
+  .price-undo-ic{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--caja-bg);color:var(--caja-dark);}
+  .price-undo-ic svg{width:17px;height:17px;}
+  .price-undo-text{flex:1;font-size:13px;color:var(--ink);line-height:1.35;}
+  .price-undo-btn{flex-shrink:0;background:var(--caja);color:#0e1419;border:none;border-radius:9px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:filter .2s ease;}
+  .price-undo-btn:hover{filter:brightness(1.08);}
+  .price-undo-btn:disabled{opacity:.6;cursor:default;}
+  .price-undo-x{flex-shrink:0;background:none;border:none;color:var(--ink-soft);font-size:20px;line-height:1;cursor:pointer;padding:0 2px;}
+  .price-undo-x:hover{color:var(--ink);}
+
   .price-modal .pm-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
   .price-modal .pm-head-ic{flex-shrink:0;width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--gold);color:#1a140a;}
   .price-modal .pm-head-ic svg{width:21px;height:21px;}

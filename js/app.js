@@ -1598,6 +1598,7 @@ function renderCatalog(){
       ? 'Aumentá el precio de 1 producto de una'
       : `Aumentá los ${conPrecio} precios de tu catálogo de una`;
   }
+  renderPriceUndoBar();
 }
 
 // ============================================
@@ -1729,18 +1730,23 @@ async function aplicarAjusteMasivo(){
   applyBtn.classList.add('pm-apply-busy');
   applyBtn.textContent = 'Aplicando…';
 
-  const cambios = items.map(p => ({ id: p.id, nuevo: roundPrice(Number(p.precio_venta) * factor, priceAdjust.round) }));
-  let ok = 0, fail = 0;
+  // Guardamos el precio anterior de cada producto antes de tocarlo, para poder
+  // deshacer el ajuste completo si el comerciante se equivocó con el %.
+  const cambios = items.map(p => ({ id: p.id, anterior: Number(p.precio_venta), nuevo: roundPrice(Number(p.precio_venta) * factor, priceAdjust.round) }));
+  const okItems = [];
+  let fail = 0;
   await Promise.all(cambios.map(async c => {
     try{
       const { error } = await sb.from('products').update({ precio_venta: c.nuevo }).eq('id', c.id).eq('user_id', currentUserId);
       if(error){ fail++; console.error(error); return; }
       const p = products.find(x => String(x.id) === String(c.id));
       if(p) p.precio_venta = c.nuevo;
-      ok++;
+      okItems.push({ id: c.id, anterior: c.anterior });
     }catch(e){ fail++; console.error(e); }
   }));
+  const ok = okItems.length;
 
+  if(ok > 0) savePriceUndo({ uid: currentUserId, items: okItems, pct, ts: Date.now() });
   priceAdjust.busy = false;
   applyBtn.classList.remove('pm-apply-busy');
   applyBtn.textContent = 'Aplicar';
@@ -1749,6 +1755,58 @@ async function aplicarAjusteMasivo(){
   closePriceAdjust();
   if(fail === 0) showToast(ok === 1 ? '1 precio actualizado' : `${ok} precios actualizados`);
   else showToast(`${ok} ok, ${fail} fallaron — revisá tu conexión`);
+}
+
+// --- Deshacer el último ajuste masivo de precios ---
+// Se guarda un único nivel de undo (el último ajuste) por cuenta, con vencimiento
+// a las 24 h para no ofrecer revertir algo viejo que ya no tiene sentido.
+const PRICE_UNDO_KEY = 'tikera_price_undo';
+const PRICE_UNDO_TTL = 24 * 60 * 60 * 1000;
+function loadPriceUndo(){
+  try{
+    const snap = JSON.parse(localStorage.getItem(PRICE_UNDO_KEY) || 'null');
+    if(!snap || snap.uid !== currentUserId) return null;
+    if(!Array.isArray(snap.items) || snap.items.length === 0) return null;
+    if(Date.now() - (snap.ts || 0) > PRICE_UNDO_TTL) return null;
+    return snap;
+  }catch(e){ return null; }
+}
+function savePriceUndo(snap){ try{ localStorage.setItem(PRICE_UNDO_KEY, JSON.stringify(snap)); }catch(e){} }
+function clearPriceUndo(){ try{ localStorage.removeItem(PRICE_UNDO_KEY); }catch(e){} }
+
+function renderPriceUndoBar(){
+  const bar = document.getElementById('priceUndoBar');
+  if(!bar) return;
+  const snap = loadPriceUndo();
+  if(!snap){ bar.style.display = 'none'; return; }
+  const txt = document.getElementById('priceUndoText');
+  const n = snap.items.length;
+  const signo = snap.pct >= 0 ? '+' : '';
+  if(txt) txt.textContent = `Ajustaste ${n} ${n === 1 ? 'precio' : 'precios'} (${signo}${pctLabel(snap.pct)}). ¿Te equivocaste?`;
+  bar.style.display = 'flex';
+}
+
+async function deshacerAjustePrecios(){
+  const snap = loadPriceUndo();
+  if(!snap) return;
+  if(!navigator.onLine){ showToast('Sin conexión — probá cuando tengas señal'); return; }
+  const btn = document.getElementById('priceUndoBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Deshaciendo…'; }
+  let ok = 0, fail = 0;
+  await Promise.all(snap.items.map(async it => {
+    try{
+      const { error } = await sb.from('products').update({ precio_venta: it.anterior }).eq('id', it.id).eq('user_id', currentUserId);
+      if(error){ fail++; console.error(error); return; }
+      const p = products.find(x => String(x.id) === String(it.id));
+      if(p) p.precio_venta = it.anterior;
+      ok++;
+    }catch(e){ fail++; console.error(e); }
+  }));
+  clearPriceUndo();
+  if(btn){ btn.disabled = false; btn.textContent = 'Deshacer'; }
+  renderCatalog();
+  if(typeof fillProductSelectOptions === 'function') fillProductSelectOptions();
+  showToast(fail === 0 ? 'Ajuste deshecho' : `${ok} restaurados, ${fail} fallaron`);
 }
 
 (function wirePriceAdjust(){
@@ -1760,6 +1818,10 @@ async function aplicarAjusteMasivo(){
   if(apply) apply.addEventListener('click', aplicarAjusteMasivo);
   const overlay = document.getElementById('priceAdjustModal');
   if(overlay) overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closePriceAdjust(); });
+  const undoBtn = document.getElementById('priceUndoBtn');
+  if(undoBtn) undoBtn.addEventListener('click', deshacerAjustePrecios);
+  const undoDismiss = document.getElementById('priceUndoDismiss');
+  if(undoDismiss) undoDismiss.addEventListener('click', ()=>{ clearPriceUndo(); renderPriceUndoBar(); });
   const pctInput = document.getElementById('pmPct');
   if(pctInput) pctInput.addEventListener('input', ()=>{
     document.querySelectorAll('#pmPctChips .pm-chip').forEach(c => c.classList.remove('active'));

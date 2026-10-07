@@ -594,6 +594,12 @@
         <span class="price-tool-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
       </button>
     </div>
+    <div id="priceUndoBar" style="display:none;">
+      <span class="price-undo-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg></span>
+      <span id="priceUndoText" class="price-undo-text"></span>
+      <button type="button" id="priceUndoBtn" class="price-undo-btn">Deshacer</button>
+      <button type="button" id="priceUndoDismiss" class="price-undo-x" aria-label="Cerrar">&times;</button>
+    </div>
     <div id="productForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
       <label for="prodNombre" style="margin-top:0;">Nombre del producto</label>
       <input type="text" id="prodNombre" placeholder="Ej: Gaseosa 500ml">
