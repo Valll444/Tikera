@@ -133,6 +133,19 @@
 </div>
 
 <div class="wrap" id="app" style="display:none;">
+  <!-- Banner para instalar Tikera como app (PWA). Aparece solo si el navegador
+       permite instalar (beforeinstallprompt) o es iOS sin estar ya instalada,
+       y se puede descartar para siempre. -->
+  <div class="install-banner" id="installBanner" hidden>
+    <span class="install-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M12 18h.01"/></svg></span>
+    <div class="install-txt">
+      <strong>Instalá Tikera en tu celular</strong>
+      <small id="installSub">Entrá en un toque, incluso sin internet.</small>
+    </div>
+    <button type="button" id="installBtn" class="install-cta">Instalar</button>
+    <button type="button" id="installDismiss" class="install-x" aria-label="Cerrar">&times;</button>
+  </div>
+
   <div class="app-header">
     <!-- El nombre del negocio ya no se edita aca -- queda solo como valor
          que usan el ticket y las exportaciones. Se cambia desde Ajustes >
@@ -140,6 +153,10 @@
          Tikera tampoco se repite aca: ya esta arriba del todo en el
          sidebar, no hace falta duplicarlo en cada pantalla. -->
     <input type="hidden" id="bizName" value="Mi kiosco">
+    <div class="conn-status" id="connStatus" hidden>
+      <span class="conn-dot"></span>
+      <span class="conn-text" id="connText"></span>
+    </div>
     <div style="text-align:right;">
       <div class="today-label" id="todayLabel"></div>
       <button id="switchBizBtn" style="background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;text-decoration:underline;padding:2px 0;">Cerrar sesión</button>

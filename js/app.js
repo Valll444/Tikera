@@ -1195,8 +1195,9 @@ let syncingPending = false;
 async function syncPendingMovements(){
   if(syncingPending) return;
   const mios = loadPendingQueue().filter(esPendienteDeLaCuenta);
-  if(mios.length === 0 || !navigator.onLine) return;
+  if(mios.length === 0 || !navigator.onLine){ refreshConnStatus(); return; }
   syncingPending = true;
+  setConnStatus('syncing', mios.length === 1 ? 'Sincronizando 1…' : `Sincronizando ${mios.length}…`);
   const subidos = new Set();
   for(const item of mios){
     try{
@@ -1227,8 +1228,107 @@ async function syncPendingMovements(){
   if(subidos.size > 0){
     showToast(subidos.size === 1 ? 'Se sincronizó 1 movimiento pendiente' : `Se sincronizaron ${subidos.size} movimientos pendientes`);
     render();
+    setConnStatus('synced', 'Sincronizado ✓');
+    setTimeout(refreshConnStatus, 2600);
+  }else{
+    refreshConnStatus();
   }
 }
+
+// ============================================
+// Estado de conexión visible (pill en el header)
+// Solo habla cuando hay algo que decir: sin señal, sincronizando o recién
+// sincronizado. En línea y sin nada pendiente, se esconde.
+// ============================================
+function setConnStatus(state, text){
+  const el = document.getElementById('connStatus');
+  if(!el) return;
+  el.className = 'conn-status conn-' + state;
+  const t = document.getElementById('connText');
+  if(t) t.textContent = text;
+  el.hidden = false;
+}
+function hideConnStatus(){
+  const el = document.getElementById('connStatus');
+  if(el) el.hidden = true;
+}
+function pendingCount(){
+  try{ return loadPendingQueue().filter(esPendienteDeLaCuenta).length; }catch(e){ return 0; }
+}
+function refreshConnStatus(){
+  if(!navigator.onLine){ setConnStatus('offline', 'Sin conexión · guardando acá'); return; }
+  const n = pendingCount();
+  if(n > 0){ setConnStatus('pending', n === 1 ? '1 venta sin subir' : `${n} ventas sin subir`); return; }
+  hideConnStatus();
+}
+window.addEventListener('offline', ()=> setConnStatus('offline', 'Sin conexión · guardando acá'));
+
+// ============================================
+// Instalar Tikera como app (PWA)
+// Chrome/Android disparan beforeinstallprompt y mostramos el banner con el
+// botón nativo. iOS no lo soporta, así que ahí mostramos cómo hacerlo a mano
+// (Compartir → Agregar a inicio). Si ya está instalada, no molesta.
+// ============================================
+let deferredInstallPrompt = null;
+const INSTALL_DISMISS_KEY = 'tikera_install_dismissed';
+
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function isIOS(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+function showInstallBanner(mode){
+  const banner = document.getElementById('installBanner');
+  if(!banner) return;
+  if(isStandalone()) return;
+  try{ if(localStorage.getItem(INSTALL_DISMISS_KEY) === '1') return; }catch(e){}
+  const sub = document.getElementById('installSub');
+  const btn = document.getElementById('installBtn');
+  if(mode === 'ios'){
+    if(sub) sub.textContent = 'Tocá Compartir y después "Agregar a inicio".';
+    if(btn) btn.style.display = 'none';
+  }else{
+    if(sub) sub.textContent = 'Entrá en un toque, incluso sin internet.';
+    if(btn) btn.style.display = '';
+  }
+  banner.hidden = false;
+}
+function hideInstallBanner(){
+  const banner = document.getElementById('installBanner');
+  if(banner) banner.hidden = true;
+}
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  showInstallBanner('prompt');
+});
+window.addEventListener('appinstalled', ()=>{
+  hideInstallBanner();
+  deferredInstallPrompt = null;
+  showToast('¡Tikera quedó instalada!');
+});
+(function wireInstall(){
+  const btn = document.getElementById('installBtn');
+  if(btn) btn.addEventListener('click', async ()=>{
+    if(!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    try{
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if(outcome === 'accepted') showToast('¡Instalando Tikera!');
+    }catch(e){ console.error(e); }
+    deferredInstallPrompt = null;
+    hideInstallBanner();
+  });
+  const dismiss = document.getElementById('installDismiss');
+  if(dismiss) dismiss.addEventListener('click', ()=>{
+    hideInstallBanner();
+    try{ localStorage.setItem(INSTALL_DISMISS_KEY, '1'); }catch(e){}
+  });
+  // iOS no dispara beforeinstallprompt: si es iPhone/iPad y no está instalada,
+  // mostramos las instrucciones manuales.
+  if(isIOS() && !isStandalone()) showInstallBanner('ios');
+})();
 function hydratePendingIntoEntries(){
   const queue = loadPendingQueue().filter(esPendienteDeLaCuenta);
   queue.forEach(item => {
