@@ -1,4 +1,4 @@
-// Corre js/app.js + js/indicadores.js + js/tiki.js dentro de Node (vm), sin navegador:
+// Corre js/app.js + js/indicadores.js + js/ajuste-precios.js + js/tiki.js dentro de Node (vm), sin navegador:
 //  - DOM simulado (cualquier elemento existe y acepta cualquier cosa),
 //  - reloj fijo (Date.now() = la fecha/hora que pide cada test),
 //  - Supabase falso en memoria que aplica lo mismo que RLS (cada cuenta ve
@@ -232,7 +232,7 @@ export function crearEntorno({ hoy = '2026-10-04', hora = '18:30' } = {}){
       static now(){ return BASE + globalThis.__reloj.desfaseMs; }
     };
   })()`, ctx);
-  for(const f of ['js/app.js', 'js/indicadores.js', 'js/tiki.js']){
+  for(const f of ['js/app.js', 'js/indicadores.js', 'js/ajuste-precios.js', 'js/tiki.js']){
     vm.runInContext(fs.readFileSync(path.join(RAIZ, f), 'utf8'), ctx, { filename: f });
   }
 
