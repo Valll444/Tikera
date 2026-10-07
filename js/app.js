@@ -1603,18 +1603,28 @@ function renderCatalog(){
 
 // ============================================
 // Ajuste masivo de precios por inflación
-// Sube todos los precios del catálogo de una (un % a mano o la inflación del
-// mes del INDEC), con redondeo prolijo y vista previa antes de aplicar. Toca
-// solo el precio de venta, nunca el costo. Pensado para la Argentina: con
-// inflación alta, re-marcar producto por producto es inviable.
+// Sube o baja todos los precios del catálogo de una (un % a mano o la inflación
+// del mes del INDEC), con redondeo prolijo —incluida terminación comercial
+// $…90 / $…99— y vista previa antes de aplicar. Toca solo el precio de venta,
+// nunca el costo. Pensado para la Argentina: con inflación alta, re-marcar
+// producto por producto es inviable.
 // ============================================
-const priceAdjust = { pct: 10, round: 10, scope: '__all__', busy: false };
+const priceAdjust = { pct: 10, dir: 1, round: '10', scope: '__all__', busy: false };
 
 function pctLabel(pct){
   return (Math.round(pct * 10) / 10).toString().replace('.', ',') + '%';
 }
 
+// Redondea un precio con terminación comercial: al múltiplo de 100 más cercano
+// y le pone la terminación pedida (90 o 99), sin bajar de la terminación misma.
+function endInPrice(value, ending){
+  const base = Math.round((value - ending) / 100) * 100 + ending;
+  return base > 0 ? base : ending;
+}
+
 function roundPrice(value, mode){
+  if(mode === 'end90') return endInPrice(value, 90);
+  if(mode === 'end99') return endInPrice(value, 99);
   mode = Number(mode) || 0;
   if(mode <= 0) return Math.round(value * 100) / 100; // sin redondear: a 2 decimales
   return Math.round(value / mode) * mode;
@@ -1628,15 +1638,31 @@ function productosEnAlcance(){
   });
 }
 
+// Cambia la dirección del ajuste (subir=1 / bajar=-1) y adapta los textos. La
+// inflación solo tiene sentido al subir, así que al bajar se esconde ese chip.
+function setPriceDir(dir){
+  priceAdjust.dir = dir;
+  document.querySelectorAll('#pmDir .pm-dir-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.dir) === dir));
+  const label = document.getElementById('pmPctLabel');
+  if(label) label.textContent = dir === 1 ? '¿Cuánto querés aumentar?' : '¿Cuánto querés bajar?';
+  const inflaChip = document.getElementById('pmChipInfla');
+  if(inflaChip){
+    inflaChip.style.display = dir === 1 ? '' : 'none';
+    if(dir === 1 && !inflaChip.classList.contains('active')) inflaChip.innerHTML = `<span class="pm-chip-dot"></span>Inflación del mes`;
+  }
+  renderPricePreview();
+}
+
 function openPriceAdjust(){
   const modal = document.getElementById('priceAdjustModal');
   if(!modal) return;
-  priceAdjust.pct = 10; priceAdjust.round = 10; priceAdjust.scope = '__all__'; priceAdjust.busy = false;
+  priceAdjust.pct = 10; priceAdjust.round = '10'; priceAdjust.scope = '__all__'; priceAdjust.busy = false;
   document.getElementById('pmPct').value = '10';
   document.querySelectorAll('#pmPctChips .pm-chip').forEach(c => c.classList.toggle('active', c.dataset.pct === '10'));
   document.querySelectorAll('#pmRoundChips .pm-chip').forEach(c => c.classList.toggle('active', c.dataset.round === '10'));
   const inflaChip = document.getElementById('pmChipInfla');
   if(inflaChip) inflaChip.innerHTML = `<span class="pm-chip-dot"></span>Inflación del mes`;
+  setPriceDir(1);
 
   const sel = document.getElementById('pmScope');
   const cats = [...new Set(products.filter(p => Number(p.precio_venta) > 0).map(p => (p.categoria || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
@@ -1666,13 +1692,15 @@ function renderPricePreview(){
   const count = document.getElementById('pmCount');
   const sub = document.getElementById('pmSubtitle');
   if(!prev) return;
-  const pct = Number(String(document.getElementById('pmPct').value).replace(',', '.')) || 0;
+  const mag = Math.abs(Number(String(document.getElementById('pmPct').value).replace(',', '.')) || 0);
+  const pct = priceAdjust.dir * mag;   // firmado: + sube, - baja
   priceAdjust.pct = pct;
+  const verbo = priceAdjust.dir === 1 ? 'subir' : 'bajar';
   const items = productosEnAlcance();
   if(count) count.textContent = items.length === 1 ? '1 producto' : `${items.length} productos`;
-  if(sub) sub.textContent = pct > 0
-    ? `Vas a subir ${items.length} ${items.length === 1 ? 'precio' : 'precios'} un ${pctLabel(pct)}`
-    : 'Elegí cuánto aumentar';
+  if(sub) sub.textContent = mag > 0
+    ? `Vas a ${verbo} ${items.length} ${items.length === 1 ? 'precio' : 'precios'} un ${pctLabel(mag)}`
+    : `Elegí cuánto ${priceAdjust.dir === 1 ? 'aumentar' : 'bajar'}`;
   if(items.length === 0){
     prev.innerHTML = `<div class="pm-preview-empty">No hay productos con precio en este grupo.</div>`;
     return;
@@ -1720,8 +1748,9 @@ async function fillInflacionEnAjuste(){
 async function aplicarAjusteMasivo(){
   if(priceAdjust.busy) return;
   if(!navigator.onLine){ showToast('Sin conexión — probá cuando tengas señal'); return; }
-  const pct = Number(String(document.getElementById('pmPct').value).replace(',', '.')) || 0;
-  if(pct === 0){ showToast('Poné un porcentaje para aumentar'); return; }
+  const mag = Math.abs(Number(String(document.getElementById('pmPct').value).replace(',', '.')) || 0);
+  if(mag === 0){ showToast(priceAdjust.dir === 1 ? 'Poné un porcentaje para aumentar' : 'Poné un porcentaje para bajar'); return; }
+  const pct = priceAdjust.dir * mag;   // firmado: + sube, - baja
   const items = productosEnAlcance();
   if(items.length === 0){ showToast('No hay productos para ajustar'); return; }
   const factor = 1 + pct / 100;
@@ -1839,11 +1868,14 @@ async function deshacerAjustePrecios(){
   if(inflaChip) inflaChip.addEventListener('click', fillInflacionEnAjuste);
   document.querySelectorAll('#pmRoundChips .pm-chip').forEach(chip => {
     chip.addEventListener('click', ()=>{
-      priceAdjust.round = Number(chip.dataset.round);
+      priceAdjust.round = chip.dataset.round;   // string: '0'|'10'|'50'|'100'|'end90'|'end99'
       document.querySelectorAll('#pmRoundChips .pm-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       renderPricePreview();
     });
+  });
+  document.querySelectorAll('#pmDir .pm-dir-btn').forEach(btn => {
+    btn.addEventListener('click', ()=> setPriceDir(Number(btn.dataset.dir)));
   });
   const scope = document.getElementById('pmScope');
   if(scope) scope.addEventListener('change', ()=>{ priceAdjust.scope = scope.value; renderPricePreview(); });

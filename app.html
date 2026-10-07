@@ -932,16 +932,21 @@
       </div>
     </div>
 
-    <label class="pm-label">¿Cuánto querés aumentar?</label>
+    <div class="pm-dir" id="pmDir">
+      <button type="button" class="pm-dir-btn active" data-dir="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>Subir</button>
+      <button type="button" class="pm-dir-btn" data-dir="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>Bajar</button>
+    </div>
+
+    <label class="pm-label" id="pmPctLabel">¿Cuánto querés aumentar?</label>
     <div class="pm-pct-row">
       <input type="text" id="pmPct" inputmode="decimal" autocomplete="off" value="10">
       <span class="pm-pct-sign">%</span>
     </div>
     <div class="pm-chips" id="pmPctChips">
-      <button type="button" class="pm-chip" data-pct="5">+5%</button>
-      <button type="button" class="pm-chip" data-pct="10">+10%</button>
-      <button type="button" class="pm-chip" data-pct="15">+15%</button>
-      <button type="button" class="pm-chip" data-pct="20">+20%</button>
+      <button type="button" class="pm-chip" data-pct="5">5%</button>
+      <button type="button" class="pm-chip" data-pct="10">10%</button>
+      <button type="button" class="pm-chip" data-pct="15">15%</button>
+      <button type="button" class="pm-chip" data-pct="20">20%</button>
       <button type="button" class="pm-chip pm-chip-infla" id="pmChipInfla"><span class="pm-chip-dot"></span>Inflación del mes</button>
     </div>
 
@@ -954,6 +959,8 @@
       <button type="button" class="pm-chip active" data-round="10">a $10</button>
       <button type="button" class="pm-chip" data-round="50">a $50</button>
       <button type="button" class="pm-chip" data-round="100">a $100</button>
+      <button type="button" class="pm-chip" data-round="end90">$…90</button>
+      <button type="button" class="pm-chip" data-round="end99">$…99</button>
     </div>
 
     <div class="pm-preview-head">
