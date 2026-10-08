@@ -1018,6 +1018,7 @@
   .price-modal .pm-prow .pm-pprice{flex-shrink:0;display:flex;align-items:center;gap:7px;font-variant-numeric:tabular-nums;}
   .price-modal .pm-pold{color:var(--ink-soft);text-decoration:line-through;}
   .price-modal .pm-pnew{color:var(--venta);font-weight:700;}
+  .price-modal .pm-pnew-bad{color:var(--gasto);}
   .price-modal .pm-preview-empty{padding:18px 13px;text-align:center;color:var(--ink-soft);font-size:13px;}
   .price-modal .pm-offline{margin-top:12px;padding:10px 13px;border-radius:10px;background:var(--gold-bg);border:1px solid rgba(217,162,81,0.30);color:var(--ink);font-size:12.5px;}
   .price-modal .pm-apply-busy{opacity:.7;pointer-events:none;}

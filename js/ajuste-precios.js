@@ -23,16 +23,23 @@ function pctLabel(pct){
   return (Math.round(pct * 10) / 10).toString().replace('.', ',') + '%';
 }
 
-// Redondea un precio con terminación comercial: al múltiplo de 100 más cercano
-// y le pone la terminación pedida (90 o 99), sin bajar de la terminación misma.
-function endInPrice(value, ending){
-  const base = Math.round((value - ending) / 100) * 100 + ending;
+// Redondea un precio con terminación comercial ($…90 / $…99). Redondea EN LA
+// DIRECCIÓN del ajuste (hacia arriba al subir, hacia abajo al bajar) para no
+// invertir el sentido: si no, por ejemplo $200 +10% con $…90 caería a $190
+// (el …90 más cercano a 220), o sea un aumento que termina bajando el precio.
+// dir: 1 sube, -1 baja; sin dir (undefined) usa el más cercano.
+function endInPrice(value, ending, dir){
+  const cercano = Math.round((value - ending) / 100) * 100 + ending;
+  let base;
+  if(dir === 1) base = cercano >= value ? cercano : cercano + 100;      // subir: hacia arriba
+  else if(dir === -1) base = cercano <= value ? cercano : cercano - 100; // bajar: hacia abajo
+  else base = cercano;
   return base > 0 ? base : ending;
 }
 
-function roundPrice(value, mode){
-  if(mode === 'end90') return endInPrice(value, 90);
-  if(mode === 'end99') return endInPrice(value, 99);
+function roundPrice(value, mode, dir){
+  if(mode === 'end90') return endInPrice(value, 90, dir);
+  if(mode === 'end99') return endInPrice(value, 99, dir);
   mode = Number(mode) || 0;
   if(mode <= 0) return Math.round(value * 100) / 100; // sin redondear: a 2 decimales
   return Math.round(value / mode) * mode;
@@ -109,19 +116,27 @@ function renderPricePreview(){
   if(sub) sub.textContent = mag > 0
     ? `Vas a ${verbo} ${items.length} ${items.length === 1 ? 'precio' : 'precios'} un ${pctLabel(mag)}`
     : `Elegí cuánto ${priceAdjust.dir === 1 ? 'aumentar' : 'bajar'}`;
+  const factor = 1 + pct / 100;
+  // Bajar 100% o más dejaría los precios en $0 o negativos: se avisa y no se
+  // listan precios inválidos.
+  if(factor <= 0){
+    if(sub) sub.textContent = 'No podés bajar 100% o más';
+    prev.innerHTML = `<div class="pm-preview-empty">Bajar 100% o más dejaría los precios en $0 o menos. Probá con un porcentaje más chico.</div>`;
+    return;
+  }
   if(items.length === 0){
     prev.innerHTML = `<div class="pm-preview-empty">No hay productos con precio en este grupo.</div>`;
     return;
   }
-  const factor = 1 + pct / 100;
   prev.innerHTML = items
     .sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'))
     .map(p => {
       const viejo = Number(p.precio_venta);
-      const nuevo = roundPrice(viejo * factor, priceAdjust.round);
+      const nuevo = roundPrice(viejo * factor, priceAdjust.round, priceAdjust.dir);
+      const cero = nuevo <= 0;
       return `<div class="pm-prow">
         <span class="pm-pname">${escapeHtml(p.nombre)}</span>
-        <span class="pm-pprice"><span class="pm-pold">${fmtMoney(viejo)}</span><span>→</span><span class="pm-pnew">${fmtMoney(nuevo)}</span></span>
+        <span class="pm-pprice"><span class="pm-pold">${fmtMoney(viejo)}</span><span>→</span><span class="pm-pnew${cero ? ' pm-pnew-bad' : ''}">${cero ? '$0' : fmtMoney(nuevo)}</span></span>
       </div>`;
     }).join('');
 }
@@ -162,14 +177,19 @@ async function aplicarAjusteMasivo(){
   const items = productosEnAlcance();
   if(items.length === 0){ showToast('No hay productos para ajustar'); return; }
   const factor = 1 + pct / 100;
+  if(factor <= 0){ showToast('No podés bajar 100% o más'); return; }
+
+  // Guardamos el precio anterior de cada producto antes de tocarlo, para poder
+  // deshacer el ajuste completo si el comerciante se equivocó con el %.
+  const cambios = items.map(p => ({ id: p.id, anterior: Number(p.precio_venta), nuevo: roundPrice(Number(p.precio_venta) * factor, priceAdjust.round, priceAdjust.dir) }));
+  // No escribir precios en $0 o menos (puede pasar con un redondeo grande sobre
+  // un precio chico): se avisa y no se toca nada.
+  if(cambios.some(c => c.nuevo <= 0)){ showToast('Con ese ajuste algún precio quedaría en $0. Probá con menos % o sin redondear.'); return; }
+
   const applyBtn = document.getElementById('pmApply');
   priceAdjust.busy = true;
   applyBtn.classList.add('pm-apply-busy');
   applyBtn.textContent = 'Aplicando…';
-
-  // Guardamos el precio anterior de cada producto antes de tocarlo, para poder
-  // deshacer el ajuste completo si el comerciante se equivocó con el %.
-  const cambios = items.map(p => ({ id: p.id, anterior: Number(p.precio_venta), nuevo: roundPrice(Number(p.precio_venta) * factor, priceAdjust.round) }));
   const okItems = [];
   let fail = 0;
   await Promise.all(cambios.map(async c => {
@@ -230,16 +250,23 @@ async function deshacerAjustePrecios(){
   const btn = document.getElementById('priceUndoBtn');
   if(btn){ btn.disabled = true; btn.textContent = 'Deshaciendo…'; }
   let ok = 0, fail = 0;
+  const okIds = new Set();
   await Promise.all(snap.items.map(async it => {
     try{
       const { error } = await sb.from('products').update({ precio_venta: it.anterior }).eq('id', it.id).eq('user_id', currentUserId);
       if(error){ fail++; console.error(error); return; }
       const p = products.find(x => String(x.id) === String(it.id));
       if(p) p.precio_venta = it.anterior;
-      ok++;
+      okIds.add(String(it.id)); ok++;
     }catch(e){ fail++; console.error(e); }
   }));
-  clearPriceUndo();
+  if(fail === 0){
+    clearPriceUndo();
+  }else{
+    // Conservar en el undo solo los que NO se pudieron restaurar, así la barra
+    // sigue y el comerciante puede reintentar esos sin perder el resto.
+    savePriceUndo({ uid: snap.uid, items: snap.items.filter(it => !okIds.has(String(it.id))), pct: snap.pct, ts: snap.ts });
+  }
   if(btn){ btn.disabled = false; btn.textContent = 'Deshacer'; }
   renderCatalog();
   if(typeof fillProductSelectOptions === 'function') fillProductSelectOptions();
