@@ -2525,7 +2525,30 @@ function render(){
 // minimo configurado, con la lista de cuales son -- vive junto al formulario
 // de carga porque ahi es cuando el kiosquero mas se beneficia de verlo (esta
 // mirando la pantalla igual, no tiene que ir a buscarlo al Catalogo aparte).
+// Badge de faltantes en el ícono de Catálogo del nav: cuenta los productos en
+// stock crítico (mínimo configurado y stock actual por debajo), el mismo
+// criterio que "Estado del stock". Se ve desde cualquier sección; si no hay
+// faltantes, se esconde. Se actualiza cada vez que corre renderStockWheel().
+function renderStockNavBadge(){
+  const badge = document.getElementById('catalogoNavBadge');
+  if(!badge) return;
+  const count = products.filter(p =>
+    p.stock_minimo !== null && p.stock_minimo !== undefined && p.stock_minimo !== '' &&
+    (Number(p.stock_actual) || 0) <= Number(p.stock_minimo)
+  ).length;
+  const btn = document.getElementById('navBtnCatalogo');
+  if(count > 0){
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.hidden = false;
+    if(btn) btn.setAttribute('aria-label', `Catálogo — ${count} ${count === 1 ? 'producto en stock crítico' : 'productos en stock crítico'}`);
+  }else{
+    badge.hidden = true;
+    if(btn) btn.setAttribute('aria-label', 'Catálogo');
+  }
+}
+
 function renderStockWheel(){
+  renderStockNavBadge();
   const wrap = document.getElementById('stockWheelBody');
   if(!wrap) return;
   if(products.length === 0){
