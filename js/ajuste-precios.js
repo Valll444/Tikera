@@ -116,6 +116,12 @@ function renderPricePreview(){
   if(sub) sub.textContent = mag > 0
     ? `Vas a ${verbo} ${items.length} ${items.length === 1 ? 'precio' : 'precios'} un ${pctLabel(mag)}`
     : `Elegí cuánto ${priceAdjust.dir === 1 ? 'aumentar' : 'bajar'}`;
+  // Sin porcentaje todavía no hay nada que previsualizar: mostrar precios
+  // "cambiados" por el redondeo (que Aplicar después rechaza) confundiría.
+  if(mag === 0){
+    prev.innerHTML = `<div class="pm-preview-empty">Elegí cuánto ${priceAdjust.dir === 1 ? 'aumentar' : 'bajar'} para ver la vista previa.</div>`;
+    return;
+  }
   const factor = 1 + pct / 100;
   // Bajar 100% o más dejaría los precios en $0 o negativos: se avisa y no se
   // listan precios inválidos.
