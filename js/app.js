@@ -2644,17 +2644,20 @@ function renderRestockPrediction(){
   const wrap = document.getElementById('restockBody');
   if(!wrap) return;
   const listBtn = document.getElementById('restockListBtn');
-  const ocultarBtn = () => { if(listBtn) listBtn.style.display = 'none'; };
+  // El botón de "armar lista para comprar" aparece si hay ALGO que comprar
+  // (algo que se agota por venta, o algo bajo el mínimo), aunque la predicción
+  // por velocidad esté vacía. La tarjeta en sí sigue mostrando la predicción.
+  const toggleListBtn = () => { if(listBtn) listBtn.style.display = calcularListaCompras().length > 0 ? 'flex' : 'none'; };
   if(products.length === 0){
     wrap.innerHTML = `<div class="restock-empty">Todavía no cargaste productos en el catálogo.</div>`;
-    ocultarBtn();
+    if(listBtn) listBtn.style.display = 'none';
     return;
   }
   const predictions = calcularReposicion();
 
   if(predictions.length === 0){
     wrap.innerHTML = `<div class="restock-empty">Con las ventas de las últimas dos semanas, ningún producto se está por quedar sin stock pronto.</div>`;
-    ocultarBtn();
+    toggleListBtn();
     return;
   }
 
@@ -2669,47 +2672,71 @@ function renderRestockPrediction(){
       </div>
     `;
   }).join('');
-  if(listBtn) listBtn.style.display = 'flex';
+  toggleListBtn();
 }
 
 // ============================================
 // Lista de reposición para el proveedor
-// Convierte la "Reposición sugerida" en una lista lista para comprar: la misma
-// que ya se muestra en la tarjeta (productos que se van a agotar + cuánto
-// reponer), pero accionable — copiar al portapapeles o mandar al proveedor por
-// WhatsApp. No calcula nada nuevo: reusa calcularReposicion() para que la lista
-// y la tarjeta nunca digan cosas distintas.
+// La lista COMPLETA de lo que hay que comprar, accionable (copiar o mandar al
+// proveedor por WhatsApp). Combina dos fuentes con el motivo de cada ítem bien
+// claro, para que no falte nada ni confunda:
+//   - "se agota en ~N días": lo que predice la tarjeta "Reposición sugerida"
+//     por velocidad de venta (calcularReposicion).
+//   - "bajo el mínimo (X/Y)": productos por debajo del mínimo configurado que
+//     no entraron por velocidad (ej. sin ventas recientes) -- antes se perdían.
 // ============================================
-function textoFilaReposicion(p){
-  const cuando = p.daysLeft < 1 ? 'se agota hoy' : `se agota en ~${Math.floor(p.daysLeft)} ${Math.floor(p.daysLeft) === 1 ? 'día' : 'días'}`;
-  return { reponer: p.suggestedQty, why: cuando };
+function calcularListaCompras(){
+  const predicciones = calcularReposicion();
+  const yaIncluidos = new Set(predicciones.map(p => (p.nombre || '').trim().toLowerCase()));
+  const items = predicciones.map(p => ({ nombre: p.nombre, suggestedQty: p.suggestedQty, motivo: 'prediccion', daysLeft: p.daysLeft }));
+  products.forEach(p => {
+    const tieneMin = p.stock_minimo !== null && p.stock_minimo !== undefined && p.stock_minimo !== '';
+    if(!tieneMin) return;
+    const actual = Number(p.stock_actual) || 0;
+    const min = Number(p.stock_minimo);
+    if(actual > min) return;
+    const key = (p.nombre || '').trim().toLowerCase();
+    if(!key || yaIncluidos.has(key)) return;
+    items.push({ nombre: p.nombre, suggestedQty: Math.max(1, Math.ceil(min - actual)), motivo: 'bajo-minimo', stockActual: actual, stockMinimo: min });
+  });
+  return items;
 }
 
-function buildRestockListText(predictions){
+function textoFilaReposicion(item){
+  let why;
+  if(item.motivo === 'bajo-minimo'){
+    why = `bajo el mínimo (${item.stockActual}/${item.stockMinimo})`;
+  }else{
+    why = item.daysLeft < 1 ? 'se agota hoy' : `se agota en ~${Math.floor(item.daysLeft)} ${Math.floor(item.daysLeft) === 1 ? 'día' : 'días'}`;
+  }
+  return { reponer: item.suggestedQty, why };
+}
+
+function buildRestockListText(items){
   const nombreNegocio = (document.getElementById('bizName') && document.getElementById('bizName').value.trim()) || 'Mi negocio';
-  const lineas = predictions.map(p => `• ${p.nombre} — reponer ${p.suggestedQty}`);
+  const lineas = items.map(p => `• ${p.nombre} — reponer ${p.suggestedQty}`);
   return `Lista de reposición — ${nombreNegocio} (${fmtFecha(todayStr())})\n\n${lineas.join('\n')}`;
 }
 
 function openRestockList(){
   const modal = document.getElementById('restockListModal');
   if(!modal) return;
-  const predictions = calcularReposicion();
-  if(predictions.length === 0){ showToast('No hay nada para reponer por ahora'); return; }
+  const items = calcularListaCompras();
+  if(items.length === 0){ showToast('No hay nada para reponer por ahora'); return; }
   const sub = document.getElementById('rlSub');
   const nombreNegocio = (document.getElementById('bizName') && document.getElementById('bizName').value.trim()) || 'Mi negocio';
-  if(sub) sub.textContent = `${nombreNegocio} · ${fmtFecha(todayStr())} · ${predictions.length} ${predictions.length === 1 ? 'producto' : 'productos'}`;
+  if(sub) sub.textContent = `${nombreNegocio} · ${fmtFecha(todayStr())} · ${items.length} ${items.length === 1 ? 'producto' : 'productos'}`;
   const list = document.getElementById('rlList');
   if(list){
-    list.innerHTML = predictions.map(p => {
-      const f = textoFilaReposicion(p);
+    list.innerHTML = items.map(item => {
+      const f = textoFilaReposicion(item);
       return `<div class="rl-row">
-        <span class="rl-rleft"><div class="rl-rname">${escapeHtml(p.nombre)}</div><div class="rl-rwhy">${f.why}</div></span>
+        <span class="rl-rleft"><div class="rl-rname">${escapeHtml(item.nombre)}</div><div class="rl-rwhy">${f.why}</div></span>
         <span class="rl-rqty">Reponer ${f.reponer}</span>
       </div>`;
     }).join('');
   }
-  modal.dataset.text = buildRestockListText(predictions);
+  modal.dataset.text = buildRestockListText(items);
   modal.style.display = 'flex';
 }
 
