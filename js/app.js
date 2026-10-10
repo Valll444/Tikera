@@ -30,6 +30,11 @@ let editingProveedorId = null;
 let openProveedorId = null;
 let catalogoTab = 'productos';
 let cierresCaja = [];
+// Config del comercio (rubro + módulos habilitados). Arranca vacía = "config
+// legacy" => todos los módulos opcionales se muestran (así los usuarios que ya
+// usaban Tikera no pierden nada hasta que elijan su rubro). Ver RUBROS/MODULOS
+// y moduloActivo() más abajo, y supabase/017_perfil_rubro_modulos.sql.
+let comercioConfig = { rubros: [], modulos: {}, onboardingAt: null };
 let facturacionConfig = null;
 // La tabla facturacion_config revoca el SELECT * y otorga lectura columna por
 // columna solo de las no-secretas (ver supabase/013_facturacion_arca.sql): el
@@ -39,6 +44,55 @@ let facturacionConfig = null;
 const FACTURACION_CONFIG_COLS = 'user_id, cuit, razon_social, punto_venta, tipo_comprobante_default, ambiente, activado, verificado_at, created_at, updated_at';
 let facturas = [];
 let selectedCategoria = null;
+
+// ============================================
+// Rubros y módulos (Tikera modular por rubro — Fase 0)
+// Los módulos CORE van siempre (cargar venta/gasto, inicio, historial, Tiki,
+// cuenta, ajustes). Los OPCIONALES se muestran según la config del comercio;
+// cada rubro trae un set recomendado que el onboarding deja activado, y el
+// usuario los prende/apaga después desde Ajustes. Es personalización de UX:
+// el aislamiento entre cuentas lo sigue garantizando RLS.
+// ============================================
+const MODULOS_OPCIONALES = ['caja', 'catalogo', 'noticias', 'facturacion'];
+// Metadata de cada módulo opcional: etiqueta y una línea de para qué sirve
+// (se usa en Ajustes y en el onboarding). navBtn/view son los ids del nav y la
+// vista que se muestran/ocultan.
+const MODULOS = {
+  caja:        { label: 'Cierre de caja',      desc: 'Arqueo diario: contás la caja y comparás con lo que registraste.', navBtn: 'navBtnCaja',        view: 'caja' },
+  catalogo:    { label: 'Catálogo y stock',    desc: 'Cargá productos, precios y stock, con alertas de reposición.',     navBtn: 'navBtnCatalogo',    view: 'catalogo' },
+  noticias:    { label: 'Indicadores',         desc: 'Dólar, inflación y feriados, para ponerle contexto a tus precios.', navBtn: 'navBtnNoticias',    view: 'noticias' },
+  facturacion: { label: 'Facturación',         desc: 'Emití comprobantes electrónicos AFIP/ARCA desde la venta.',        navBtn: 'navBtnFacturacion', view: 'facturacion' },
+};
+// Rubros ofrecidos (sin mayoristas/logística/supermercados a pedido del usuario)
+// y el set de módulos opcionales que se recomienda a cada uno.
+const RUBROS = {
+  kiosco:      { label: 'Kiosco o almacén',            modulos: ['caja', 'catalogo', 'noticias'] },
+  minorista:   { label: 'Comercio minorista',          modulos: ['caja', 'catalogo'] },
+  celulares:   { label: 'Celulares y electrónica',     modulos: ['catalogo'] },
+  ropa:        { label: 'Ropa y calzado',              modulos: ['caja', 'catalogo'] },
+  ecommerce:   { label: 'Ecommerce / marketplaces',    modulos: ['catalogo'] },
+  gastronomia: { label: 'Gastronomía',                 modulos: ['caja', 'catalogo'] },
+  servicios:   { label: 'Negocio de servicios',        modulos: ['caja'] },
+  otros:       { label: 'Otro rubro',                  modulos: ['caja', 'catalogo', 'noticias', 'facturacion'] },
+};
+
+// ¿Está activo un módulo para este comercio? Los core siempre; los opcionales
+// según la config. Config vacía (usuarios previos al onboarding) = todo activo,
+// para no sacarle funciones a nadie sin que lo pida.
+function moduloActivo(key){
+  if(!MODULOS_OPCIONALES.includes(key)) return true;
+  const m = (comercioConfig && comercioConfig.modulos) || {};
+  if(Object.keys(m).length === 0) return true; // legacy / sin configurar
+  return m[key] === true;
+}
+// Lista de módulos opcionales recomendados para un conjunto de rubros (unión).
+function modulosRecomendados(rubros){
+  const set = new Set();
+  (rubros || []).forEach(r => (RUBROS[r] ? RUBROS[r].modulos : []).forEach(m => set.add(m)));
+  return [...set];
+}
+function rubroLabel(key){ return RUBROS[key] ? RUBROS[key].label : key; }
+function onboardingPendiente(){ return !(comercioConfig && comercioConfig.onboardingAt); }
 
 // Categorias fijas de gasto -- a proposito una lista chica y cerrada (no un
 // campo libre ni una pantalla de "administrar categorias"): lo que importa
@@ -435,7 +489,20 @@ function traducirErrorAuth(msg){
   return msg;
 }
 
+// Muestra u oculta los botones del nav de los módulos OPCIONALES según la config
+// del comercio. Los core no se tocan (siempre visibles).
+function aplicarModulosAlNav(){
+  MODULOS_OPCIONALES.forEach(key => {
+    const btn = document.getElementById(MODULOS[key].navBtn);
+    if(btn) btn.style.display = moduloActivo(key) ? '' : 'none';
+  });
+}
+
 function switchView(view){
+  // Si la vista es de un módulo opcional apagado, no entrar: caer a Inicio.
+  // Es defensa de UX (igual cada uno solo accede a sus propios datos por RLS).
+  const modKey = Object.keys(MODULOS).find(k => MODULOS[k].view === view);
+  if(modKey && !moduloActivo(modKey)) view = 'inicio';
   document.getElementById('viewCargar').style.display = view==='cargar' ? 'block' : 'none';
   document.getElementById('viewInicio').style.display = view==='inicio' ? 'block' : 'none';
   document.getElementById('viewTiki').style.display = view==='tiki' ? 'block' : 'none';
@@ -1408,6 +1475,17 @@ async function loadData(){
     currentPlan = (profile && profile.plan) || 'trial';
     currentTrialStartedAt = profile && profile.trial_started_at ? new Date(profile.trial_started_at) : null;
 
+    // Config del comercio (rubro/módulos). Tolerante a que la migración 017 no
+    // esté aplicada todavía: si las columnas no existen, queda la config legacy
+    // (todos los módulos activos), así la app funciona igual antes y después de
+    // correr la migración.
+    try{
+      const { data: cfg, error: cfgErr } = await sb.from('profiles').select('rubros, modulos, onboarding_at').eq('id', user.id).single();
+      comercioConfig = (!cfgErr && cfg)
+        ? { rubros: cfg.rubros || [], modulos: cfg.modulos || {}, onboardingAt: cfg.onboarding_at || null }
+        : { rubros: [], modulos: {}, onboardingAt: null };
+    }catch(e){ comercioConfig = { rubros: [], modulos: {}, onboardingAt: null }; }
+
     const { data: movRows, error: movErr } = await fetchAllRows(opts => sb.from('movements').select('*', opts).eq('user_id', user.id).order('created_at', {ascending:true}).order('id', {ascending:true}));
     entries = movErr ? [] : (movRows || []).map(mapRowToEntry);
     if(movErr){ console.error(movErr); showToast('No se pudieron cargar los movimientos'); }
@@ -1464,6 +1542,7 @@ async function loadData(){
   renderFreqChips();
   fillProductSelectOptions();
   fillGastoProveedorOptions();
+  aplicarModulosAlNav();
   render();
   syncPendingMovements();
 }
