@@ -588,7 +588,12 @@
      sus botones quedan 5px más arriba que "Importar de Excel" (botón suelto)
      cuando la barra alinea por abajo. Este margen sube el de importar para que
      los dos botones queden a la misma altura. */
-  .hist-toolbar #importBtn{margin-bottom:5px;}
+  /* "Importar de Excel": botón secundario (borde y texto apagados), pero al
+     pasar el mouse el fondo se pone de acento, así que el texto va BLANCO para
+     que se lea (antes el color estaba inline y pisaba el :hover, quedando
+     oscuro sobre el fondo de color). */
+  .hist-toolbar #importBtn{margin-bottom:5px;border-color:var(--line);color:var(--ink-soft);}
+  .hist-toolbar #importBtn:hover{color:#fff;}
   .export-group{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:9px;}
   .export-group-label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;font-weight:600;padding-left:6px;}
   @media (max-width:600px){
