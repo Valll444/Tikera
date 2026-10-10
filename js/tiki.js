@@ -2247,6 +2247,24 @@ async function tikiResponder(texto){
   return tikiCerrarRespuesta(seguimiento || await tikiRutear(raw, t));
 }
 
+// Tikera modular por rubro: a qué módulo OPCIONAL apunta una consulta (o null).
+// Keywords específicas para no pisar preguntas del core (ventas, ganancia, etc.).
+// Si el módulo está apagado, Tiki explica cómo activarlo en vez de inventar.
+const TIKI_MOD_RE = {
+  caja:        /\b(cierre de caja|arqueo|cuadr\w* la caja|cerrar la caja|cerre de caja)\b/,
+  catalogo:    /\b(stock|catalog\w*|reposicion|reponer|inventario|lista (de|para) compra\w*)\b/,
+  noticias:    /\b(dolar|blue|inflacion|riesgo pais|plazo fijo|feriado\w*)\b/,
+  facturacion: /\b(factura\w*|facturacion|cae|afip|arca|comprobante\w*)\b/,
+};
+function tikiModuloDeConsulta(t){
+  for(const key of Object.keys(TIKI_MOD_RE)){ if(TIKI_MOD_RE[key].test(t)) return key; }
+  return null;
+}
+function tikiModuloApagado(key){
+  const label = (typeof MODULOS !== 'undefined' && MODULOS[key]) ? MODULOS[key].label : key;
+  return { html: `<p>El módulo <b>${label}</b> lo tenés apagado en tu Tikera, así que no está activo. Si lo querés usar, prendelo en <b>Ajustes → Rubro y módulos</b> y con gusto te doy una mano con eso.</p>` };
+}
+
 async function tikiRutear(raw, t){
   const periodo = tikiPeriodo(t);
   const sobrantes = tikiSobrantes(t);
@@ -2262,6 +2280,11 @@ async function tikiRutear(raw, t){
 
   if(TIKI_RE_META.test(t)) return tikiFueraDeAlcance('meta', t);
   if(TIKI_RE_AJENO.test(t)) return tikiFueraDeAlcance('ajeno', t);
+
+  // Si la consulta es de un módulo opcional que el comercio tiene apagado,
+  // explicar cómo activarlo en vez de responder como si estuviera (o inventar).
+  const modConsulta = tikiModuloDeConsulta(t);
+  if(modConsulta && typeof moduloActivo === 'function' && !moduloActivo(modConsulta)) return tikiModuloApagado(modConsulta);
 
   if(tikiPendiente){
     const pend = tikiPendiente;
