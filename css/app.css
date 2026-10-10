@@ -995,13 +995,13 @@
   .price-modal .pm-dir-btn svg{width:15px;height:15px;}
   .price-modal .pm-dir-btn:hover{color:var(--ink);}
   .price-modal .pm-dir-btn.active{background:var(--gold);color:#1a140a;}
-  .price-modal .pm-pct-row{position:relative;}
+  .price-modal .pm-pct-row{position:relative;margin-bottom:12px;}
   .price-modal #pmPct{width:100%;font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;letter-spacing:-0.02em;
     padding:10px 44px 10px 14px;background:var(--paper);border:1.5px solid var(--line-strong);border-radius:12px;color:var(--ink);}
   .price-modal #pmPct:focus{outline:none;border-color:var(--gold);}
   .price-modal .pm-pct-sign{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:22px;font-weight:700;color:var(--ink-soft);font-family:'Space Grotesk',sans-serif;}
-  .price-modal .pm-chips{display:flex;flex-wrap:wrap;gap:7px;}
-  .price-modal .pm-chip{padding:7px 13px;border-radius:999px;border:1.5px solid var(--line-strong);background:transparent;color:var(--ink-soft);
+  .price-modal .pm-chips{display:flex;flex-wrap:wrap;gap:9px;}
+  .price-modal .pm-chip{padding:8px 15px;border-radius:999px;border:1.5px solid var(--line-strong);background:transparent;color:var(--ink-soft);
     font-size:13px;font-weight:600;cursor:pointer;transition:all .15s ease;display:inline-flex;align-items:center;gap:6px;}
   .price-modal .pm-chip:hover{border-color:var(--gold);color:var(--ink);}
   .price-modal .pm-chip.active{background:var(--gold);border-color:var(--gold);color:#1a140a;}
