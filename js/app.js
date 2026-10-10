@@ -94,6 +94,103 @@ function modulosRecomendados(rubros){
 function rubroLabel(key){ return RUBROS[key] ? RUBROS[key].label : key; }
 function onboardingPendiente(){ return !(comercioConfig && comercioConfig.onboardingAt); }
 
+// --- Onboarding: elegir rubro y módulos (primera vez, o re-configurar desde Ajustes) ---
+const onbState = { rubros: new Set(), modulos: {} };
+
+function maybeShowOnboarding(){ if(onboardingPendiente()) openOnboarding(); }
+
+function openOnboarding(){
+  const ov = document.getElementById('onboardingOverlay');
+  if(!ov) return;
+  onbState.rubros = new Set(comercioConfig.rubros || []);
+  onbState.modulos = Object.assign({}, comercioConfig.modulos || {});
+  renderOnbRubros();
+  onbGoStep(1);
+  ov.style.display = 'flex';
+}
+function closeOnboarding(){ const ov = document.getElementById('onboardingOverlay'); if(ov) ov.style.display = 'none'; }
+function onbGoStep(n){
+  const s1 = document.getElementById('onbStep1'), s2 = document.getElementById('onbStep2');
+  if(s1) s1.style.display = n === 1 ? 'block' : 'none';
+  if(s2) s2.style.display = n === 2 ? 'block' : 'none';
+  document.querySelectorAll('#onboardingOverlay .onb-dot').forEach(d => d.classList.toggle('active', Number(d.dataset.step) <= n));
+}
+function renderOnbRubros(){
+  const wrap = document.getElementById('onbRubros');
+  if(!wrap) return;
+  wrap.innerHTML = Object.keys(RUBROS).map(key => `
+    <button type="button" class="onb-rubro${onbState.rubros.has(key) ? ' sel' : ''}" data-rubro="${key}">
+      <span class="onb-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+      ${escapeHtml(RUBROS[key].label)}
+    </button>`).join('');
+  actualizarOnbNext();
+}
+function actualizarOnbNext(){ const b = document.getElementById('onbNext'); if(b) b.disabled = onbState.rubros.size === 0; }
+function renderOnbModulos(){
+  const wrap = document.getElementById('onbModulos');
+  if(!wrap) return;
+  wrap.innerHTML = MODULOS_OPCIONALES.map(key => {
+    const on = onbState.modulos[key] === true;
+    return `<div class="onb-mod${on ? ' on' : ''}" data-mod="${key}">
+      <span class="onb-mod-txt"><strong>${escapeHtml(MODULOS[key].label)}</strong><small>${escapeHtml(MODULOS[key].desc)}</small></span>
+      <span class="onb-switch"></span>
+    </div>`;
+  }).join('');
+}
+function onbIrAModulos(){
+  // Pre-marcar los recomendados según el/los rubro(s) elegido(s), sin pisar lo
+  // que el usuario ya haya tocado (keys ya definidas, ej. al editar).
+  const rec = modulosRecomendados([...onbState.rubros]);
+  MODULOS_OPCIONALES.forEach(k => { if(onbState.modulos[k] === undefined) onbState.modulos[k] = rec.includes(k); });
+  renderOnbModulos();
+  onbGoStep(2);
+}
+async function guardarOnboarding(rubros, modulos){
+  const payload = { rubros, modulos, onboarding_at: new Date().toISOString() };
+  comercioConfig = { rubros, modulos, onboardingAt: payload.onboarding_at };
+  aplicarModulosAlNav();
+  closeOnboarding();
+  switchView('inicio');
+  try{
+    const { error } = await sb.from('profiles').update(payload).eq('id', currentUserId);
+    if(error){ console.error(error); showToast('Guardado acá — no se pudo sincronizar'); return; }
+    showToast('¡Listo! Tikera quedó configurada');
+  }catch(e){ console.error(e); showToast('Guardado acá — revisá tu conexión'); }
+}
+function finishOnboarding(){
+  const modulos = {};
+  MODULOS_OPCIONALES.forEach(k => modulos[k] = onbState.modulos[k] === true);
+  guardarOnboarding([...onbState.rubros], modulos);
+}
+// Omitir: no fuerza nada. Marca el onboarding como hecho con config legacy
+// (rubros vacío, módulos vacío = todo activo) para no volver a preguntar ni
+// sacarle funciones a nadie.
+function skipOnboarding(){ guardarOnboarding([], {}); }
+
+(function wireOnboarding(){
+  const ov = document.getElementById('onboardingOverlay');
+  if(!ov) return;
+  const rubrosWrap = document.getElementById('onbRubros');
+  if(rubrosWrap) rubrosWrap.addEventListener('click', (e)=>{
+    const card = e.target.closest('.onb-rubro'); if(!card) return;
+    const key = card.dataset.rubro;
+    if(onbState.rubros.has(key)) onbState.rubros.delete(key); else onbState.rubros.add(key);
+    card.classList.toggle('sel');
+    actualizarOnbNext();
+  });
+  const modsWrap = document.getElementById('onbModulos');
+  if(modsWrap) modsWrap.addEventListener('click', (e)=>{
+    const row = e.target.closest('.onb-mod'); if(!row) return;
+    const key = row.dataset.mod;
+    onbState.modulos[key] = !(onbState.modulos[key] === true);
+    row.classList.toggle('on', onbState.modulos[key]);
+  });
+  const next = document.getElementById('onbNext'); if(next) next.addEventListener('click', onbIrAModulos);
+  const back = document.getElementById('onbBack'); if(back) back.addEventListener('click', ()=> onbGoStep(1));
+  const finish = document.getElementById('onbFinish'); if(finish) finish.addEventListener('click', finishOnboarding);
+  const skip = document.getElementById('onbSkip'); if(skip) skip.addEventListener('click', skipOnboarding);
+})();
+
 // Categorias fijas de gasto -- a proposito una lista chica y cerrada (no un
 // campo libre ni una pantalla de "administrar categorias"): lo que importa
 // aca es no perder velocidad de carga, no armar un sistema de categorias
@@ -587,6 +684,7 @@ function revealApp(){
     setTimeout(()=> app.classList.remove('entering'), 350);
     document.getElementById('bottomNav').style.display = 'flex';
     switchView('inicio');
+    maybeShowOnboarding();
   }, 180);
 }
 
@@ -699,7 +797,24 @@ function loadAjustesView(){
   renderThemeToggle();
   document.getElementById('settNegocio').value = document.getElementById('bizName').value;
   document.getElementById('settPerfilMsg').textContent = '';
+  renderRubroAjustes();
   renderFacturacionAjustesForm();
+}
+
+// Muestra el rubro actual y qué módulos están activos en Ajustes (el botón
+// reabre el onboarding para cambiarlos).
+function renderRubroAjustes(){
+  const el = document.getElementById('settRubroActual');
+  if(!el) return;
+  const rubros = (comercioConfig.rubros || []).map(rubroLabel);
+  const activos = MODULOS_OPCIONALES.filter(moduloActivo).map(k => MODULOS[k].label);
+  if(rubros.length === 0 && onboardingPendiente()){
+    el.innerHTML = 'Todavía no elegiste tu rubro — están todos los módulos activos.';
+    return;
+  }
+  const rubroTxt = rubros.length ? `<b>Rubro:</b> ${escapeHtml(rubros.join(', '))}` : '<b>Rubro:</b> sin especificar';
+  const modTxt = activos.length ? `<b>Módulos activos:</b> ${escapeHtml(activos.join(', '))}` : 'Sin módulos opcionales activos';
+  el.innerHTML = `${rubroTxt}<br>${modTxt}`;
 }
 
 function renderPlanCard(){
@@ -742,6 +857,8 @@ function renderPlanCard(){
     <div class="plan-note">${note}</div>
   `;
 }
+
+(function(){ const b = document.getElementById('settRubroBtn'); if(b) b.addEventListener('click', openOnboarding); })();
 
 document.getElementById('settPerfilBtn').addEventListener('click', async ()=>{
   const msg = document.getElementById('settPerfilMsg');
@@ -1142,6 +1259,7 @@ document.getElementById('settDeleteBtn').addEventListener('click', async ()=>{
       document.body.classList.add('app-active');
       document.getElementById('bottomNav').style.display = 'flex';
       switchView('inicio');
+      maybeShowOnboarding();
     }
   }catch(e){ console.error(e); }
 })();

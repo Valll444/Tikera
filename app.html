@@ -761,6 +761,18 @@
       </div>
     </div>
 
+    <!-- Rubro y módulos -->
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <h2><span class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Rubro y módulos</h2>
+        <p>Tikera se adapta a tu tipo de comercio: elegí tu rubro y qué módulos usás. No perdés ningún dato al cambiarlo.</p>
+      </div>
+      <div class="settings-field" style="max-width:420px;">
+        <div id="settRubroActual" style="font-size:13.5px;color:var(--ink-soft);margin-bottom:12px;"></div>
+        <button type="button" class="settings-btn primary" id="settRubroBtn">Configurar rubro y módulos</button>
+      </div>
+    </div>
+
     <!-- Facturación electrónica (ARCA) -->
     <div class="settings-section">
       <div class="settings-section-head">
@@ -999,6 +1011,34 @@
       <button type="button" id="rlWhatsapp" class="settings-btn primary">WhatsApp</button>
     </div>
     <button type="button" id="rlClose" class="rl-close-link">Cerrar</button>
+  </div>
+</div>
+
+<div id="onboardingOverlay" class="onb-overlay" style="display:none;" role="dialog" aria-label="Configurá tu comercio">
+  <div class="onb-card">
+    <div class="onb-head">
+      <div class="onb-dots"><span class="onb-dot" data-step="1"></span><span class="onb-dot" data-step="2"></span></div>
+      <button type="button" id="onbSkip" class="onb-skip">Omitir por ahora</button>
+    </div>
+
+    <div class="onb-step" id="onbStep1">
+      <h2 class="onb-title">¿Qué tipo de comercio tenés?</h2>
+      <p class="onb-sub">Elegí uno o más. Tikera se adapta a lo que vendés — podés cambiarlo cuando quieras.</p>
+      <div class="onb-rubros" id="onbRubros"></div>
+      <div class="onb-actions">
+        <button type="button" id="onbNext" class="onb-btn-primary" disabled>Seguir</button>
+      </div>
+    </div>
+
+    <div class="onb-step" id="onbStep2" style="display:none;">
+      <h2 class="onb-title">¿Qué vas a usar?</h2>
+      <p class="onb-sub">Marcamos lo recomendado para tu rubro. Prendé o apagá lo que quieras; esto se cambia después desde Ajustes.</p>
+      <div class="onb-modulos" id="onbModulos"></div>
+      <div class="onb-actions">
+        <button type="button" id="onbBack" class="onb-btn-ghost">Atrás</button>
+        <button type="button" id="onbFinish" class="onb-btn-primary">Listo, entrar a Tikera</button>
+      </div>
+    </div>
   </div>
 </div>
 
