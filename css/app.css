@@ -584,6 +584,11 @@
     font-family:var(--font-body);white-space:nowrap;
   }
   .export-btn:hover{background:var(--accent);color:#fff;}
+  /* El grupo "Exportar" es una cápsula con borde (1px) + padding (4px), así que
+     sus botones quedan 5px más arriba que "Importar de Excel" (botón suelto)
+     cuando la barra alinea por abajo. Este margen sube el de importar para que
+     los dos botones queden a la misma altura. */
+  .hist-toolbar #importBtn{margin-bottom:5px;}
   .export-group{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:9px;}
   .export-group-label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;font-weight:600;padding-left:6px;}
   @media (max-width:600px){
