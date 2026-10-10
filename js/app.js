@@ -31,6 +31,12 @@ let openProveedorId = null;
 let catalogoTab = 'productos';
 let cierresCaja = [];
 let facturacionConfig = null;
+// La tabla facturacion_config revoca el SELECT * y otorga lectura columna por
+// columna solo de las no-secretas (ver supabase/013_facturacion_arca.sql): el
+// certificado, la clave privada y el ticket de WSAA nunca tienen que llegar al
+// navegador. Por eso el cliente pide esta lista explícita y NO '*', que da 403
+// (permission denied) al tocar las columnas prohibidas.
+const FACTURACION_CONFIG_COLS = 'user_id, cuit, razon_social, punto_venta, tipo_comprobante_default, ambiente, activado, verificado_at, created_at, updated_at';
 let facturas = [];
 let selectedCategoria = null;
 
@@ -770,7 +776,7 @@ async function llamarArca(funcionNombre, body){
 }
 
 async function recargarFacturacionConfig(){
-  const { data } = await sb.from('facturacion_config').select('*').eq('user_id', currentUserId).maybeSingle();
+  const { data } = await sb.from('facturacion_config').select(FACTURACION_CONFIG_COLS).eq('user_id', currentUserId).maybeSingle();
   facturacionConfig = data || null;
 }
 
@@ -1436,7 +1442,7 @@ async function loadData(){
     // esta sección queda vacía/sin configurar en vez de romper el resto de la app.
     // No tener fila en facturacion_config es un estado normal (nunca se configuró
     // todavía), por eso maybeSingle() en vez de single().
-    const { data: facturacionRow, error: facturacionErr } = await sb.from('facturacion_config').select('*').eq('user_id', user.id).maybeSingle();
+    const { data: facturacionRow, error: facturacionErr } = await sb.from('facturacion_config').select(FACTURACION_CONFIG_COLS).eq('user_id', user.id).maybeSingle();
     facturacionConfig = facturacionErr ? null : facturacionRow;
     if(facturacionErr) console.error(facturacionErr);
 
