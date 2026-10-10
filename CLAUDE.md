@@ -48,6 +48,7 @@ violeta  #6E63A6  → Ajustes
 coral    #A66358  → Noticias
 oliva    #5C7A42  → Facturación
 ciruela  #9A5C86  → Tiki (asistente)
+índigo   #5862B8  → Equipos (celulares/electrónica)
 ```
 
 `oliva` se agregó en su momento para un ícono de nav sin que existiera en
@@ -62,6 +63,13 @@ violeta (Ajustes) y de coral (Noticias). En css/app.css vive como `--tiki`
 (más claro en oscuro, #B97AA5; más oscuro en claro, #8A4F78) y
 `--tiki-dark`/`--tiki-bg`, con el mismo patrón que `--factura`. No es un
 preset de acento: no se ofrece en Apariencia.
+
+`índigo` es el 9°, agregado para la sección Equipos (módulo celulares de la
+Fase 1 modular por rubro). Azul-violáceo frío, a propósito separado del acero
+de Caja (`--caja`, más gris) y del violeta de Ajustes (más púrpura). En
+css/app.css vive como `--equipos` (más claro en oscuro #6E79C9; más oscuro en
+claro #4E57A8) y `--equipos-dark`/`--equipos-bg`, mismo patrón que `--tiki`.
+Tampoco es un preset de acento.
 
 ## Paleta clara
 

@@ -2252,10 +2252,22 @@ async function tikiResponder(texto){
 // Si el módulo está apagado, Tiki explica cómo activarlo en vez de inventar.
 const TIKI_MOD_RE = {
   caja:        /\b(cierre de caja|arqueo|cuadr\w* la caja|cerrar la caja|cerre de caja)\b/,
+  equipos:     /\b(imei|numero de serie|equipo\w*|garantia\w*|en reparacion)\b/,
   catalogo:    /\b(stock|catalog\w*|reposicion|reponer|inventario|lista (de|para) compra\w*)\b/,
   noticias:    /\b(dolar|blue|inflacion|riesgo pais|plazo fijo|feriado\w*)\b/,
   facturacion: /\b(factura\w*|facturacion|cae|afip|arca|comprobante\w*)\b/,
 };
+// Resumen de inventario de equipos por estado (módulo celulares). No inventa:
+// si no hay equipos cargados, lo dice.
+function tikiEquiposResumen(){
+  if(typeof equipos === 'undefined' || !Array.isArray(equipos) || equipos.length === 0){
+    return { html: '<p>Todavía no cargaste equipos en el inventario. Agregalos desde la sección <b>Equipos</b> y te los puedo resumir.</p>' };
+  }
+  const c = { disponible: 0, reservado: 0, vendido: 0, reparacion: 0 };
+  equipos.forEach(e => { const k = e.estado || 'disponible'; c[k] = (c[k] || 0) + 1; });
+  const plural = (n, s, p) => `${n} ${n === 1 ? s : p}`;
+  return { html: `<p>En tu inventario tenés <b>${plural(c.disponible, 'equipo disponible', 'equipos disponibles')}</b>, ${c.reservado} reservado${c.reservado === 1 ? '' : 's'}, ${c.reparacion} en reparación y ${c.vendido} vendido${c.vendido === 1 ? '' : 's'}.</p>` };
+}
 function tikiModuloDeConsulta(t){
   for(const key of Object.keys(TIKI_MOD_RE)){ if(TIKI_MOD_RE[key].test(t)) return key; }
   return null;
@@ -2285,6 +2297,9 @@ async function tikiRutear(raw, t){
   // explicar cómo activarlo en vez de responder como si estuviera (o inventar).
   const modConsulta = tikiModuloDeConsulta(t);
   if(modConsulta && typeof moduloActivo === 'function' && !moduloActivo(modConsulta)) return tikiModuloApagado(modConsulta);
+  // Si el módulo Equipos está activo y preguntan por el inventario de equipos,
+  // Tiki lo resume por estado (acá ya sabemos que no está apagado).
+  if(modConsulta === 'equipos' && /\b(cuant\w*|stock|disponible\w*|resumen|tengo|hay|inventario)\b/.test(t)) return tikiEquiposResumen();
 
   if(tikiPendiente){
     const pend = tikiPendiente;

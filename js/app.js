@@ -26,6 +26,8 @@ let editingProductId = null;
 let selectedProductId = null;
 let proveedores = [];
 let pedidosProveedor = [];
+let equipos = [];            // módulo Equipos (celulares): inventario por unidad
+let editingEquipoId = null;
 let editingProveedorId = null;
 let openProveedorId = null;
 let catalogoTab = 'productos';
@@ -53,13 +55,14 @@ let selectedCategoria = null;
 // usuario los prende/apaga después desde Ajustes. Es personalización de UX:
 // el aislamiento entre cuentas lo sigue garantizando RLS.
 // ============================================
-const MODULOS_OPCIONALES = ['caja', 'catalogo', 'noticias', 'facturacion'];
+const MODULOS_OPCIONALES = ['caja', 'catalogo', 'equipos', 'noticias', 'facturacion'];
 // Metadata de cada módulo opcional: etiqueta y una línea de para qué sirve
 // (se usa en Ajustes y en el onboarding). navBtn/view son los ids del nav y la
 // vista que se muestran/ocultan.
 const MODULOS = {
   caja:        { label: 'Cierre de caja',      desc: 'Arqueo diario: contás la caja y comparás con lo que registraste.', navBtn: 'navBtnCaja',        view: 'caja' },
   catalogo:    { label: 'Catálogo y stock',    desc: 'Cargá productos, precios y stock, con alertas de reposición.',     navBtn: 'navBtnCatalogo',    view: 'catalogo' },
+  equipos:     { label: 'Equipos (por unidad)',desc: 'Inventario unidad por unidad: IMEI, estado, garantía y margen de cada equipo.', navBtn: 'navBtnEquipos', view: 'equipos' },
   noticias:    { label: 'Indicadores',         desc: 'Dólar, inflación y feriados, para ponerle contexto a tus precios.', navBtn: 'navBtnNoticias',    view: 'noticias' },
   facturacion: { label: 'Facturación',         desc: 'Emití comprobantes electrónicos AFIP/ARCA desde la venta.',        navBtn: 'navBtnFacturacion', view: 'facturacion' },
 };
@@ -68,7 +71,7 @@ const MODULOS = {
 const RUBROS = {
   kiosco:      { label: 'Kiosco o almacén',            modulos: ['caja', 'catalogo', 'noticias'] },
   minorista:   { label: 'Comercio minorista',          modulos: ['caja', 'catalogo'] },
-  celulares:   { label: 'Celulares y electrónica',     modulos: ['catalogo'] },
+  celulares:   { label: 'Celulares y electrónica',     modulos: ['equipos', 'catalogo'] },
   ropa:        { label: 'Ropa y calzado',              modulos: ['caja', 'catalogo'] },
   ecommerce:   { label: 'Ecommerce / marketplaces',    modulos: ['catalogo'] },
   gastronomia: { label: 'Gastronomía',                 modulos: ['caja', 'catalogo'] },
@@ -605,6 +608,7 @@ function switchView(view){
   document.getElementById('viewTiki').style.display = view==='tiki' ? 'block' : 'none';
   document.getElementById('viewHistorial').style.display = view==='historial' ? 'block' : 'none';
   document.getElementById('viewCatalogo').style.display = view==='catalogo' ? 'block' : 'none';
+  document.getElementById('viewEquipos').style.display = view==='equipos' ? 'block' : 'none';
   document.getElementById('viewCaja').style.display = view==='caja' ? 'block' : 'none';
   document.getElementById('viewNoticias').style.display = view==='noticias' ? 'block' : 'none';
   document.getElementById('viewFacturacion').style.display = view==='facturacion' ? 'block' : 'none';
@@ -615,12 +619,14 @@ function switchView(view){
   document.getElementById('navBtnTiki').classList.toggle('active', view==='tiki');
   document.getElementById('navBtnHistorial').classList.toggle('active', view==='historial');
   document.getElementById('navBtnCatalogo').classList.toggle('active', view==='catalogo');
+  document.getElementById('navBtnEquipos').classList.toggle('active', view==='equipos');
   document.getElementById('navBtnCaja').classList.toggle('active', view==='caja');
   document.getElementById('navBtnNoticias').classList.toggle('active', view==='noticias');
   document.getElementById('navBtnFacturacion').classList.toggle('active', view==='facturacion');
   document.getElementById('navBtnCuenta').classList.toggle('active', view==='cuenta');
   document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
   if(view==='catalogo'){ renderCatalog(); if(catalogoTab === 'proveedores') renderProveedores(); }
+  if(view==='equipos') openEquiposView();
   if(view==='caja') openCajaView();
   if(view==='tiki') openTikiView();
   if(view==='noticias'){ fetchDolar(); fetchInflacion(); fetchFeriados(); }
@@ -629,7 +635,7 @@ function switchView(view){
   if(view==='ajustes') loadAjustesView();
   window.scrollTo({top:0, behavior:'instant'});
 
-  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', tiki:'viewTiki', historial:'viewHistorial', catalogo:'viewCatalogo', caja:'viewCaja', noticias:'viewNoticias', facturacion:'viewFacturacion', cuenta:'viewCuenta', ajustes:'viewAjustes'};
+  const viewIds = {cargar:'viewCargar', inicio:'viewInicio', tiki:'viewTiki', historial:'viewHistorial', catalogo:'viewCatalogo', equipos:'viewEquipos', caja:'viewCaja', noticias:'viewNoticias', facturacion:'viewFacturacion', cuenta:'viewCuenta', ajustes:'viewAjustes'};
   const activeEl = document.getElementById(viewIds[view]);
   if(activeEl){
     activeEl.classList.remove('view-fade-in');
@@ -1542,6 +1548,7 @@ function clearUserState(){
   products = [];
   proveedores = [];
   pedidosProveedor = [];
+  equipos = [];
   cierresCaja = [];
   facturacionConfig = null;
   facturas = [];
@@ -1623,6 +1630,16 @@ async function loadData(){
     const { data: provRows, error: provErr } = await fetchAllRows(opts => sb.from('proveedores').select('*', opts).eq('user_id', user.id).order('nombre', {ascending:true}).order('id', {ascending:true}));
     proveedores = provErr ? [] : (provRows || []);
     if(provErr) console.error(provErr);
+
+    // Equipos (celulares): solo si el módulo está activo. Tolerante a que la
+    // migración 018 todavía no esté aplicada (si la tabla no existe, queda []).
+    if(moduloActivo('equipos')){
+      try{
+        const { data: eqRows, error: eqErr } = await fetchAllRows(opts => sb.from('equipos').select('*', opts).eq('user_id', user.id).order('created_at', {ascending:false}).order('id', {ascending:false}));
+        equipos = eqErr ? [] : (eqRows || []);
+        if(eqErr && !looksLikeNetworkError(eqErr)) console.error(eqErr);
+      }catch(e){ equipos = []; console.error(e); }
+    }else{ equipos = []; }
 
     const { data: pedidoRows, error: pedidoErr } = await fetchAllRows(opts => sb.from('pedidos_proveedor').select('*', opts).eq('user_id', user.id).order('fecha', {ascending:false}).order('id', {ascending:false}));
     pedidosProveedor = pedidoErr ? [] : (pedidoRows || []);

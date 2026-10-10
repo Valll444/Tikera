@@ -669,6 +669,83 @@
   </div>
   </div>
 
+  <div id="viewEquipos" style="display:none;">
+  <div class="card">
+    <div class="title-row" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span>
+        <h2 style="margin:0;">Equipos</h2>
+      </div>
+      <button type="button" id="newEquipoBtn" class="export-btn">+ Nuevo equipo</button>
+    </div>
+
+    <div class="eq-filtros" id="eqFiltros" style="margin-top:14px;"></div>
+
+    <div id="equipoForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
+      <label for="eqMarca" style="margin-top:0;">Marca</label>
+      <input type="text" id="eqMarca" placeholder="Ej: Apple, Samsung, Motorola" autocomplete="off">
+      <div class="row2">
+        <div>
+          <label for="eqModelo">Modelo</label>
+          <input type="text" id="eqModelo" placeholder="iPhone 13" autocomplete="off">
+        </div>
+        <div>
+          <label for="eqCapacidad">Capacidad <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+          <input type="text" id="eqCapacidad" placeholder="128 GB" autocomplete="off">
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="eqColor">Color <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+          <input type="text" id="eqColor" placeholder="Negro" autocomplete="off">
+        </div>
+        <div>
+          <label for="eqImei">IMEI o serie <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+          <input type="text" id="eqImei" placeholder="356..." inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+      <label for="eqEstado">Estado</label>
+      <select id="eqEstado" class="eq-select">
+        <option value="disponible">Disponible</option>
+        <option value="reservado">Reservado</option>
+        <option value="vendido">Vendido</option>
+        <option value="reparacion">En reparación</option>
+      </select>
+      <div class="row2">
+        <div>
+          <label for="eqCosto">Costo de compra <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+          <input type="text" id="eqCosto" placeholder="0.00" inputmode="decimal" autocomplete="off">
+        </div>
+        <div>
+          <label for="eqPrecio">Precio de venta <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+          <input type="text" id="eqPrecio" placeholder="0.00" inputmode="decimal" autocomplete="off">
+        </div>
+      </div>
+
+      <button type="button" id="eqMasBtn" class="field-toggle-btn">+ Más datos (garantía, accesorios, cliente)</button>
+      <div id="eqMasWrap" style="display:none;">
+        <label for="eqGarantia">Garantía hasta <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+        <input type="date" id="eqGarantia">
+        <label for="eqAccesorios">Accesorios <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+        <input type="text" id="eqAccesorios" placeholder="caja, cargador, funda" autocomplete="off">
+        <label for="eqCliente">Cliente <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+        <input type="text" id="eqCliente" placeholder="a quién se reservó / vendió" autocomplete="off">
+        <label for="eqNotas">Notas <span style="font-weight:400;color:var(--ink-soft);">(opcional)</span></label>
+        <input type="text" id="eqNotas" autocomplete="off">
+      </div>
+
+      <div class="error-msg" id="eqErrorMsg" role="alert" aria-live="polite"></div>
+      <button class="submit-btn" id="eqSubmitBtn" type="button">Guardar equipo</button>
+      <button type="button" id="eqCancelBtn" style="display:block;width:100%;margin-top:8px;padding:9px 0;border:1.5px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
+    </div>
+
+    <div id="equiposEmpty" style="display:none;padding:34px 0;text-align:center;color:var(--ink-soft);font-size:13.5px;">
+      Todavía no cargaste equipos. Agregá tu primer celular para seguir su estado, su margen y su garantía, unidad por unidad.
+    </div>
+    <div class="ticket-list" id="equiposList" style="margin-top:10px;"></div>
+  </div>
+  </div>
+
   <div id="viewCuenta" style="display:none;">
   <div class="card">
     <div class="settings-intro">
@@ -876,6 +953,10 @@
     <b class="nav-badge" id="catalogoNavBadge" hidden></b>
     <span>Catálogo</span>
   </button>
+  <button type="button" class="bottom-nav-btn" id="navBtnEquipos" onclick="switchView('equipos')" aria-label="Equipos" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+    <span>Equipos</span>
+  </button>
   <button type="button" class="bottom-nav-btn" id="navBtnCaja" onclick="switchView('caja')" aria-label="Cierre de caja">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
     <span>Caja</span>
@@ -1055,6 +1136,7 @@
 <script src="js/indicadores.js"></script>
 <script src="js/ajuste-precios.js"></script>
 <script src="js/stock.js"></script>
+<script src="js/equipos.js"></script>
 <script src="js/tiki.js"></script>
 </body>
 </html>

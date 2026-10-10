@@ -18,7 +18,7 @@ describe('Módulos: activación y config', () => {
       comercioConfig = { rubros:[], modulos:{}, onboardingAt:null };
       return JSON.stringify(MODULOS_OPCIONALES.map(k => moduloActivo(k)));
     })()`));
-    assert.deepEqual(r, [true, true, true, true], 'sin configurar, no se le saca ningún módulo a nadie');
+    assert.ok(r.length >= 4 && r.every(v => v === true), 'sin configurar, no se le saca ningún módulo a nadie');
   });
 
   test('config explícita respeta los flags elegidos', () => {

@@ -45,6 +45,12 @@
     --tiki:#B97AA5;
     --tiki-dark:#9A5C86;
     --tiki-bg:rgba(185,122,165,0.16);
+    /* Indigo para la seccion Equipos (celulares/electronica), agregado para el
+       modulo de inventario por unidad. Noveno color de nav: azul-violaceo frio,
+       distinto del acero de Caja (--caja) y del violeta de Ajustes. */
+    --equipos:#6E79C9;
+    --equipos-dark:#5862B8;
+    --equipos-bg:rgba(110,121,201,0.16);
     /* Identidad fija del nav (logo, Inicio, Cuenta): a proposito NO usa
        --accent, para que elegir un color de acento en Apariencia no deje
        algunos iconos del dock cambiados y otros no -- o cambian todos o
@@ -97,6 +103,9 @@
     --tiki:#8A4F78;
     --tiki-dark:#6E3D5F;
     --tiki-bg:rgba(138,79,120,0.10);
+    --equipos:#4E57A8;
+    --equipos-dark:#3B4285;
+    --equipos-bg:rgba(78,87,168,0.10);
     --nav-brand:#3E5670;
     --nav-brand-dark:#2C4256;
     --nav-brand-bg:rgba(62,86,112,0.10);
@@ -464,6 +473,8 @@
   #navBtnHistorial.active{background:var(--gold-bg);}
   #navBtnCatalogo{color:var(--teal);}
   #navBtnCatalogo.active{background:var(--teal-bg);}
+  #navBtnEquipos{color:var(--equipos);}
+  #navBtnEquipos.active{background:var(--equipos-bg);}
   #navBtnCaja{color:var(--caja);}
   #navBtnCaja.active{background:var(--caja-bg);}
   #navBtnNoticias{color:var(--noticias);}
@@ -522,6 +533,7 @@
     #navBtnCargar.active{background:var(--venta);color:#fff;}
     #navBtnHistorial.active{background:var(--gold);color:#fff;}
     #navBtnCatalogo.active{background:var(--teal);color:#fff;}
+    #navBtnEquipos.active{background:var(--equipos);color:#fff;}
     #navBtnCaja.active{background:var(--caja);color:#fff;}
     #navBtnNoticias.active{background:var(--noticias);color:#fff;}
     #navBtnFacturacion.active{background:var(--factura);color:#fff;}
@@ -740,6 +752,24 @@
   .rl-hint{font-size:12px;color:var(--ink-soft);margin:11px 2px 0;text-align:center;}
   .rl-close-link{display:block;width:100%;margin-top:10px;padding:8px 0;border:none;background:transparent;color:var(--ink-soft);font-size:13px;cursor:pointer;}
   .rl-close-link:hover{color:var(--ink);}
+
+  /* Módulo Equipos (celulares): filtros por estado, badge de estado y la fila
+     de cada equipo con su selector rápido de estado. */
+  .eq-filtros{display:flex;flex-wrap:wrap;gap:7px;}
+  .eq-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+    border:1.5px solid var(--line-strong);background:transparent;color:var(--ink-soft);
+    font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s ease;}
+  .eq-chip:hover{border-color:var(--equipos);color:var(--ink);}
+  .eq-chip.active{background:var(--equipos-bg);border-color:var(--equipos);color:var(--equipos-dark);}
+  .eq-chip-n{font-family:'IBM Plex Mono';font-size:11px;opacity:.8;}
+  .eq-badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:8px;vertical-align:middle;white-space:nowrap;}
+  .eq-item .ti-desc{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+  .eq-right{display:flex;align-items:center;gap:6px;}
+  .eq-estado-quick{font-size:11.5px;padding:4px 6px;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);border-radius:7px;max-width:120px;}
+  .eq-estado-quick:focus{outline:none;border-color:var(--equipos);}
+  @media(max-width:480px){ .eq-estado-quick{max-width:104px;font-size:11px;padding:4px 4px;} .eq-right{gap:4px;} }
+  .eq-select{width:100%;padding:10px 12px;background:var(--paper);border:1.5px solid var(--line);border-radius:8px;color:var(--ink);font-size:14px;}
+  .eq-select:focus{outline:none;border-color:var(--equipos);}
 
   /* Onboarding: elegir rubro y módulos la primera vez (o re-configurar desde
      Ajustes). Overlay propio, no reusa .ticket-modal porque es más grande y con
