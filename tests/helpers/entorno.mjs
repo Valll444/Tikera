@@ -232,7 +232,7 @@ export function crearEntorno({ hoy = '2026-10-04', hora = '18:30' } = {}){
       static now(){ return BASE + globalThis.__reloj.desfaseMs; }
     };
   })()`, ctx);
-  for(const f of ['js/app.js', 'js/indicadores.js', 'js/ajuste-precios.js', 'js/stock.js', 'js/equipos.js', 'js/tiki.js']){
+  for(const f of ['js/app.js', 'js/indicadores.js', 'js/ajuste-precios.js', 'js/stock.js', 'js/equipos.js', 'js/variantes.js', 'js/tiki.js']){
     vm.runInContext(fs.readFileSync(path.join(RAIZ, f), 'utf8'), ctx, { filename: f });
   }
 

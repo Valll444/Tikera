@@ -28,6 +28,7 @@ let proveedores = [];
 let pedidosProveedor = [];
 let equipos = [];            // módulo Equipos (celulares): inventario por unidad
 let editingEquipoId = null;
+let productoVariantes = [];  // módulo Variantes (ropa): talle/color/stock por producto
 let editingProveedorId = null;
 let openProveedorId = null;
 let catalogoTab = 'productos';
@@ -55,13 +56,14 @@ let selectedCategoria = null;
 // usuario los prende/apaga después desde Ajustes. Es personalización de UX:
 // el aislamiento entre cuentas lo sigue garantizando RLS.
 // ============================================
-const MODULOS_OPCIONALES = ['caja', 'catalogo', 'equipos', 'noticias', 'facturacion'];
+const MODULOS_OPCIONALES = ['caja', 'catalogo', 'variantes', 'equipos', 'noticias', 'facturacion'];
 // Metadata de cada módulo opcional: etiqueta y una línea de para qué sirve
 // (se usa en Ajustes y en el onboarding). navBtn/view son los ids del nav y la
 // vista que se muestran/ocultan.
 const MODULOS = {
   caja:        { label: 'Cierre de caja',      desc: 'Arqueo diario: contás la caja y comparás con lo que registraste.', navBtn: 'navBtnCaja',        view: 'caja' },
   catalogo:    { label: 'Catálogo y stock',    desc: 'Cargá productos, precios y stock, con alertas de reposición.',     navBtn: 'navBtnCatalogo',    view: 'catalogo' },
+  variantes:   { label: 'Variantes de talle/color', desc: 'Para ropa y calzado: cada producto puede tener talles y colores con su propio stock.', subDe: 'catalogo' },
   equipos:     { label: 'Equipos (por unidad)',desc: 'Inventario unidad por unidad: IMEI, estado, garantía y margen de cada equipo.', navBtn: 'navBtnEquipos', view: 'equipos' },
   noticias:    { label: 'Indicadores',         desc: 'Dólar, inflación y feriados, para ponerle contexto a tus precios.', navBtn: 'navBtnNoticias',    view: 'noticias' },
   facturacion: { label: 'Facturación',         desc: 'Emití comprobantes electrónicos AFIP/ARCA desde la venta.',        navBtn: 'navBtnFacturacion', view: 'facturacion' },
@@ -72,7 +74,7 @@ const RUBROS = {
   kiosco:      { label: 'Kiosco o almacén',            modulos: ['caja', 'catalogo', 'noticias'] },
   minorista:   { label: 'Comercio minorista',          modulos: ['caja', 'catalogo'] },
   celulares:   { label: 'Celulares y electrónica',     modulos: ['equipos', 'catalogo'] },
-  ropa:        { label: 'Ropa y calzado',              modulos: ['caja', 'catalogo'] },
+  ropa:        { label: 'Ropa y calzado',              modulos: ['catalogo', 'variantes'] },
   ecommerce:   { label: 'Ecommerce / marketplaces',    modulos: ['catalogo'] },
   gastronomia: { label: 'Gastronomía',                 modulos: ['caja', 'catalogo'] },
   servicios:   { label: 'Negocio de servicios',        modulos: ['caja'] },
@@ -593,6 +595,7 @@ function traducirErrorAuth(msg){
 // del comercio. Los core no se tocan (siempre visibles).
 function aplicarModulosAlNav(){
   MODULOS_OPCIONALES.forEach(key => {
+    if(!MODULOS[key].navBtn) return; // módulos sin sección propia (ej. variantes, sub-feature del catálogo)
     const btn = document.getElementById(MODULOS[key].navBtn);
     if(btn) btn.style.display = moduloActivo(key) ? '' : 'none';
   });
@@ -1549,6 +1552,7 @@ function clearUserState(){
   proveedores = [];
   pedidosProveedor = [];
   equipos = [];
+  productoVariantes = [];
   cierresCaja = [];
   facturacionConfig = null;
   facturas = [];
@@ -1640,6 +1644,16 @@ async function loadData(){
         if(eqErr && !looksLikeNetworkError(eqErr)) console.error(eqErr);
       }catch(e){ equipos = []; console.error(e); }
     }else{ equipos = []; }
+
+    // Variantes de producto (ropa): solo si el módulo está activo. Tolerante a
+    // que la migración 019 todavía no esté aplicada.
+    if(moduloActivo('variantes')){
+      try{
+        const { data: varRows, error: varErr } = await fetchAllRows(opts => sb.from('producto_variantes').select('*', opts).eq('user_id', user.id).order('id', {ascending:true}));
+        productoVariantes = varErr ? [] : (varRows || []);
+        if(varErr && !looksLikeNetworkError(varErr)) console.error(varErr);
+      }catch(e){ productoVariantes = []; console.error(e); }
+    }else{ productoVariantes = []; }
 
     const { data: pedidoRows, error: pedidoErr } = await fetchAllRows(opts => sb.from('pedidos_proveedor').select('*', opts).eq('user_id', user.id).order('fecha', {ascending:false}).order('id', {ascending:false}));
     pedidosProveedor = pedidoErr ? [] : (pedidoRows || []);
@@ -1777,16 +1791,27 @@ function renderCatalog(){
 
   list.innerHTML = catNames.map(cat => {
     const items = groups[cat].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+    const conVariantes = moduloActivo('variantes');
     const rows = items.map(p => {
       const stock = Number(p.stock_actual) || 0;
       const low = p.stock_minimo !== null && p.stock_minimo !== undefined && p.stock_minimo !== '' && stock <= Number(p.stock_minimo);
+      // Con el módulo de variantes: si el producto tiene variantes, el stock que
+      // vale es el de las variantes (suma), y se ofrece gestionarlas.
+      const vars = conVariantes ? variantesDeProducto(p.id) : [];
+      const stockTxt = (conVariantes && vars.length)
+        ? `Stock (variantes): ${stockVariantes(p.id)} · ${vars.length} ${vars.length === 1 ? 'variante' : 'variantes'}`
+        : `Stock: <span class="${low ? 'stock-low' : ''}">${stock}${low ? ' — repone ya' : ''}</span>`;
+      const btnVariantes = conVariantes
+        ? `<button class="ti-del eq-varbtn" aria-label="Variantes" title="Talles y colores" onclick="openVariantes('${p.id}')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>`
+        : '';
       return `
         <div class="ticket-item">
           <div class="ti-left">
             <div class="ti-desc">${escapeHtml(p.nombre)}</div>
-            <div class="ti-meta">${p.precio_venta ? fmtMoney(p.precio_venta) : 'sin precio'} · Stock: <span class="${low ? 'stock-low' : ''}">${stock}${low ? ' — repone ya' : ''}</span></div>
+            <div class="ti-meta">${p.precio_venta ? fmtMoney(p.precio_venta) : 'sin precio'} · ${stockTxt}</div>
           </div>
           <div class="ti-right">
+            ${btnVariantes}
             <button class="ti-del" aria-label="Editar" onclick="editProduct('${p.id}')">&#9998;</button>
             <button class="ti-del" aria-label="Eliminar" onclick="deleteProduct('${p.id}')">&times;</button>
           </div>

@@ -2253,6 +2253,7 @@ async function tikiResponder(texto){
 const TIKI_MOD_RE = {
   caja:        /\b(cierre de caja|arqueo|cuadr\w* la caja|cerrar la caja|cerre de caja)\b/,
   equipos:     /\b(imei|numero de serie|equipo\w*|garantia\w*|en reparacion)\b/,
+  variantes:   /\b(talle\w*|variante\w*)\b/,
   catalogo:    /\b(stock|catalog\w*|reposicion|reponer|inventario|lista (de|para) compra\w*)\b/,
   noticias:    /\b(dolar|blue|inflacion|riesgo pais|plazo fijo|feriado\w*)\b/,
   facturacion: /\b(factura\w*|facturacion|cae|afip|arca|comprobante\w*)\b/,

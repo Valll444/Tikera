@@ -768,6 +768,28 @@
   .eq-estado-quick{font-size:11.5px;padding:4px 6px;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);border-radius:7px;max-width:120px;}
   .eq-estado-quick:focus{outline:none;border-color:var(--equipos);}
   @media(max-width:480px){ .eq-estado-quick{max-width:104px;font-size:11px;padding:4px 4px;} .eq-right{gap:4px;} }
+  .eq-varbtn{color:var(--teal) !important;}
+
+  /* Módulo Variantes (ropa): modal de talles/colores con stock por variante. */
+  .var-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .var-ic{flex-shrink:0;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--teal-bg);color:var(--teal-dark);}
+  .var-ic svg{width:20px;height:20px;}
+  .var-title{margin:0;font-size:17px;font-weight:700;color:var(--ink);}
+  .var-sub{margin:2px 0 0;font-size:13px;color:var(--ink-soft);}
+  .var-list{max-height:240px;overflow-y:auto;}
+  .var-empty{color:var(--ink-soft);font-size:13px;padding:10px 2px;text-align:center;}
+  .var-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-faint);}
+  .var-row .var-name{flex:1;min-width:0;font-size:13.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .var-row .var-stock-input{flex:0 0 66px;width:66px;text-align:center;font-size:13px;padding:6px 8px;background:var(--paper);border:1.5px solid var(--line-strong);border-radius:8px;color:var(--ink);}
+  .var-row .var-stock-input:focus{outline:none;border-color:var(--teal);}
+  .var-del{color:var(--ink-soft);}
+  .var-total{text-align:right;font-size:13px;color:var(--ink-soft);margin-top:10px;}
+  .var-add{display:flex;gap:7px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap;}
+  .var-add input{flex:1;min-width:70px;font-size:13px;padding:8px 10px;background:var(--paper);border:1.5px solid var(--line-strong);border-radius:8px;color:var(--ink);}
+  .var-add input:focus{outline:none;border-color:var(--teal);}
+  .var-add #varStock{flex:0 0 66px;min-width:0;text-align:center;}
+  .var-add-btn{flex:0 0 auto;background:var(--teal);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+  .var-add-btn:hover{filter:brightness(1.08);}
   .eq-select{width:100%;padding:10px 12px;background:var(--paper);border:1.5px solid var(--line);border-radius:8px;color:var(--ink);font-size:14px;}
   .eq-select:focus{outline:none;border-color:var(--equipos);}
 

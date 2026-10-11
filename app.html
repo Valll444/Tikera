@@ -1095,6 +1095,28 @@
   </div>
 </div>
 
+<div id="variantesModal" class="ticket-modal-overlay" style="display:none;" role="dialog" aria-label="Variantes de talle y color">
+  <div class="ticket-modal" style="max-width:440px;">
+    <div class="var-head">
+      <span class="var-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span>
+      <div>
+        <h3 class="var-title" id="varTitulo">Variantes</h3>
+        <p class="var-sub" id="varSub">—</p>
+      </div>
+    </div>
+    <div class="var-list" id="varList"></div>
+    <div class="var-add">
+      <input type="text" id="varTalle" placeholder="Talle (S, M, 42…)" autocomplete="off">
+      <input type="text" id="varColor" placeholder="Color" autocomplete="off">
+      <input type="text" id="varStock" placeholder="Stock" inputmode="numeric" autocomplete="off">
+      <button type="button" id="varAddBtn" class="var-add-btn">Agregar</button>
+    </div>
+    <div class="ticket-modal-actions">
+      <button type="button" id="varClose" class="settings-btn primary">Listo</button>
+    </div>
+  </div>
+</div>
+
 <div id="onboardingOverlay" class="onb-overlay" style="display:none;" role="dialog" aria-label="Configurá tu comercio">
   <div class="onb-card">
     <div class="onb-head">
@@ -1137,6 +1159,7 @@
 <script src="js/ajuste-precios.js"></script>
 <script src="js/stock.js"></script>
 <script src="js/equipos.js"></script>
+<script src="js/variantes.js"></script>
 <script src="js/tiki.js"></script>
 </body>
 </html>
