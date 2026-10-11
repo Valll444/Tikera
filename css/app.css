@@ -455,6 +455,11 @@
     border-radius:999px;box-shadow:0 0 0 2px var(--card);pointer-events:none;
   }
   .nav-badge[hidden]{display:none;}
+  /* Puntito de notificación: avisa que hay algo nuevo en una sección (ej.
+     equipos reservados/en reparación). Se limpia al entrar a la sección. */
+  .nav-dot{position:absolute;top:3px;right:12px;width:9px;height:9px;border-radius:50%;
+    background:var(--gasto);box-shadow:0 0 0 2px var(--card);pointer-events:none;}
+  .nav-dot[hidden]{display:none;}
   /* Sin esto, el navegador dibuja su contorno de foco por default al
      tocar/clickear un boton del nav -- sobre fondo oscuro se ve como una
      barrita blanca suelta. outline:none solo, sin reemplazo, tampoco sirve

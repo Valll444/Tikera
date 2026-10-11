@@ -56,6 +56,8 @@ function renderEquiposFiltros(){
   EQ_ESTADO_ORDEN.forEach(est => conteo[est] = equipos.filter(e => (e.estado || 'disponible') === est).length);
   const chip = (key, label) => `<button type="button" class="eq-chip${eqFiltroEstado === key ? ' active' : ''}" data-estado="${key}">${label} <span class="eq-chip-n">${conteo[key] || 0}</span></button>`;
   wrap.innerHTML = chip('todos', 'Todos') + EQ_ESTADO_ORDEN.map(est => chip(est, EQ_ESTADOS[est].label)).join('');
+  // Estar viendo los equipos = ya los viste: limpia/actualiza la notificación.
+  if(typeof marcarNotifVisto === 'function') marcarNotifVisto('equipos');
 }
 
 function renderEquipos(){
@@ -158,13 +160,18 @@ async function saveEquipo(){
   const btn = document.getElementById('eqSubmitBtn');
   btn.disabled = true;
   try{
+    let eqGuardado = null, registrarVenta = false;
     if(editingEquipoId){
       fields.updated_at = new Date().toISOString();
-      if(fields.estado === 'vendido'){ const e = equipos.find(x => String(x.id) === String(editingEquipoId)); if(e && e.estado !== 'vendido') fields.vendido_at = new Date().toISOString(); }
+      const eAnt = equipos.find(x => String(x.id) === String(editingEquipoId));
+      const eraVendido = !!(eAnt && eAnt.vendido_at);
+      if(fields.estado === 'vendido' && !(eAnt && eAnt.estado === 'vendido')) fields.vendido_at = new Date().toISOString();
       const { data, error } = await sb.from('equipos').update(fields).eq('id', editingEquipoId).eq('user_id', currentUserId).select().single();
       if(error){ console.error(error); msg.textContent = 'No se pudo guardar.'; btn.disabled = false; return; }
       const idx = equipos.findIndex(x => String(x.id) === String(editingEquipoId));
       if(idx !== -1 && data) equipos[idx] = data;
+      eqGuardado = data;
+      registrarVenta = (fields.estado === 'vendido' && !eraVendido);
       showToast('Equipo actualizado');
     }else{
       const row = { user_id: currentUserId, ...fields };
@@ -172,7 +179,14 @@ async function saveEquipo(){
       const { data, error } = await sb.from('equipos').insert(row).select().single();
       if(error){ console.error(error); msg.textContent = 'No se pudo guardar.'; btn.disabled = false; return; }
       if(data) equipos.unshift(data);
+      eqGuardado = data;
+      registrarVenta = (fields.estado === 'vendido');
       showToast('Equipo agregado');
+    }
+    // Si quedó vendido (primera vez), registrar la venta real.
+    if(registrarVenta && eqGuardado){
+      const reg = await registrarVentaEquipo(eqGuardado);
+      if(reg) showToast(`Venta de ${fmtMoney(eqGuardado.precio)} registrada`);
     }
   }catch(e){ console.error(e); msg.textContent = 'No se pudo guardar — revisá tu conexión.'; btn.disabled = false; return; }
   btn.disabled = false;
@@ -197,10 +211,37 @@ async function deleteEquipo(id){
   }catch(err){ console.error(err); showToast('No se pudo borrar'); }
 }
 
+// Al marcar un equipo como vendido por primera vez, registra una venta real
+// reusando addMovement: así suma a las ventas/ganancia del día y aparece en el
+// historial. Solo si tiene precio cargado. El método queda en Efectivo
+// (editable desde Historial). Devuelve true si registró la venta.
+async function registrarVentaEquipo(e){
+  if(!e || !(Number(e.precio) > 0) || typeof addMovement !== 'function') return false;
+  const precio = Number(e.precio), costo = Number(e.costo) || 0;
+  try{
+    await addMovement({
+      fecha: todayStr(),
+      tipo: 'Venta',
+      descripcion: equipoTitulo(e),
+      cantidad: 1,
+      precioUnitario: precio,
+      costoUnitario: costo > 0 ? costo : '',
+      costoTotal: costo > 0 ? costo : '',
+      ganancia: costo > 0 ? (precio - costo) : '',
+      monto: precio,
+      metodoPago: 'Efectivo',
+      nota: 'Venta de equipo' + (e.imei ? ' · IMEI ' + e.imei : '')
+    });
+    if(typeof render === 'function') render();
+    return true;
+  }catch(err){ console.error(err); return false; }
+}
+
 async function cambiarEstadoEquipo(id, estado){
   const e = equipos.find(x => String(x.id) === String(id));
   if(!e || e.estado === estado) return;
   if(!navigator.onLine){ showToast('Sin conexión — probá cuando tengas señal'); renderEquipos(); return; }
+  const eraVendido = !!e.vendido_at;
   const payload = { estado, updated_at: new Date().toISOString() };
   if(estado === 'vendido' && !e.vendido_at) payload.vendido_at = new Date().toISOString();
   try{
@@ -210,7 +251,12 @@ async function cambiarEstadoEquipo(id, estado){
     if(idx !== -1 && data) equipos[idx] = data;
     renderEquiposFiltros();
     renderEquipos();
-    showToast(`Marcado como ${(EQ_ESTADOS[estado] || {}).label || estado}`);
+    if(estado === 'vendido' && !eraVendido){
+      const reg = await registrarVentaEquipo(data || e);
+      showToast(reg ? `Vendido · venta de ${fmtMoney((data || e).precio)} registrada` : 'Marcado como vendido');
+    }else{
+      showToast(`Marcado como ${(EQ_ESTADOS[estado] || {}).label || estado}`);
+    }
   }catch(err){ console.error(err); showToast('No se pudo cambiar el estado'); renderEquipos(); }
 }
 

@@ -72,7 +72,7 @@ function almacenamiento(){
   };
 }
 
-const TABLAS = ['profiles', 'movements', 'products', 'frequent_items', 'proveedores', 'pedidos_proveedor', 'cierres_caja', 'facturacion_config', 'facturas', 'tiki_memoria', 'agent_messages'];
+const TABLAS = ['profiles', 'movements', 'products', 'frequent_items', 'proveedores', 'pedidos_proveedor', 'cierres_caja', 'facturacion_config', 'facturas', 'tiki_memoria', 'agent_messages', 'equipos', 'producto_variantes'];
 
 function crearSupabaseFalso(){
   const db = Object.fromEntries(TABLAS.map(t => [t, []]));

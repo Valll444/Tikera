@@ -30,6 +30,32 @@ describe('Equipos: cálculo de margen y título', () => {
   });
 });
 
+describe('Vender un equipo', () => {
+  test('marcar un equipo como vendido registra una venta real (suma a entries)', async () => {
+    const e = entorno();
+    const equipo = { id: 1, user_id: A.id, marca: 'Apple', modelo: 'iPhone 13', estado: 'disponible', precio: 620000, costo: 450000, vendido_at: null };
+    e.sembrar({ equipos: [equipo] }); // fila en el fake sb (la update opera ahí)
+    e.run(`currentUserId = ${JSON.stringify(A.id)}; equipos = ${JSON.stringify([equipo])}; entries.length = 0;`);
+    await e.run(`cambiarEstadoEquipo(1, 'vendido')`);
+    const r = JSON.parse(e.run(`JSON.stringify(entries.map(x => ({ tipo:x.tipo, desc:x.descripcion, monto:Number(x.monto) })))`));
+    assert.equal(r.length, 1, 'debería registrar una venta');
+    assert.equal(r[0].tipo, 'Venta');
+    assert.match(r[0].desc, /iPhone 13/);
+    assert.equal(r[0].monto, 620000);
+    assert.equal(e.run(`equipos[0].estado`), 'vendido');
+  });
+
+  test('sin precio cargado, lo marca vendido pero no registra una venta de $0', async () => {
+    const e = entorno();
+    const equipo = { id: 2, user_id: A.id, marca: 'Moto', modelo: 'G84', estado: 'disponible', vendido_at: null };
+    e.sembrar({ equipos: [equipo] });
+    e.run(`currentUserId = ${JSON.stringify(A.id)}; equipos = ${JSON.stringify([equipo])}; entries.length = 0;`);
+    await e.run(`cambiarEstadoEquipo(2, 'vendido')`);
+    assert.equal(e.run(`entries.length`), 0, 'sin precio no se registra venta');
+    assert.equal(e.run(`equipos[0].estado`), 'vendido');
+  });
+});
+
 describe('Tiki y el módulo Equipos', () => {
   test('con Equipos activo, resume el inventario por estado (no inventa)', async () => {
     const e = entorno();
@@ -56,6 +82,29 @@ describe('Tiki y el módulo Equipos', () => {
            equipos = [];`);
     const { texto } = await e.preguntar('¿cuántos equipos tengo?');
     assert.match(texto, /Todavía no cargaste equipos/i);
+  });
+
+  test('busca por marca/modelo: "¿qué iPhones tengo?" lista solo los iPhone', async () => {
+    const e = entorno();
+    e.run(`comercioConfig = { rubros:['celulares'], modulos:{caja:false,catalogo:false,equipos:true,variantes:false,noticias:false,facturacion:false}, onboardingAt:'x' };
+           equipos = [
+             {marca:'Apple', modelo:'iPhone 13', estado:'disponible', precio:620000},
+             {marca:'Apple', modelo:'iPhone 12', estado:'vendido', precio:500000},
+             {marca:'Samsung', modelo:'Galaxy A54', estado:'disponible', precio:380000}
+           ];`);
+    const { texto } = await e.preguntar('¿qué iPhones tengo?');
+    assert.match(texto, /iPhone 13/);
+    assert.match(texto, /iPhone 12/);
+    assert.ok(!/A54/.test(texto), 'no debería listar el Samsung');
+  });
+
+  test('dice cuál es el equipo más caro', async () => {
+    const e = entorno();
+    e.run(`comercioConfig = { rubros:['celulares'], modulos:{caja:false,catalogo:false,equipos:true,variantes:false,noticias:false,facturacion:false}, onboardingAt:'x' };
+           equipos = [ {marca:'Apple', modelo:'iPhone 13', estado:'disponible', precio:620000}, {marca:'Samsung', modelo:'A54', estado:'disponible', precio:380000} ];`);
+    const { texto } = await e.preguntar('¿cuál es el equipo más caro?');
+    assert.match(texto, /más caro/i);
+    assert.match(texto, /iPhone 13/);
   });
 
   test('con Equipos apagado, explica cómo activarlo', async () => {

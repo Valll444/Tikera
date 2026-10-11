@@ -2252,7 +2252,7 @@ async function tikiResponder(texto){
 // Si el módulo está apagado, Tiki explica cómo activarlo en vez de inventar.
 const TIKI_MOD_RE = {
   caja:        /\b(cierre de caja|arqueo|cuadr\w* la caja|cerrar la caja|cerre de caja)\b/,
-  equipos:     /\b(imei|numero de serie|equipo\w*|garantia\w*|en reparacion)\b/,
+  equipos:     /\b(imei|numero de serie|equipo\w*|garantia\w*|en reparacion|iphone\w*|celular\w*|samsung|motorola|xiaomi|android)\b/,
   variantes:   /\b(talle\w*|variante\w*)\b/,
   catalogo:    /\b(stock|catalog\w*|reposicion|reponer|inventario|lista (de|para) compra\w*)\b/,
   noticias:    /\b(dolar|blue|inflacion|riesgo pais|plazo fijo|feriado\w*)\b/,
@@ -2280,6 +2280,27 @@ function tikiEquiposRentabilidad(){
   const margen = vendidos.reduce((s, e) => s + (Number(e.precio) - Number(e.costo)), 0);
   const fmt = (typeof fmtMoney === 'function') ? fmtMoney : (n) => '$' + n;
   return { html: `<p>Con los <b>${vendidos.length}</b> ${vendidos.length === 1 ? 'equipo vendido' : 'equipos vendidos'} que tienen costo y precio cargados, tu ganancia fue de <b>${fmt(margen)}</b> (precio menos costo de cada uno).</p>` };
+}
+// Formatea un equipo para una respuesta de Tiki: "Apple iPhone 13 … — Disponible · $620.000".
+function tikiEquipoFmt(e){
+  const t = (typeof equipoTitulo === 'function') ? equipoTitulo(e) : [e.marca, e.modelo].filter(Boolean).join(' ');
+  const est = (typeof EQ_ESTADOS !== 'undefined' && EQ_ESTADOS[e.estado]) ? EQ_ESTADOS[e.estado].label : (e.estado || '');
+  const precio = Number(e.precio) > 0 ? ' · ' + ((typeof fmtMoney === 'function') ? fmtMoney(e.precio) : '$' + e.precio) : '';
+  return `${escapeHtml(t)} — ${est}${precio}`;
+}
+// Lista de equipos que matchean una búsqueda (marca/modelo), ej. "qué iPhones tengo".
+function tikiEquiposBuscar(eqs){
+  if(!eqs || eqs.length === 0) return null;
+  const lista = eqs.slice(0, 8).map(e => `<li>${tikiEquipoFmt(e)}</li>`).join('');
+  return { html: `<p>Tenés <b>${eqs.length}</b> ${eqs.length === 1 ? 'equipo' : 'equipos'} que coinciden:</p><ul>${lista}</ul>${eqs.length > 8 ? '<p>(te muestro los primeros 8)</p>' : ''}` };
+}
+// El equipo más caro o más barato del inventario.
+function tikiEquipoExtremo(caro){
+  if(typeof equipos === 'undefined' || !Array.isArray(equipos)) return tikiEquiposResumen();
+  const conPrecio = equipos.filter(e => Number(e.precio) > 0);
+  if(conPrecio.length === 0) return { html: '<p>Todavía no tenés equipos con precio cargado, así que no puedo decirte cuál es el más caro o el más barato.</p>' };
+  const ext = conPrecio.reduce((a, b) => (caro ? (Number(b.precio) > Number(a.precio) ? b : a) : (Number(b.precio) < Number(a.precio) ? b : a)));
+  return { html: `<p>El equipo más ${caro ? 'caro' : 'barato'} que tenés es <b>${tikiEquipoFmt(ext)}</b>.</p>` };
 }
 function tikiModuloDeConsulta(t){
   for(const key of Object.keys(TIKI_MOD_RE)){ if(TIKI_MOD_RE[key].test(t)) return key; }
@@ -2313,8 +2334,13 @@ async function tikiRutear(raw, t){
   // Si el módulo Equipos está activo y preguntan por los equipos, Tiki responde
   // (acá ya sabemos que no está apagado): ganancia de los vendidos, o el
   // inventario por estado.
-  if(modConsulta === 'equipos' && /\b(gan\w*|margen|rentabilidad|ganancia|cuanto hice|cuanto gane)\b/.test(t)) return tikiEquiposRentabilidad();
-  if(modConsulta === 'equipos' && /\b(cuant\w*|stock|disponible\w*|resumen|tengo|hay|inventario)\b/.test(t)) return tikiEquiposResumen();
+  if(modConsulta === 'equipos'){
+    if(/\b(gan\w*|margen|rentabilidad|ganancia|cuanto hice|cuanto gane)\b/.test(t)) return tikiEquiposRentabilidad();
+    if(/\b(mas car\w*|mas barat\w*)\b/.test(t)) return tikiEquipoExtremo(/car/.test(t));
+    const eqs = (typeof equipos !== 'undefined' && Array.isArray(equipos)) ? tikiBuscar(claves, equipos, e => ((e.marca || '') + ' ' + (e.modelo || '') + ' ' + (e.color || ''))) : [];
+    if(eqs.length) return tikiEquiposBuscar(eqs);
+    if(/\b(cuant\w*|stock|disponible\w*|resumen|tengo|hay|inventario|que equipos|mis equipos)\b/.test(t)) return tikiEquiposResumen();
+  }
 
   if(tikiPendiente){
     const pend = tikiPendiente;

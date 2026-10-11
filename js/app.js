@@ -619,6 +619,38 @@ function aplicarModulosAlDashboard(){
     eqCard.style.display = eqOn ? '' : 'none';
     if(eqOn && typeof renderEquiposResumen === 'function') renderEquiposResumen();
   }
+  renderNotificaciones();
+}
+
+// --- Notificaciones de nav: un puntito en una sección cuando hay algo nuevo
+// que revisar desde la última vez que entraste. Se limpia al entrar (guarda la
+// "firma" del estado visto en localStorage, por cuenta). ---
+const NOTIF_SIGNATURE = {
+  // Equipos: avisa si hay reservados o en reparación (pendientes de seguir).
+  equipos: () => {
+    if(typeof equipos === 'undefined' || !Array.isArray(equipos)) return '';
+    const res = equipos.filter(e => e.estado === 'reservado').length;
+    const rep = equipos.filter(e => e.estado === 'reparacion').length;
+    return (res + rep) > 0 ? `r${res}x${rep}` : '';
+  },
+};
+const NOTIF_DOT = { equipos: 'equiposNavDot' };
+function notifSeenKey(section){ return `tikera_notif_${section}_${currentUserId || 'anon'}`; }
+function renderNotificaciones(){
+  Object.keys(NOTIF_SIGNATURE).forEach(section => {
+    const dot = document.getElementById(NOTIF_DOT[section]);
+    if(!dot) return;
+    const sig = NOTIF_SIGNATURE[section]();
+    let seen = ''; try{ seen = localStorage.getItem(notifSeenKey(section)) || ''; }catch(e){}
+    // Mostrar si el módulo está activo, hay pendientes, y cambió desde la última visita.
+    dot.hidden = !(moduloActivo(section) && sig !== '' && sig !== seen);
+  });
+}
+function marcarNotifVisto(section){
+  if(!NOTIF_SIGNATURE[section]) return;
+  try{ localStorage.setItem(notifSeenKey(section), NOTIF_SIGNATURE[section]()); }catch(e){}
+  const dot = document.getElementById(NOTIF_DOT[section]);
+  if(dot) dot.hidden = true;
 }
 
 function switchView(view){
@@ -649,7 +681,7 @@ function switchView(view){
   document.getElementById('navBtnCuenta').classList.toggle('active', view==='cuenta');
   document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
   if(view==='catalogo'){ renderCatalog(); if(catalogoTab === 'proveedores') renderProveedores(); }
-  if(view==='equipos') openEquiposView();
+  if(view==='equipos'){ openEquiposView(); marcarNotifVisto('equipos'); }
   if(view==='inicio' && typeof renderEquiposResumen === 'function' && moduloActivo('equipos')) renderEquiposResumen();
   if(view==='caja') openCajaView();
   if(view==='tiki') openTikiView();
