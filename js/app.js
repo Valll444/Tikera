@@ -73,7 +73,7 @@ const MODULOS = {
 const RUBROS = {
   kiosco:      { label: 'Kiosco o almacén',            modulos: ['caja', 'catalogo', 'noticias'] },
   minorista:   { label: 'Comercio minorista',          modulos: ['caja', 'catalogo'] },
-  celulares:   { label: 'Celulares y electrónica',     modulos: ['equipos', 'catalogo'] },
+  celulares:   { label: 'Celulares y electrónica',     modulos: ['equipos'] },
   ropa:        { label: 'Ropa y calzado',              modulos: ['catalogo', 'variantes'] },
   ecommerce:   { label: 'Ecommerce / marketplaces',    modulos: ['catalogo'] },
   gastronomia: { label: 'Gastronomía',                 modulos: ['caja', 'catalogo'] },
@@ -599,6 +599,26 @@ function aplicarModulosAlNav(){
     const btn = document.getElementById(MODULOS[key].navBtn);
     if(btn) btn.style.display = moduloActivo(key) ? '' : 'none';
   });
+  aplicarModulosAlDashboard();
+}
+
+// Adapta el dashboard (Inicio y pantalla de carga) al rubro: las tarjetas de
+// productos genéricos (estado del stock, reposición, productos que más facturan)
+// son de catálogo — si el comercio no usa catálogo (ej. un vendedor de celulares
+// que trabaja por unidad), no se muestran. En su lugar, si usa Equipos, aparece
+// el resumen de equipos.
+function aplicarModulosAlDashboard(){
+  const catOn = moduloActivo('catalogo');
+  ['cardEstadoStock', 'cardReposicion', 'cardTopProductos'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = catOn ? '' : 'none';
+  });
+  const eqCard = document.getElementById('cardEquiposResumen');
+  if(eqCard){
+    const eqOn = moduloActivo('equipos');
+    eqCard.style.display = eqOn ? '' : 'none';
+    if(eqOn && typeof renderEquiposResumen === 'function') renderEquiposResumen();
+  }
 }
 
 function switchView(view){
@@ -630,6 +650,7 @@ function switchView(view){
   document.getElementById('navBtnConfig').classList.toggle('active', view==='ajustes');
   if(view==='catalogo'){ renderCatalog(); if(catalogoTab === 'proveedores') renderProveedores(); }
   if(view==='equipos') openEquiposView();
+  if(view==='inicio' && typeof renderEquiposResumen === 'function' && moduloActivo('equipos')) renderEquiposResumen();
   if(view==='caja') openCajaView();
   if(view==='tiki') openTikiView();
   if(view==='noticias'){ fetchDolar(); fetchInflacion(); fetchFeriados(); }

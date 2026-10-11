@@ -38,11 +38,12 @@ describe('Recomendaciones por rubro', () => {
     assert.deepEqual(rec, ['caja', 'catalogo', 'noticias']);
   });
 
-  test('un vendedor de celulares prioriza el catálogo y NO fuerza el cierre de caja', () => {
+  test('un vendedor de celulares prioriza el inventario por unidad (equipos), no el catálogo genérico ni el cierre de caja', () => {
     const e = entorno();
     const rec = JSON.parse(e.run('JSON.stringify(modulosRecomendados(["celulares"]))'));
-    assert.ok(rec.includes('catalogo'), 'celulares necesita catálogo');
-    assert.ok(!rec.includes('caja'), 'celulares no debería traer cierre de caja por default');
+    assert.ok(rec.includes('equipos'), 'celulares necesita el módulo de equipos (inventario por unidad)');
+    assert.ok(!rec.includes('catalogo'), 'celulares no trae el catálogo genérico de kiosco por default');
+    assert.ok(!rec.includes('caja'), 'celulares no fuerza el cierre de caja');
   });
 
   test('un negocio mixto suma las necesidades de varios rubros', () => {

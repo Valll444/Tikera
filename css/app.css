@@ -769,6 +769,11 @@
   .eq-estado-quick:focus{outline:none;border-color:var(--equipos);}
   @media(max-width:480px){ .eq-estado-quick{max-width:104px;font-size:11px;padding:4px 4px;} .eq-right{gap:4px;} }
   .eq-varbtn{color:var(--teal) !important;}
+  .eq-resumen{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  @media(max-width:520px){ .eq-resumen{grid-template-columns:repeat(2,1fr);} }
+  .eq-resumen-tile{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 10px;text-align:center;}
+  .eq-resumen-n{display:block;font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;line-height:1;}
+  .eq-resumen-cap{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:5px;}
 
   /* Módulo Variantes (ropa): modal de talles/colores con stock por variante. */
   .var-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}

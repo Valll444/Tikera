@@ -41,6 +41,15 @@ describe('Tiki y el módulo Equipos', () => {
     assert.match(texto, /1 vendido/i);
   });
 
+  test('calcula la ganancia de los equipos vendidos (precio − costo)', async () => {
+    const e = entorno();
+    e.run(`comercioConfig = { rubros:['celulares'], modulos:{caja:false,catalogo:false,equipos:true,noticias:false,facturacion:false}, onboardingAt:'x' };
+           equipos = [ {estado:'vendido', precio:620000, costo:450000}, {estado:'vendido', precio:380000, costo:280000}, {estado:'disponible', precio:500000, costo:400000} ];`);
+    const { texto } = await e.preguntar('¿cuánto gané con los equipos?');
+    assert.match(texto, /\$270\.000/); // (620-450) + (380-280) = 270 mil
+    assert.match(texto, /2 equipos vendidos/i);
+  });
+
   test('sin equipos cargados, lo dice en vez de inventar', async () => {
     const e = entorno();
     e.run(`comercioConfig = { rubros:['celulares'], modulos:{caja:false,catalogo:false,equipos:true,noticias:false,facturacion:false}, onboardingAt:'x' };

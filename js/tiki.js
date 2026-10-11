@@ -2269,6 +2269,18 @@ function tikiEquiposResumen(){
   const plural = (n, s, p) => `${n} ${n === 1 ? s : p}`;
   return { html: `<p>En tu inventario tenés <b>${plural(c.disponible, 'equipo disponible', 'equipos disponibles')}</b>, ${c.reservado} reservado${c.reservado === 1 ? '' : 's'}, ${c.reparacion} en reparación y ${c.vendido} vendido${c.vendido === 1 ? '' : 's'}.</p>` };
 }
+// Ganancia de los equipos vendidos (precio − costo de cada uno). No inventa: si
+// no hay vendidos con los dos datos, lo dice.
+function tikiEquiposRentabilidad(){
+  if(typeof equipos === 'undefined' || !Array.isArray(equipos)) return tikiEquiposResumen();
+  const vendidos = equipos.filter(e => e.estado === 'vendido' && Number(e.precio) > 0 && Number(e.costo) > 0);
+  if(vendidos.length === 0){
+    return { html: '<p>Todavía no tenés equipos marcados como vendidos con costo y precio cargados, así que no puedo calcular la ganancia. Cargá esos datos en la sección <b>Equipos</b>.</p>' };
+  }
+  const margen = vendidos.reduce((s, e) => s + (Number(e.precio) - Number(e.costo)), 0);
+  const fmt = (typeof fmtMoney === 'function') ? fmtMoney : (n) => '$' + n;
+  return { html: `<p>Con los <b>${vendidos.length}</b> ${vendidos.length === 1 ? 'equipo vendido' : 'equipos vendidos'} que tienen costo y precio cargados, tu ganancia fue de <b>${fmt(margen)}</b> (precio menos costo de cada uno).</p>` };
+}
 function tikiModuloDeConsulta(t){
   for(const key of Object.keys(TIKI_MOD_RE)){ if(TIKI_MOD_RE[key].test(t)) return key; }
   return null;
@@ -2298,8 +2310,10 @@ async function tikiRutear(raw, t){
   // explicar cómo activarlo en vez de responder como si estuviera (o inventar).
   const modConsulta = tikiModuloDeConsulta(t);
   if(modConsulta && typeof moduloActivo === 'function' && !moduloActivo(modConsulta)) return tikiModuloApagado(modConsulta);
-  // Si el módulo Equipos está activo y preguntan por el inventario de equipos,
-  // Tiki lo resume por estado (acá ya sabemos que no está apagado).
+  // Si el módulo Equipos está activo y preguntan por los equipos, Tiki responde
+  // (acá ya sabemos que no está apagado): ganancia de los vendidos, o el
+  // inventario por estado.
+  if(modConsulta === 'equipos' && /\b(gan\w*|margen|rentabilidad|ganancia|cuanto hice|cuanto gane)\b/.test(t)) return tikiEquiposRentabilidad();
   if(modConsulta === 'equipos' && /\b(cuant\w*|stock|disponible\w*|resumen|tengo|hay|inventario)\b/.test(t)) return tikiEquiposResumen();
 
   if(tikiPendiente){

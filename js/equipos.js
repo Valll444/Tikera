@@ -25,6 +25,22 @@ function equipoMargen(e){
   return { monto, pct: monto / precio * 100 };
 }
 
+// Resumen de equipos por estado, para la tarjeta del dashboard (Inicio).
+function renderEquiposResumen(){
+  const body = document.getElementById('equiposResumenBody');
+  if(!body) return;
+  if(!Array.isArray(equipos) || equipos.length === 0){
+    body.innerHTML = `<div class="restock-empty">Todavía no cargaste equipos. Agregalos en la sección Equipos.</div>`;
+    return;
+  }
+  const c = { disponible: 0, reservado: 0, vendido: 0, reparacion: 0 };
+  equipos.forEach(e => { const k = e.estado || 'disponible'; c[k] = (c[k] || 0) + 1; });
+  body.innerHTML = `<div class="eq-resumen">` + EQ_ESTADO_ORDEN.map(est => {
+    const m = EQ_ESTADOS[est];
+    return `<div class="eq-resumen-tile"><span class="eq-resumen-n" style="color:${m.color};">${c[est] || 0}</span><span class="eq-resumen-cap">${m.label}</span></div>`;
+  }).join('') + `</div>`;
+}
+
 function openEquiposView(){
   editingEquipoId = null;
   const form = document.getElementById('equipoForm');

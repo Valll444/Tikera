@@ -275,7 +275,7 @@
         <div class="ticket-list" id="ticketList"></div>
       </div>
 
-      <div class="card" style="padding:20px 22px;">
+      <div class="card" id="cardEstadoStock" style="padding:20px 22px;">
         <div class="title-row">
           <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/></svg></span>
           <h2 style="margin:0;">Estado del stock</h2>
@@ -283,7 +283,7 @@
         <div id="stockWheelBody"></div>
       </div>
 
-      <div class="card" style="padding:20px 22px;">
+      <div class="card" id="cardReposicion" style="padding:20px 22px;">
         <div class="title-row">
           <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
           <h2 style="margin:0;">Reposición sugerida</h2>
@@ -321,12 +321,23 @@
     <div class="sales-chart" id="salesChart"></div>
   </div>
 
-  <div class="card" style="margin-top:16px;">
+  <div class="card" id="cardTopProductos" style="margin-top:16px;">
     <div class="title-row">
       <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg></span>
       <h2 class="section-title" style="margin:0;">Productos que más facturan</h2>
     </div>
     <div id="topProductsList"></div>
+  </div>
+
+  <!-- Resumen de equipos (celulares): aparece cuando el módulo Equipos está
+       activo, con el conteo por estado. Reemplaza a las tarjetas de productos
+       genéricos para un comercio que vende por unidad. -->
+  <div class="card" id="cardEquiposResumen" style="margin-top:16px;display:none;">
+    <div class="title-row">
+      <span class="title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span>
+      <h2 class="section-title" style="margin:0;">Equipos</h2>
+    </div>
+    <div id="equiposResumenBody"></div>
   </div>
   </div>
 
