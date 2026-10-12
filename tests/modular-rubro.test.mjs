@@ -31,6 +31,36 @@ describe('Módulos: activación y config', () => {
   });
 });
 
+describe('Onboarding: solo al crear la cuenta, no en cada login', () => {
+  test('cuenta nueva (sin datos y sin onboarding previo) → se muestra', () => {
+    const e = entorno();
+    e.run(`currentUserId='u-nueva'; comercioConfig = { rubros:[], modulos:{}, onboardingAt:null };
+           entries = []; products = []; equipos = [];`);
+    assert.equal(e.run('debeMostrarOnboarding()'), true);
+  });
+
+  test('ya configurado (onboardingAt seteado) → no reaparece aunque no haya datos', () => {
+    const e = entorno();
+    e.run(`currentUserId='u-config'; comercioConfig = { rubros:['kiosco'], modulos:{caja:true}, onboardingAt:'2026-10-10T00:00:00Z' };
+           entries = []; products = []; equipos = [];`);
+    assert.equal(e.run('debeMostrarOnboarding()'), false);
+  });
+
+  test('cuenta vieja con datos (sin onboarding) → NO se interrumpe', () => {
+    const e = entorno();
+    e.run(`currentUserId='u-vieja'; comercioConfig = { rubros:[], modulos:{}, onboardingAt:null };
+           entries = [{ tipo:'Venta', monto:1000 }]; products = []; equipos = [];`);
+    assert.equal(e.run('debeMostrarOnboarding()'), false);
+  });
+
+  test('una vez visto/omitido en el dispositivo, no vuelve a aparecer', () => {
+    const e = entorno();
+    e.run(`currentUserId='u-visto'; comercioConfig = { rubros:[], modulos:{}, onboardingAt:null };
+           entries = []; products = []; equipos = []; marcarOnboardingVistoEnDispositivo();`);
+    assert.equal(e.run('debeMostrarOnboarding()'), false);
+  });
+});
+
 describe('Recomendaciones por rubro', () => {
   test('un kiosco recibe caja, catálogo y noticias', () => {
     const e = entorno();

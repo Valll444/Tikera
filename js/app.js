@@ -99,10 +99,31 @@ function modulosRecomendados(rubros){
 function rubroLabel(key){ return RUBROS[key] ? RUBROS[key].label : key; }
 function onboardingPendiente(){ return !(comercioConfig && comercioConfig.onboardingAt); }
 
+// El asistente de configuración (rubro + módulos) es SOLO para cuentas nuevas:
+// aparece una vez, al crear la cuenta, y nunca más. No interrumpe a quien ya
+// venía usando Tikera (tiene ventas/productos/equipos cargados) ni reaparece en
+// cada login. Siempre se puede reconfigurar desde Ajustes → "Rubro y módulos".
+function cuentaReciencreada(){
+  const sinVentas = !(typeof entries !== 'undefined' && entries && entries.length);
+  const sinProductos = !(typeof products !== 'undefined' && products && products.length);
+  const sinEquipos = !(typeof equipos !== 'undefined' && equipos && equipos.length);
+  return sinVentas && sinProductos && sinEquipos;
+}
+function onboardingDeviceKey(){ return 'tikera:onboarding-visto:' + (currentUserId || 'anon'); }
+function onboardingVistoEnDispositivo(){ try{ return localStorage.getItem(onboardingDeviceKey()) === '1'; }catch(e){ return false; } }
+function marcarOnboardingVistoEnDispositivo(){ try{ localStorage.setItem(onboardingDeviceKey(), '1'); }catch(e){} }
+
 // --- Onboarding: elegir rubro y módulos (primera vez, o re-configurar desde Ajustes) ---
 const onbState = { rubros: new Set(), modulos: {} };
 
-function maybeShowOnboarding(){ if(onboardingPendiente()) openOnboarding(); }
+// Decide si el asistente debe abrirse solo. Se separa de maybeShowOnboarding
+// para poder testear la decisión sin tocar el DOM.
+function debeMostrarOnboarding(){
+  if(!onboardingPendiente()) return false;         // ya quedó configurado (guardado en el perfil)
+  if(onboardingVistoEnDispositivo()) return false; // ya se vio/omitió en este dispositivo
+  return cuentaReciencreada();                      // solo cuentas nuevas, no las que ya tienen datos
+}
+function maybeShowOnboarding(){ if(debeMostrarOnboarding()) openOnboarding(); }
 
 function openOnboarding(){
   const ov = document.getElementById('onboardingOverlay');
@@ -153,6 +174,7 @@ function onbIrAModulos(){
 async function guardarOnboarding(rubros, modulos){
   const payload = { rubros, modulos, onboarding_at: new Date().toISOString() };
   comercioConfig = { rubros, modulos, onboardingAt: payload.onboarding_at };
+  marcarOnboardingVistoEnDispositivo(); // no volver a mostrarlo en este dispositivo, aunque falle el sync
   aplicarModulosAlNav();
   closeOnboarding();
   switchView('inicio');
