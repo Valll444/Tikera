@@ -2923,26 +2923,291 @@ document.getElementById('ticketModal').addEventListener('click', (e)=>{
   if(e.target.id === 'ticketModal') document.getElementById('ticketModal').style.display = 'none';
 });
 
+// ============================================================
+// Inicio / Resumen enriquecido: lectura en lenguaje claro ("Cómo venís"),
+// tarjetas con variación vs el período anterior, gráfico interactivo que
+// sigue el toggle Hoy/Mes, y avisos accionables. Todo con los datos ya
+// cargados -- sin red ni API, el mismo análisis que usa el motor de Tiki.
+// ============================================================
+
+// Íconos de línea (en badge de color, nunca emoji -- ver CLAUDE.md).
+const ICO_REPONER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>';
+const ICO_ALERTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>';
+const ICO_SUBE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>';
+const ICO_BAJA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M14 17h7v-7"/></svg>';
+const ICO_INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>';
+const ICO_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>';
+const ICO_CELU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>';
+const ICO_CALENDARIO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+const ARROW_UP = '<svg class="delta-ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+const ARROW_DOWN = '<svg class="delta-ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+
+// --- Período elegido y su comparable (ayer si es Hoy, el mes pasado si es Mes) ---
+function ayerDe(fechaISO){
+  const d = new Date(fechaISO + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function mesAnteriorDe(mesISO){
+  const [y,m] = mesISO.split('-').map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function entriesDelScope(scope){
+  const hoy = todayStr();
+  if(scope === 'mes'){
+    const mes = hoy.slice(0,7), prev = mesAnteriorDe(mes);
+    return {
+      actual: entries.filter(e => e.fecha && e.fecha.slice(0,7) === mes),
+      anterior: entries.filter(e => e.fecha && e.fecha.slice(0,7) === prev),
+      labelAnterior: 'el mes pasado'
+    };
+  }
+  const ayer = ayerDe(hoy);
+  return {
+    actual: entries.filter(e => e.fecha === hoy),
+    anterior: entries.filter(e => e.fecha === ayer),
+    labelAnterior: 'ayer'
+  };
+}
+function calcPeriodo(list){
+  const ventasArr = list.filter(e => e.tipo === 'Venta');
+  const ventas = ventasArr.reduce((s,e)=>s+e.monto,0);
+  const gastos = list.filter(e=>e.tipo==='Gasto').reduce((s,e)=>s+e.monto,0);
+  const costoMerc = ventasArr.reduce((s,e)=>s + (parseFloat(e.costoTotal) || 0), 0);
+  return {
+    ventas, gastos, costoMerc, gananciaReal: ventas - costoMerc - gastos,
+    nMov: list.length, nVentas: ventasArr.length,
+    ventasSinCosto: ventasArr.filter(e => !(parseFloat(e.costoTotal) > 0)).length
+  };
+}
+// % de cambio actual vs anterior. null = sin base de comparación (el período
+// anterior está en cero): no inventamos "+100%" ni récords sin con qué comparar.
+function pctCambio(actual, anterior){
+  if(!(anterior > 0)) return null;
+  return Math.round((actual - anterior) / anterior * 100);
+}
+
+// Chip de variación para las tarjetas. buenoSiSube: true (ventas/ganancia),
+// false (gastos), null (sin juicio de valor -> neutro).
+function deltaChip(pct, buenoSiSube, labelAnt){
+  if(pct === null) return `<span class="delta delta-none">sin ${labelAnt} para comparar</span>`;
+  if(pct === 0) return `<span class="delta delta-flat">igual que ${labelAnt}</span>`;
+  const sube = pct > 0;
+  const cls = buenoSiSube === null ? 'delta-neutral' : (sube === buenoSiSube ? 'delta-up' : 'delta-down');
+  return `<span class="delta ${cls}">${sube ? ARROW_UP : ARROW_DOWN}${Math.abs(pct)}% <span class="delta-vs">vs ${labelAnt}</span></span>`;
+}
+
+// Panel "Cómo venís": el período leído en una frase, sin jerga. El número
+// grande es lo que entró; la frase explica qué quedó y si vas mejor o peor.
+function renderComoVenis(scope, act, ant){
+  const el = document.getElementById('comoVenis');
+  if(!el) return;
+  const esMes = scope === 'mes', corto = esMes ? 'este mes' : 'hoy', vsAnt = esMes ? 'el mes pasado' : 'ayer';
+  if(act.nMov === 0){
+    el.innerHTML = `
+      <div class="cv-inner">
+        <div class="cv-eyebrow">Cómo venís</div>
+        <div class="cv-headline">Cargá un movimiento y ${corto} vas a ver cómo viene el negocio</div>
+        <p class="cv-text">Con cada venta y gasto, acá te lo resumo en una frase: cuánto entró, cuánto te quedó de verdad y si vas mejor que ${vsAnt}.</p>
+        <button type="button" class="cv-cta" onclick="switchView('cargar')">Cargar mi primer movimiento</button>
+      </div>`;
+    return;
+  }
+  let fraseGan;
+  if(act.nVentas === 0){
+    fraseGan = `Por ahora solo cargaste gastos (${fmtMoney(act.gastos)}) y ninguna venta ${corto}.`;
+  } else if(act.gananciaReal >= 0){
+    fraseGan = `Después de la mercadería y los gastos, te quedaron <strong class="cv-pos">${fmtMoney(act.gananciaReal)}</strong> de ganancia real.`;
+  } else {
+    fraseGan = `Ojo: los costos y gastos superan a las ventas, así que vas <strong class="cv-neg">${fmtMoney(act.gananciaReal)}</strong> ${corto}.`;
+  }
+  const dV = pctCambio(act.ventas, ant.ventas), dG = pctCambio(act.gananciaReal, ant.gananciaReal);
+  const base = dV !== null ? { d: dV, q: 'en ventas' } : (dG !== null ? { d: dG, q: 'en ganancia' } : null);
+  let fraseComp;
+  if(!base) fraseComp = ` Todavía no tengo ${vsAnt} para comparar.`;
+  else if(base.d === 0) fraseComp = ` Vas parejo con ${vsAnt}.`;
+  else { const mejor = base.d > 0; fraseComp = ` Vas un <strong class="${mejor?'cv-pos':'cv-neg'}">${Math.abs(base.d)}% ${mejor?'mejor':'peor'}</strong> que ${vsAnt} ${base.q}.`; }
+  el.innerHTML = `
+    <div class="cv-inner">
+      <div class="cv-eyebrow">Cómo venís · ${corto}</div>
+      <div class="cv-headline">Vendiste <span class="cv-big">${fmtMoney(act.ventas)}</span></div>
+      <p class="cv-text">${fraseGan}${fraseComp}</p>
+    </div>`;
+}
+
+// --- Datos del gráfico según el toggle: por hora (Hoy) o por día (Mes) ---
+function ventasPorHoraDeHoy(){
+  const hoy = todayStr();
+  const vts = entries.filter(e => e.tipo === 'Venta' && e.fecha === hoy);
+  const porHora = {}; let sinHora = 0;
+  vts.forEach(e => {
+    const m = /^(\d{1,2}):/.exec(e.hora || '');
+    if(!m){ sinHora += 1; return; }
+    const h = Number(m[1]);
+    porHora[h] = (porHora[h] || 0) + e.monto;
+  });
+  const horas = Object.keys(porHora).map(Number);
+  if(!horas.length) return { puntos: [], sinHora };
+  const min = Math.min(...horas), max = Math.max(...horas), puntos = [];
+  for(let h = min; h <= max; h++){
+    puntos.push({ label: `${h}h`, total: porHora[h] || 0, sub: `${String(h).padStart(2,'0')}:00 a ${String(h+1).padStart(2,'0')}:00` });
+  }
+  return { puntos, sinHora };
+}
+function ventasPorDiaDelMes(){
+  const hoy = todayStr(), mes = hoy.slice(0,7), diaHoy = Number(hoy.slice(8,10));
+  const porDia = {};
+  entries.filter(e => e.tipo === 'Venta' && e.fecha && e.fecha.slice(0,7) === mes)
+    .forEach(e => { const d = Number(e.fecha.slice(8,10)); porDia[d] = (porDia[d] || 0) + e.monto; });
+  const puntos = [];
+  for(let d = 1; d <= diaHoy; d++){
+    puntos.push({ label: String(d), total: porDia[d] || 0, sub: fmtFecha(`${mes}-${String(d).padStart(2,'0')}`) });
+  }
+  return { puntos, sinHora: 0 };
+}
+// Dibuja el gráfico interactivo: barras + línea de promedio + mejor punto
+// resaltado + tooltip al pasar/tocar. Vacío = estado claro, no una caja muda.
+function pintarGraficoInicio(puntos, sinHora){
+  const wrap = document.getElementById('salesChart');
+  if(!wrap) return;
+  const vals = puntos.map(p => p.total);
+  const max = Math.max(...vals, 0);
+  if(!puntos.length || max === 0){
+    wrap.innerHTML = `<div class="isc-empty">${summaryScope === 'mes'
+      ? 'Todavía no registraste ventas este mes para graficar.'
+      : 'Todavía no registraste ventas hoy. Cuando cargues la primera, la vas a ver acá hora por hora.'}</div>`;
+    wrap.onpointerover = wrap.onclick = wrap.onpointerleave = null;
+    return;
+  }
+  const conVenta = vals.filter(v => v > 0);
+  const prom = conVenta.length ? conVenta.reduce((a,b)=>a+b,0) / conVenta.length : 0;
+  const idxMax = vals.indexOf(max);
+  const promPct = max > 0 ? (prom / max * 100) : 0;
+  wrap.innerHTML = `
+    <div class="isc-plot">
+      ${prom > 0 ? `<div class="isc-avg" style="bottom:${promPct.toFixed(1)}%"><span class="isc-avg-lbl">prom. ${fmtMoneyCompact(prom)}</span></div>` : ''}
+      ${puntos.map((p,i) => `
+        <div class="isc-col${i === idxMax ? ' is-top' : ''}${p.total === 0 ? ' is-zero' : ''}" data-label="${escapeHtml(p.sub || p.label)}" data-val="${escapeHtml(fmtMoney(p.total))}">
+          <div class="isc-barwrap"><div class="isc-bar" style="height:${p.total ? Math.max(3, p.total / max * 100) : 0}%"></div></div>
+        </div>`).join('')}
+    </div>
+    <div class="isc-xrow">${puntos.map(p => `<div class="isc-x">${escapeHtml(p.label)}</div>`).join('')}</div>
+    ${sinHora ? `<div class="isc-note">+ ${sinHora} venta${sinHora > 1 ? 's' : ''} sin hora cargada (no ${sinHora > 1 ? 'entran' : 'entra'} en este gráfico)</div>` : ''}
+    <div class="isc-tip" id="iscTip" hidden></div>`;
+  const tip = wrap.querySelector('#iscTip');
+  const mostrar = (col) => {
+    if(!col || !tip) return;
+    wrap.querySelectorAll('.isc-col.is-active').forEach(c => c.classList.remove('is-active'));
+    col.classList.add('is-active');
+    tip.innerHTML = `<span class="isc-tip-k">${col.dataset.label}</span><span class="isc-tip-v">${col.dataset.val}</span>`;
+    tip.hidden = false;
+    const wr = wrap.getBoundingClientRect(), cr = col.getBoundingClientRect();
+    tip.style.left = Math.round(cr.left - wr.left + cr.width / 2) + 'px';
+  };
+  wrap.onpointerover = (e) => { const c = e.target.closest('.isc-col'); if(c) mostrar(c); };
+  wrap.onclick = (e) => { const c = e.target.closest('.isc-col'); if(c) mostrar(c); };
+  wrap.onpointerleave = () => { if(tip) tip.hidden = true; wrap.querySelectorAll('.isc-col.is-active').forEach(c => c.classList.remove('is-active')); };
+}
+
+// Avisos accionables en lenguaje claro. Devuelve a lo sumo lo relevante; el
+// render corta en 4 para no abrumar.
+function construirAvisosInicio(scope, act, ant){
+  const avisos = [];
+  if(moduloActivo('catalogo') && typeof calcularListaCompras === 'function'){
+    const lista = calcularListaCompras();
+    if(lista.length){
+      const urgentes = lista.filter(i => i.motivo === 'bajo-minimo' || (i.daysLeft != null && i.daysLeft <= 2)).length;
+      avisos.push({ nivel: urgentes ? 'urgente' : 'pronto', icon: ICO_REPONER,
+        titulo: `${lista.length} producto${lista.length > 1 ? 's' : ''} para reponer`,
+        texto: urgentes
+          ? `${urgentes} ya ${urgentes > 1 ? 'están en el mínimo o se agotan' : 'está en el mínimo o se agota'} enseguida.`
+          : 'Según lo que vendiste en las últimas dos semanas.',
+        accion: { label: 'Ver la lista', fn: 'openRestockList()' } });
+    }
+  }
+  const dG = pctCambio(act.gananciaReal, ant.gananciaReal);
+  if(act.nVentas > 0 && act.gananciaReal < 0){
+    avisos.push({ nivel: 'urgente', icon: ICO_ALERTA, titulo: 'La ganancia está en rojo',
+      texto: `${scope === 'mes' ? 'Este mes' : 'Hoy'} los costos y gastos superan a las ventas (${fmtMoney(act.gananciaReal)}). Mirá los gastos más grandes.`,
+      accion: { label: 'Ver movimientos', fn: "switchView('historial')" } });
+  } else if(dG !== null && dG <= -15){
+    avisos.push({ nivel: 'pronto', icon: ICO_BAJA, titulo: `Ganancia ${Math.abs(dG)}% abajo`,
+      texto: `Vas por debajo de ${scope === 'mes' ? 'el mes pasado' : 'ayer'}. Puede ser que subieran los gastos o bajaran las ventas.` });
+  } else if(dG !== null && dG >= 15){
+    avisos.push({ nivel: 'bien', icon: ICO_SUBE, titulo: `Ganancia ${dG}% arriba`,
+      texto: `Vas mejor que ${scope === 'mes' ? 'el mes pasado' : 'ayer'}. Buen momento para reponer lo que más sale.` });
+  }
+  if(act.nVentas > 0 && act.ventasSinCosto > 0){
+    avisos.push({ nivel: 'info', icon: ICO_INFO,
+      titulo: `${act.ventasSinCosto} venta${act.ventasSinCosto > 1 ? 's' : ''} sin costo cargado`,
+      texto: 'Sin el costo no puedo calcular bien tu ganancia real. Cargalo al registrar la venta.' });
+  }
+  if(moduloActivo('equipos') && typeof equipos !== 'undefined' && equipos){
+    const pend = equipos.filter(e => e.estado === 'reservado' || e.estado === 'reparacion').length;
+    if(pend){
+      avisos.push({ nivel: 'info', icon: ICO_CELU, titulo: `${pend} equipo${pend > 1 ? 's' : ''} para seguir`,
+        texto: 'Tenés equipos reservados o en reparación esperando.', accion: { label: 'Ver equipos', fn: "switchView('equipos')" } });
+    }
+  }
+  return avisos;
+}
+function tarjetasAvisos(avisos, scope){
+  if(!avisos.length){
+    return `<div class="insight insight-bien"><span class="insight-ic">${ICO_OK}</span><div class="insight-body"><div class="insight-title">Todo en orden</div><div class="insight-text">No hay nada urgente ${scope === 'mes' ? 'este mes' : 'hoy'}. Seguí cargando tus ventas y gastos.</div></div></div>`;
+  }
+  return avisos.map(a => `
+    <div class="insight insight-${a.nivel}">
+      <span class="insight-ic">${a.icon}</span>
+      <div class="insight-body">
+        <div class="insight-title">${escapeHtml(a.titulo)}</div>
+        <div class="insight-text">${a.texto}</div>
+        ${a.accion ? `<button type="button" class="insight-btn" onclick="${a.accion.fn}">${escapeHtml(a.accion.label)}</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+function renderInsightsInicio(scope, act, ant){
+  const cont = document.getElementById('insightsInicio');
+  if(!cont) return;
+  if(act.nMov === 0){ cont.innerHTML = ''; cont.dataset.scope = ''; return; }
+  const avisos = construirAvisosInicio(scope, act, ant).slice(0, 4);
+  const head = '<div class="insights-head">Para mirar</div>';
+  cont.innerHTML = head + tarjetasAvisos(avisos, scope);
+  cont.dataset.scope = scope;
+  // Feriado próximo: lo trae el motor de Tiki (async). Se suma cuando llega,
+  // sin trabar el resto del Inicio ni duplicarse si cambió el período.
+  if(typeof tikiProximoFeriado === 'function' && avisos.length < 4){
+    tikiProximoFeriado().then(f => {
+      if(!f || cont.dataset.scope !== scope) return;
+      const dias = Math.round((new Date(f.fecha + 'T12:00:00') - new Date(todayStr() + 'T12:00:00')) / 86400000);
+      if(dias < 0 || dias > 7) return;
+      const aviso = { nivel: 'info', icon: ICO_CALENDARIO,
+        titulo: dias === 0 ? 'Hoy es feriado' : (dias === 1 ? 'Mañana es feriado' : `Feriado en ${dias} días`),
+        texto: `${escapeHtml(f.nombre || 'Feriado')}. Si abrís, revisá el stock de lo que más sale y avisá a tus proveedores si cambian las entregas.` };
+      cont.innerHTML = head + tarjetasAvisos(avisos.slice(0, 3).concat([aviso]), scope);
+    }).catch(() => {});
+  }
+}
+
 function renderSummary(){
   const today = todayStr();
-  const todays = entries.filter(e => e.fecha === today);
-  const currentMonth = today.slice(0,7); // "YYYY-MM"
-  const summaryEntries = summaryScope === 'mes'
-    ? entries.filter(e => e.fecha && e.fecha.slice(0,7) === currentMonth)
-    : todays;
+  const { actual: summaryEntries, anterior: prevEntries, labelAnterior } = entriesDelScope(summaryScope);
   const scopeLabel = summaryScope === 'mes' ? 'del mes' : 'hoy';
+  const act = calcPeriodo(summaryEntries);
+  const ant = calcPeriodo(prevEntries);
+  const ventasS = act.ventas, gastosS = act.gastos, costoMercS = act.costoMerc, gananciaRealS = act.gananciaReal;
 
-  const ventasS = summaryEntries.filter(e=>e.tipo==='Venta').reduce((s,e)=>s+e.monto,0);
-  const gastosS = summaryEntries.filter(e=>e.tipo==='Gasto').reduce((s,e)=>s+e.monto,0);
-  const costoMercS = summaryEntries.filter(e=>e.tipo==='Venta').reduce((s,e)=>s + (parseFloat(e.costoTotal) || 0), 0);
-  const gananciaRealS = ventasS - costoMercS - gastosS;
+  renderComoVenis(summaryScope, act, ant);
+
   document.getElementById('summary').innerHTML = `
-    <div class="metric metric-venta"><div class="metric-label">Ventas ${scopeLabel}</div><div class="metric-value" style="color:var(--venta)">${fmtMoney(ventasS)}</div></div>
-    <div class="metric metric-accent"><div class="metric-label">Costo mercadería</div><div class="metric-value" style="color:var(--accent-dark)">${fmtMoney(costoMercS)}</div></div>
-    <div class="metric metric-gasto"><div class="metric-label">Gastos ${scopeLabel}</div><div class="metric-value" style="color:var(--gasto)">${fmtMoney(gastosS)}</div></div>
-    <div class="metric" style="border:1.5px solid ${gananciaRealS >= 0 ? 'var(--gold)' : 'var(--gasto)'};background:linear-gradient(${gananciaRealS >= 0 ? 'var(--gold-bg),var(--gold-bg)' : 'var(--gasto-bg),var(--gasto-bg)'}),var(--card);"><div class="metric-label" style="font-weight:700;">Ganancia real ${scopeLabel}</div><div class="metric-value" style="color:${gananciaRealS >= 0 ? 'var(--gold)' : 'var(--gasto)'};font-size:22px;">${fmtMoney(gananciaRealS)}</div></div>
-    <div class="metric"><div class="metric-label">Movimientos ${scopeLabel}</div><div class="metric-value">${summaryEntries.length}</div></div>
+    <div class="metric metric-venta"><div class="metric-label">Ventas ${scopeLabel}</div><div class="metric-value" style="color:var(--venta)">${fmtMoney(ventasS)}</div><div class="metric-delta">${deltaChip(pctCambio(act.ventas, ant.ventas), true, labelAnterior)}</div></div>
+    <div class="metric metric-accent"><div class="metric-label">Costo mercadería</div><div class="metric-value" style="color:var(--accent-dark)">${fmtMoney(costoMercS)}</div><div class="metric-delta">${deltaChip(pctCambio(act.costoMerc, ant.costoMerc), null, labelAnterior)}</div></div>
+    <div class="metric metric-gasto"><div class="metric-label">Gastos ${scopeLabel}</div><div class="metric-value" style="color:var(--gasto)">${fmtMoney(gastosS)}</div><div class="metric-delta">${deltaChip(pctCambio(act.gastos, ant.gastos), false, labelAnterior)}</div></div>
+    <div class="metric" style="border:1.5px solid ${gananciaRealS >= 0 ? 'var(--gold)' : 'var(--gasto)'};background:linear-gradient(${gananciaRealS >= 0 ? 'var(--gold-bg),var(--gold-bg)' : 'var(--gasto-bg),var(--gasto-bg)'}),var(--card);"><div class="metric-label" style="font-weight:700;">Ganancia real ${scopeLabel}</div><div class="metric-value" style="color:${gananciaRealS >= 0 ? 'var(--gold)' : 'var(--gasto)'};font-size:22px;">${fmtMoney(gananciaRealS)}</div><div class="metric-delta">${deltaChip(pctCambio(act.gananciaReal, ant.gananciaReal), true, labelAnterior)}</div></div>
+    <div class="metric"><div class="metric-label">Movimientos ${scopeLabel}</div><div class="metric-value">${act.nMov}</div><div class="metric-delta">${deltaChip(pctCambio(act.nMov, ant.nMov), null, labelAnterior)}</div></div>
   `;
+
+  renderInsightsInicio(summaryScope, act, ant);
 
   const totalMovS = ventasS + gastosS;
   const ventaPctS = totalMovS > 0 ? (ventasS/totalMovS*100) : 50;
@@ -3001,37 +3266,16 @@ function renderSummary(){
   renderSalesChart();
 }
 
-// Grafico de barras de los ultimos 7 dias (independiente del toggle Hoy/Mes:
-// una semana fija le da al kiosquero una foto rapida de la tendencia, sin
-// tener que ir a Historial a compararla a mano).
+// Gráfico del Inicio: sigue el toggle Hoy/Mes. En "Hoy" muestra las ventas
+// hora por hora; en "Este mes", día por día. Así nunca queda vacío si hay
+// ventas en el período elegido (antes era una semana fija que podía estar en
+// cero aunque el mes tuviera datos). El dibujo lo hace pintarGraficoInicio.
 function renderSalesChart(){
-  const wrap = document.getElementById('salesChart');
-  if(!wrap) return;
-  const dayNames = ['dom','lun','mar','mié','jue','vie','sáb'];
-  const days = [];
-  for(let i=6;i>=0;i--){
-    const d = new Date();
-    d.setDate(d.getDate()-i);
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    const key = `${y}-${m}-${day}`;
-    const total = entries.filter(e => e.tipo==='Venta' && e.fecha===key).reduce((s,e)=>s+e.monto,0);
-    days.push({ key, label: dayNames[d.getDay()], total, isToday: i===0 });
-  }
-  const max = Math.max(...days.map(d=>d.total));
-  if(max === 0){
-    wrap.innerHTML = `<div class="sales-chart-empty">Todavía no hay ventas esta semana para graficar.</div>`;
-    return;
-  }
-  wrap.innerHTML = days.map(d => `
-    <div class="sales-chart-col">
-      <div class="sales-chart-bar-wrap">
-        <div class="sales-chart-bar${d.isToday ? ' is-today' : ''}" style="height:${d.total ? Math.max(6, d.total/max*100) : 0}%;" title="${fmtFecha(d.key)}: ${fmtMoney(d.total)}">${d.total ? `<span class="sales-chart-val">${fmtMoneyCompact(d.total)}</span>` : ''}</div>
-      </div>
-      <div class="sales-chart-day${d.isToday ? ' is-today' : ''}">${d.label}</div>
-    </div>
-  `).join('');
+  const titleEl = document.getElementById('salesChartTitle');
+  const esMes = summaryScope === 'mes';
+  if(titleEl) titleEl.textContent = esMes ? 'Ventas de este mes, día por día' : 'Ventas de hoy, hora por hora';
+  const { puntos, sinHora } = esMes ? ventasPorDiaDelMes() : ventasPorHoraDeHoy();
+  pintarGraficoInicio(puntos, sinHora);
 }
 
 // Formato corto para las etiquetas del grafico ($5.2k en vez de $5.200,00):

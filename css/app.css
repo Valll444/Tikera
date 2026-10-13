@@ -1262,3 +1262,85 @@
   /* Ojo con la barra de navegacion inferior de la app en mobile (fixed, ~80px) */
   body.app-active .cookie-banner{bottom:calc(80px + env(safe-area-inset-bottom,0px));}
   @media(min-width:900px){ body.app-active .cookie-banner{bottom:16px;} }
+
+  /* ======================================================================
+     Inicio / Resumen enriquecido: panel "Cómo venís", variación en las
+     tarjetas, avisos "Para mirar" y gráfico interactivo. Todo con las
+     variables de tema, así funciona igual en claro y oscuro.
+     ====================================================================== */
+
+  /* Panel "Cómo venís": titular del Inicio. Rompe el molde de .card a
+     propósito (su propio resplandor radial suave, alineado a la izquierda). */
+  .como-venis{position:relative;overflow:hidden;margin-top:14px;border:1px solid var(--line);border-radius:20px;background:var(--card);padding:22px 24px;}
+  .como-venis::before{content:"";position:absolute;top:-45%;right:-8%;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle, var(--venta-bg) 0%, transparent 70%);pointer-events:none;}
+  .cv-inner{position:relative;z-index:1;max-width:62ch;}
+  .cv-eyebrow{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:9px;}
+  .cv-headline{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:23px;line-height:1.22;letter-spacing:-0.015em;color:var(--ink);}
+  .cv-big{color:var(--venta);white-space:nowrap;}
+  .cv-text{font-family:var(--font-body);font-size:15px;line-height:1.6;color:var(--ink-soft);margin:11px 0 0;}
+  .cv-text .cv-pos{color:var(--venta);font-weight:600;}
+  .cv-text .cv-neg{color:var(--gasto);font-weight:600;}
+  .cv-cta{margin-top:16px;border:none;cursor:pointer;background:var(--brand-gradient);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;border-radius:11px;padding:11px 20px;transition:transform .15s ease, box-shadow .15s ease;}
+  .cv-cta:hover{transform:translateY(-1px);box-shadow:0 10px 24px -10px rgba(0,0,0,.5);}
+
+  /* Variación (↑/↓ % vs período anterior) bajo cada número del resumen */
+  .metric-delta{margin-top:8px;min-height:17px;}
+  .delta{display:inline-flex;align-items:center;gap:3px;font-family:var(--font-body);font-size:11px;font-weight:600;line-height:1;padding:3px 7px;border-radius:999px;}
+  .delta .delta-ar{width:11px;height:11px;flex-shrink:0;}
+  .delta-vs{font-weight:500;opacity:.8;}
+  .delta-up{background:var(--venta-bg);color:var(--venta);}
+  .delta-down{background:var(--gasto-bg);color:var(--gasto);}
+  .delta-neutral{background:var(--accent-bg);color:var(--accent-dark);}
+  .delta-flat{background:var(--line-faint);color:var(--ink-soft);}
+  .delta-none{background:transparent;color:var(--ink-soft);font-weight:500;padding-left:0;}
+
+  /* "Para mirar": avisos accionables en lenguaje claro */
+  #insightsInicio{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px;}
+  #insightsInicio:empty{display:none;margin:0;}
+  .insights-head{grid-column:1/-1;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase;margin:0 2px 0;}
+  .insight{display:flex;align-items:flex-start;gap:12px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:14px;padding:14px 15px;transition:transform .15s ease, box-shadow .15s ease;}
+  .insight:hover{transform:translateY(-2px);box-shadow:0 8px 20px -10px rgba(0,0,0,0.4);}
+  .insight-ic{flex-shrink:0;width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+  .insight-ic svg{width:18px;height:18px;}
+  .insight-body{flex:1;min-width:0;}
+  .insight-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--ink);line-height:1.25;}
+  .insight-text{font-family:var(--font-body);font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin-top:3px;}
+  .insight-text strong{color:var(--ink);font-weight:600;}
+  .insight-btn{display:inline-block;margin-top:11px;border:1px solid var(--line-strong);background:transparent;color:var(--ink);font-family:var(--font-body);font-weight:600;font-size:12.5px;border-radius:9px;padding:7px 14px;cursor:pointer;transition:background-color .15s ease,border-color .15s ease;}
+  .insight-btn:hover{background:var(--accent-bg);border-color:var(--accent);}
+  .insight-bien{border-left-color:var(--venta);} .insight-bien .insight-ic{background:var(--venta-bg);color:var(--venta);}
+  .insight-info{border-left-color:var(--accent-dark);} .insight-info .insight-ic{background:var(--accent-bg);color:var(--accent-dark);}
+  .insight-pronto{border-left-color:var(--gold);} .insight-pronto .insight-ic{background:var(--gold-bg);color:var(--gold-dark);}
+  .insight-urgente{border-left-color:var(--gasto);} .insight-urgente .insight-ic{background:var(--gasto-bg);color:var(--gasto);}
+
+  /* Gráfico interactivo del Inicio (isc = inicio sales chart). Clases propias
+     para no tocar .sales-chart, que comparte el gráfico de cierres de caja. */
+  .isc-chart{position:relative;margin:18px 0 2px;padding:0 2px;}
+  .isc-plot{position:relative;display:flex;align-items:flex-end;gap:6px;height:150px;border-bottom:1px solid var(--line);}
+  .isc-col{flex:1;min-width:0;height:100%;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;}
+  .isc-barwrap{width:100%;max-width:30px;height:100%;display:flex;align-items:flex-end;}
+  .isc-bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg, var(--accent-dark), var(--accent));min-height:3px;transition:filter .15s ease;}
+  .isc-col.is-top .isc-bar{background:linear-gradient(180deg, var(--venta), var(--venta));}
+  .isc-col.is-zero .isc-bar{background:var(--line-strong);border-radius:3px;}
+  .isc-col.is-active .isc-bar,.isc-col:hover .isc-bar{filter:brightness(1.15);}
+  .isc-avg{position:absolute;left:0;right:0;border-top:1px dashed var(--gold);pointer-events:none;z-index:2;}
+  .isc-avg-lbl{position:absolute;right:0;top:-9px;font-family:'IBM Plex Mono';font-size:10px;color:var(--gold-dark);background:var(--card);padding:0 4px;}
+  .isc-xrow{display:flex;gap:6px;margin-top:7px;}
+  .isc-x{flex:1;min-width:0;text-align:center;font-family:var(--font-body);font-size:10.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .isc-note{font-family:var(--font-body);font-size:11.5px;color:var(--ink-soft);margin-top:8px;text-align:center;}
+  .isc-tip{position:absolute;top:-6px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:5px 9px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:5;box-shadow:0 6px 18px -6px rgba(0,0,0,.5);display:flex;flex-direction:column;align-items:center;gap:1px;}
+  .isc-tip[hidden]{display:none;}
+  .isc-tip-k{font-family:var(--font-body);font-weight:500;opacity:.85;font-size:10.5px;}
+  .isc-tip-v{font-family:'IBM Plex Mono';font-weight:600;font-size:12px;}
+  .isc-empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:40px 0;}
+
+  @media(max-width:600px){
+    .como-venis{padding:18px 18px;border-radius:16px;}
+    .cv-headline{font-size:20px;}
+    .cv-big{white-space:normal;}
+    #insightsInicio{grid-template-columns:1fr;}
+    .isc-x{font-size:9px;}
+    /* En las tarjetas angostas, el chip queda solo con la flecha y el %: el
+       "vs el mes pasado" partía en dos líneas y agrandaba la tarjeta. */
+    .delta-vs{display:none;}
+  }
