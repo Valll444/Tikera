@@ -40,7 +40,7 @@ async function fetchDolar(){
       <div class="dolar-grid">
         ${filas.map(d => `
           <div class="dolar-tile">
-            <div class="dolar-tile-label">${d.nombre}</div>
+            <div class="dolar-tile-label">${escapeHtml(d.nombre)}</div>
             <div class="dolar-tile-value">${fmtMoney(d.venta)}</div>
             <div class="dolar-tile-sub">Compra ${fmtMoney(d.compra)}</div>
           </div>
