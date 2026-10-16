@@ -1317,7 +1317,15 @@
      para no tocar .sales-chart, que comparte el gráfico de cierres de caja. */
   .isc-chart{position:relative;margin:18px 0 2px;padding:0 2px;}
   .isc-plot{position:relative;display:flex;align-items:flex-end;gap:6px;height:150px;border-bottom:1px solid var(--line);}
-  .isc-col{flex:1;min-width:0;height:100%;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;}
+  .isc-col{position:relative;flex:1;min-width:0;height:100%;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;}
+  /* Marcador del período anterior (mes pasado / ayer) al nivel que tuvo ese
+     día/hora, para comparar de un vistazo contra la barra actual. */
+  .isc-ghost{position:absolute;left:3px;right:3px;height:0;border-top:2px dashed var(--accent-dark);opacity:.6;pointer-events:none;z-index:1;}
+  .isc-legend{display:flex;gap:16px;justify-content:center;margin-top:9px;}
+  .isc-leg{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:11px;color:var(--ink-soft);}
+  .isc-leg-cur{width:10px;height:10px;border-radius:2px;background:linear-gradient(180deg,var(--accent-dark),var(--accent));}
+  .isc-leg-prev{width:14px;height:0;border-top:2px dashed var(--accent-dark);opacity:.7;}
+  .isc-tip-p{font-family:var(--font-body);font-weight:500;font-size:10px;opacity:.78;}
   .isc-barwrap{width:100%;max-width:30px;height:100%;display:flex;align-items:flex-end;}
   .isc-bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg, var(--accent-dark), var(--accent));min-height:3px;transition:filter .15s ease;}
   .isc-col.is-top .isc-bar{background:linear-gradient(180deg, var(--venta), var(--venta));}

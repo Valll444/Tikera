@@ -107,6 +107,35 @@ describe('Inicio: datos del gráfico', () => {
     assert.equal(r.puntos[0].total, 150); // 10h = 100 + 50
     assert.equal(r.puntos[3].total, 70);  // 13h
   });
+
+  test('por día del mes: trae prev = ventas del mismo día el mes pasado', () => {
+    const e = ent();
+    e.run(`entries = [
+      {fecha:'2026-10-02',tipo:'Venta',monto:500},
+      {fecha:'2026-09-02',tipo:'Venta',monto:300},
+      {fecha:'2026-09-02',tipo:'Venta',monto:100},
+      {fecha:'2026-09-09',tipo:'Venta',monto:999}
+    ];`);
+    const r = JSON.parse(e.run('JSON.stringify(ventasPorDiaDelMes())'));
+    assert.equal(r.puntos[1].total, 500); // día 2, este mes
+    assert.equal(r.puntos[1].prev, 400);  // día 2, mes pasado = 300 + 100
+    assert.equal(r.puntos[0].prev, null); // día 1 no tuvo ventas el mes pasado
+    assert.equal(r.puntos[8].prev, 999);  // día 9, mes pasado
+  });
+
+  test('por hora de hoy: trae prev = ventas de la misma hora ayer', () => {
+    const e = ent();
+    e.run(`entries = [
+      {fecha:'2026-10-11',tipo:'Venta',monto:100,hora:'10:15'},
+      {fecha:'2026-10-11',tipo:'Venta',monto:70,hora:'12:00'},
+      {fecha:'2026-10-10',tipo:'Venta',monto:40,hora:'10:30'},
+      {fecha:'2026-10-10',tipo:'Venta',monto:60,hora:'10:45'}
+    ];`);
+    const r = JSON.parse(e.run('JSON.stringify(ventasPorHoraDeHoy())'));
+    assert.equal(r.puntos[0].total, 100); // 10h hoy
+    assert.equal(r.puntos[0].prev, 100);  // 10h ayer = 40 + 60
+    assert.equal(r.puntos[2].prev, null); // 12h ayer no hubo ventas
+  });
 });
 
 describe('Inicio: avisos accionables', () => {

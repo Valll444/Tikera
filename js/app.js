@@ -3037,32 +3037,41 @@ function renderComoVenis(scope, act, ant){
 }
 
 // --- Datos del gráfico según el toggle: por hora (Hoy) o por día (Mes) ---
-function ventasPorHoraDeHoy(){
-  const hoy = todayStr();
-  const vts = entries.filter(e => e.tipo === 'Venta' && e.fecha === hoy);
-  const porHora = {}; let sinHora = 0;
-  vts.forEach(e => {
-    const m = /^(\d{1,2}):/.exec(e.hora || '');
-    if(!m){ sinHora += 1; return; }
-    const h = Number(m[1]);
-    porHora[h] = (porHora[h] || 0) + e.monto;
+// Cada punto trae además `prev`: lo mismo en el período anterior comparable
+// (ayer a esa hora, o el mes pasado ese día), para superponerlo y ver de un
+// vistazo si vas por encima o por debajo. null = no hay con qué comparar.
+function sumarVentasPorHora(fecha){
+  const m = {};
+  entries.filter(e => e.tipo === 'Venta' && e.fecha === fecha).forEach(e => {
+    const h = /^(\d{1,2}):/.exec(e.hora || '');
+    if(h) m[Number(h[1])] = (m[Number(h[1])] || 0) + e.monto;
   });
+  return m;
+}
+function ventasPorHoraDeHoy(){
+  const hoy = todayStr(), ayer = ayerDe(hoy);
+  const porHora = sumarVentasPorHora(hoy), prevPorHora = sumarVentasPorHora(ayer);
+  let sinHora = 0;
+  entries.filter(e => e.tipo === 'Venta' && e.fecha === hoy).forEach(e => { if(!/^(\d{1,2}):/.test(e.hora || '')) sinHora += 1; });
   const horas = Object.keys(porHora).map(Number);
   if(!horas.length) return { puntos: [], sinHora };
   const min = Math.min(...horas), max = Math.max(...horas), puntos = [];
   for(let h = min; h <= max; h++){
-    puntos.push({ label: `${h}h`, total: porHora[h] || 0, sub: `${String(h).padStart(2,'0')}:00 a ${String(h+1).padStart(2,'0')}:00` });
+    puntos.push({ label: `${h}h`, total: porHora[h] || 0, prev: (h in prevPorHora) ? prevPorHora[h] : null, sub: `${String(h).padStart(2,'0')}:00 a ${String(h+1).padStart(2,'0')}:00` });
   }
   return { puntos, sinHora };
 }
 function ventasPorDiaDelMes(){
-  const hoy = todayStr(), mes = hoy.slice(0,7), diaHoy = Number(hoy.slice(8,10));
-  const porDia = {};
-  entries.filter(e => e.tipo === 'Venta' && e.fecha && e.fecha.slice(0,7) === mes)
-    .forEach(e => { const d = Number(e.fecha.slice(8,10)); porDia[d] = (porDia[d] || 0) + e.monto; });
+  const hoy = todayStr(), mes = hoy.slice(0,7), diaHoy = Number(hoy.slice(8,10)), prevMes = mesAnteriorDe(mes);
+  const porDia = {}, prevPorDia = {};
+  entries.filter(e => e.tipo === 'Venta' && e.fecha).forEach(e => {
+    const mm = e.fecha.slice(0,7), d = Number(e.fecha.slice(8,10));
+    if(mm === mes) porDia[d] = (porDia[d] || 0) + e.monto;
+    else if(mm === prevMes) prevPorDia[d] = (prevPorDia[d] || 0) + e.monto;
+  });
   const puntos = [];
   for(let d = 1; d <= diaHoy; d++){
-    puntos.push({ label: String(d), total: porDia[d] || 0, sub: fmtFecha(`${mes}-${String(d).padStart(2,'0')}`) });
+    puntos.push({ label: String(d), total: porDia[d] || 0, prev: (d in prevPorDia) ? prevPorDia[d] : null, sub: fmtFecha(`${mes}-${String(d).padStart(2,'0')}`) });
   }
   return { puntos, sinHora: 0 };
 }
@@ -3072,7 +3081,8 @@ function pintarGraficoInicio(puntos, sinHora){
   const wrap = document.getElementById('salesChart');
   if(!wrap) return;
   const vals = puntos.map(p => p.total);
-  const max = Math.max(...vals, 0);
+  const prevVals = puntos.map(p => (p.prev != null ? p.prev : 0));
+  const max = Math.max(...vals, ...prevVals, 0);
   if(!puntos.length || max === 0){
     wrap.innerHTML = `<div class="isc-empty">${summaryScope === 'mes'
       ? 'Todavía no registraste ventas este mes para graficar.'
@@ -3080,19 +3090,26 @@ function pintarGraficoInicio(puntos, sinHora){
     wrap.onpointerover = wrap.onclick = wrap.onpointerleave = null;
     return;
   }
+  // Comparación con el período anterior: solo si hay algo con qué comparar.
+  const hayPrev = puntos.some(p => p.prev != null && p.prev > 0);
+  const vsLabel = summaryScope === 'mes' ? 'mes pasado' : 'ayer';
+  const curLabel = summaryScope === 'mes' ? 'este mes' : 'hoy';
   const conVenta = vals.filter(v => v > 0);
   const prom = conVenta.length ? conVenta.reduce((a,b)=>a+b,0) / conVenta.length : 0;
-  const idxMax = vals.indexOf(max);
+  const curMax = Math.max(...vals, 0);
+  const idxMax = curMax > 0 ? vals.indexOf(curMax) : -1;
   const promPct = max > 0 ? (prom / max * 100) : 0;
   wrap.innerHTML = `
     <div class="isc-plot">
       ${prom > 0 ? `<div class="isc-avg" style="bottom:${promPct.toFixed(1)}%"><span class="isc-avg-lbl">prom. ${fmtMoneyCompact(prom)}</span></div>` : ''}
       ${puntos.map((p,i) => `
-        <div class="isc-col${i === idxMax ? ' is-top' : ''}${p.total === 0 ? ' is-zero' : ''}" data-label="${escapeHtml(p.sub || p.label)}" data-val="${escapeHtml(fmtMoney(p.total))}">
+        <div class="isc-col${i === idxMax ? ' is-top' : ''}${p.total === 0 ? ' is-zero' : ''}" data-label="${escapeHtml(p.sub || p.label)}" data-val="${escapeHtml(fmtMoney(p.total))}" data-prev="${p.prev != null ? escapeHtml(fmtMoney(p.prev)) : ''}">
           <div class="isc-barwrap"><div class="isc-bar" style="height:${p.total ? Math.max(3, p.total / max * 100) : 0}%"></div></div>
+          ${hayPrev && p.prev != null && p.prev > 0 ? `<div class="isc-ghost" style="bottom:${(p.prev / max * 100).toFixed(1)}%"></div>` : ''}
         </div>`).join('')}
     </div>
     <div class="isc-xrow">${puntos.map(p => `<div class="isc-x">${escapeHtml(p.label)}</div>`).join('')}</div>
+    ${hayPrev ? `<div class="isc-legend"><span class="isc-leg"><i class="isc-leg-cur"></i>${curLabel}</span><span class="isc-leg"><i class="isc-leg-prev"></i>${vsLabel}</span></div>` : ''}
     ${sinHora ? `<div class="isc-note">+ ${sinHora} venta${sinHora > 1 ? 's' : ''} sin hora cargada (no ${sinHora > 1 ? 'entran' : 'entra'} en este gráfico)</div>` : ''}
     <div class="isc-tip" id="iscTip" hidden></div>`;
   const tip = wrap.querySelector('#iscTip');
@@ -3100,7 +3117,8 @@ function pintarGraficoInicio(puntos, sinHora){
     if(!col || !tip) return;
     wrap.querySelectorAll('.isc-col.is-active').forEach(c => c.classList.remove('is-active'));
     col.classList.add('is-active');
-    tip.innerHTML = `<span class="isc-tip-k">${col.dataset.label}</span><span class="isc-tip-v">${col.dataset.val}</span>`;
+    tip.innerHTML = `<span class="isc-tip-k">${col.dataset.label}</span><span class="isc-tip-v">${col.dataset.val}</span>`
+      + (col.dataset.prev ? `<span class="isc-tip-p">${vsLabel}: ${col.dataset.prev}</span>` : '');
     tip.hidden = false;
     const wr = wrap.getBoundingClientRect(), cr = col.getBoundingClientRect();
     tip.style.left = Math.round(cr.left - wr.left + cr.width / 2) + 'px';
