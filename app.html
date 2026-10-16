@@ -1140,32 +1140,28 @@
   </div>
 </div>
 
-<div id="onboardingOverlay" class="onb-overlay" style="display:none;" role="dialog" aria-label="Configurá tu comercio">
-  <div class="onb-card">
-    <div class="onb-head">
-      <div class="onb-dots"><span class="onb-dot" data-step="1"></span><span class="onb-dot" data-step="2"></span></div>
-      <button type="button" id="onbSkip" class="onb-skip">Omitir por ahora</button>
+<!-- Onboarding en pasos: asistente a pantalla completa que arma el perfil del
+     comercio la primera vez (nombre, rubro, módulos, antigüedad, volumen,
+     cobro) y cierra con una pantalla de valor. Lo maneja wizRender() en
+     js/app.js. Reeditable desde Ajustes → "Rubro y módulos". -->
+<div id="onboardingOverlay" class="wiz-overlay" style="display:none;" role="dialog" aria-label="Configurá tu negocio">
+  <div class="wiz-glow" aria-hidden="true"></div>
+  <header class="wiz-topbar">
+    <div class="wiz-brand">
+      <span class="wiz-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>
+      <span>Tikera</span>
     </div>
-
-    <div class="onb-step" id="onbStep1">
-      <h2 class="onb-title">¿Qué tipo de comercio tenés?</h2>
-      <p class="onb-sub">Elegí uno o más. Tikera se adapta a lo que vendés — podés cambiarlo cuando quieras.</p>
-      <div class="onb-rubros" id="onbRubros"></div>
-      <div class="onb-actions">
-        <button type="button" id="onbNext" class="onb-btn-primary" disabled>Seguir</button>
-      </div>
+    <div class="wiz-top-right">
+      <span class="wiz-step-label" id="wizStepLabel"></span>
+      <button type="button" id="wizSkip" class="wiz-skip">Omitir por ahora</button>
     </div>
-
-    <div class="onb-step" id="onbStep2" style="display:none;">
-      <h2 class="onb-title">¿Qué vas a usar?</h2>
-      <p class="onb-sub">Marcamos lo recomendado para tu rubro. Prendé o apagá lo que quieras; esto se cambia después desde Ajustes.</p>
-      <div class="onb-modulos" id="onbModulos"></div>
-      <div class="onb-actions">
-        <button type="button" id="onbBack" class="onb-btn-ghost">Atrás</button>
-        <button type="button" id="onbFinish" class="onb-btn-primary">Listo, entrar a Tikera</button>
-      </div>
-    </div>
-  </div>
+  </header>
+  <div class="wiz-stepper" id="wizStepper"></div>
+  <main class="wiz-main"><div class="wiz-body" id="wizBody"></div></main>
+  <footer class="wiz-footer">
+    <button type="button" id="wizBack" class="wiz-btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> Atrás</button>
+    <button type="button" id="wizNext" class="wiz-btn-primary">Continuar</button>
+  </footer>
 </div>
 
 <div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Aviso de cookies">

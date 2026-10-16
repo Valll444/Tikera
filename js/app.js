@@ -38,6 +38,10 @@ let cierresCaja = [];
 // usaban Tikera no pierden nada hasta que elijan su rubro). Ver RUBROS/MODULOS
 // y moduloActivo() más abajo, y supabase/017_perfil_rubro_modulos.sql.
 let comercioConfig = { rubros: [], modulos: {}, onboardingAt: null };
+// Perfil del comercio que arma el onboarding (antigüedad, volumen de ventas,
+// forma de cobro habitual). Vive en profiles.perfil (jsonb, migración 021);
+// tolerante a que la migración no esté corrida (queda {}).
+let perfilNegocio = {};
 let facturacionConfig = null;
 // La tabla facturacion_config revoca el SELECT * y otorga lectura columna por
 // columna solo de las no-secretas (ver supabase/013_facturacion_arca.sql): el
@@ -113,8 +117,44 @@ function onboardingDeviceKey(){ return 'tikera:onboarding-visto:' + (currentUser
 function onboardingVistoEnDispositivo(){ try{ return localStorage.getItem(onboardingDeviceKey()) === '1'; }catch(e){ return false; } }
 function marcarOnboardingVistoEnDispositivo(){ try{ localStorage.setItem(onboardingDeviceKey(), '1'); }catch(e){} }
 
-// --- Onboarding: elegir rubro y módulos (primera vez, o re-configurar desde Ajustes) ---
-const onbState = { rubros: new Set(), modulos: {} };
+// --- Onboarding en pasos (asistente a pantalla completa) ---
+// Arma el perfil del comercio la primera vez: nombre, rubro, módulos,
+// antigüedad, volumen de ventas y forma de cobro, y cierra con una pantalla de
+// valor. Absorbe el viejo flujo de 2 pasos. Se guarda en profiles
+// (business_name + rubros/modulos/onboarding_at + perfil jsonb), tolerante a
+// que falte la migración 021. Reeditable desde Ajustes.
+
+// Íconos de línea de los pasos (badge de color, nunca emoji).
+const WICO_VOL_1 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>';
+const WICO_VOL_2 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>';
+const WICO_VOL_3 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M8 17v-5M13 17V8M18 17v-9"/></svg>';
+const WICO_VOL_4 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 4 4 6 4 10a4 4 0 0 1-8 0c0-1 .5-2 1-2.5C9 11 9 13 10 14c.5-3 2-4 2-7z"/><path d="M8.5 22h7"/></svg>';
+const WICO_CAJA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>';
+const WICO_TIKI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4.5 3.5V17H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9.5v1M15 9.5v1"/><path d="M9.5 13.5c1.4.9 3.6.9 5 0"/></svg>';
+const WICO_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><path d="M12 15v2"/></svg>';
+
+const ONB_ANTIGUEDAD = [
+  { v: 'nuevo', label: 'Recién arranco',   desc: 'Estoy empezando con el negocio.' },
+  { v: '<1',    label: 'Menos de 1 año',   desc: 'Hace poco que abrí.' },
+  { v: '1-3',   label: 'Entre 1 y 3 años', desc: 'Ya tengo rodaje.' },
+  { v: '+3',    label: 'Más de 3 años',    desc: 'Negocio establecido.' },
+];
+const ONB_VOLUMEN = [
+  { v: '<20',    label: 'Hasta 20 por día', desc: 'Arrancando o local chico.', icon: WICO_VOL_1 },
+  { v: '20-50',  label: 'Entre 20 y 50',    desc: 'Movimiento constante.',      icon: WICO_VOL_2 },
+  { v: '50-150', label: 'Entre 50 y 150',   desc: 'Buen flujo todos los días.', icon: WICO_VOL_3 },
+  { v: '+150',   label: 'Más de 150',       desc: 'Alto volumen.',              icon: WICO_VOL_4 },
+];
+const ONB_COBRO = [
+  { v: 'efectivo', label: 'Casi todo efectivo',      desc: 'La mayoría me paga en mano.' },
+  { v: 'digital',  label: 'Tarjeta o transferencia', desc: 'Casi todo es digital.' },
+  { v: 'mixto',    label: 'Mitad y mitad',           desc: 'Un poco de cada uno.' },
+];
+// Orden de los pasos. Los 6 primeros son preguntas; 'final' es el cierre.
+const ONB_PASOS = ['negocio', 'rubro', 'modulos', 'antiguedad', 'volumen', 'cobro', 'final'];
+const ONB_PREGUNTAS = ONB_PASOS.length - 1;
+
+const wizState = { i: 0, negocio: '', rubros: new Set(), modulos: {}, antiguedad: '', volumen: '', cobro: '' };
 
 // Decide si el asistente debe abrirse solo. Se separa de maybeShowOnboarding
 // para poder testear la decisión sin tocar el DOM.
@@ -128,94 +168,192 @@ function maybeShowOnboarding(){ if(debeMostrarOnboarding()) openOnboarding(); }
 function openOnboarding(){
   const ov = document.getElementById('onboardingOverlay');
   if(!ov) return;
-  onbState.rubros = new Set(comercioConfig.rubros || []);
-  onbState.modulos = Object.assign({}, comercioConfig.modulos || {});
-  renderOnbRubros();
-  onbGoStep(1);
+  const bn = document.getElementById('bizName');
+  wizState.i = 0;
+  wizState.negocio = (bn && bn.value && bn.value.trim() && bn.value.trim() !== 'Mi negocio') ? bn.value.trim() : '';
+  wizState.rubros = new Set(comercioConfig.rubros || []);
+  wizState.modulos = Object.assign({}, comercioConfig.modulos || {});
+  const p = (typeof perfilNegocio !== 'undefined' && perfilNegocio) || {};
+  wizState.antiguedad = p.antiguedad || '';
+  wizState.volumen = p.volumen || '';
+  wizState.cobro = p.cobro || '';
   ov.style.display = 'flex';
+  document.body.classList.add('wiz-open');
+  wizRender();
 }
-function closeOnboarding(){ const ov = document.getElementById('onboardingOverlay'); if(ov) ov.style.display = 'none'; }
-function onbGoStep(n){
-  const s1 = document.getElementById('onbStep1'), s2 = document.getElementById('onbStep2');
-  if(s1) s1.style.display = n === 1 ? 'block' : 'none';
-  if(s2) s2.style.display = n === 2 ? 'block' : 'none';
-  document.querySelectorAll('#onboardingOverlay .onb-dot').forEach(d => d.classList.toggle('active', Number(d.dataset.step) <= n));
+function closeOnboarding(){
+  const ov = document.getElementById('onboardingOverlay');
+  if(ov) ov.style.display = 'none';
+  document.body.classList.remove('wiz-open');
 }
-function renderOnbRubros(){
-  const wrap = document.getElementById('onbRubros');
-  if(!wrap) return;
-  wrap.innerHTML = Object.keys(RUBROS).map(key => `
-    <button type="button" class="onb-rubro${onbState.rubros.has(key) ? ' sel' : ''}" data-rubro="${key}">
-      <span class="onb-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
-      ${escapeHtml(RUBROS[key].label)}
-    </button>`).join('');
-  actualizarOnbNext();
+
+function wizPuedeSeguir(){
+  const paso = ONB_PASOS[wizState.i];
+  if(paso === 'negocio') return (wizState.negocio || '').trim().length > 0;
+  if(paso === 'rubro') return wizState.rubros.size > 0;
+  return true; // módulos y los datos opcionales no bloquean el avance
 }
-function actualizarOnbNext(){ const b = document.getElementById('onbNext'); if(b) b.disabled = onbState.rubros.size === 0; }
-function renderOnbModulos(){
-  const wrap = document.getElementById('onbModulos');
-  if(!wrap) return;
-  wrap.innerHTML = MODULOS_OPCIONALES.map(key => {
-    const on = onbState.modulos[key] === true;
-    return `<div class="onb-mod${on ? ' on' : ''}" data-mod="${key}">
-      <span class="onb-mod-txt"><strong>${escapeHtml(MODULOS[key].label)}</strong><small>${escapeHtml(MODULOS[key].desc)}</small></span>
-      <span class="onb-switch"></span>
+function wizRefreshNext(){ const b = document.getElementById('wizNext'); if(b) b.disabled = !wizPuedeSeguir(); }
+
+function wizRender(){
+  const paso = ONB_PASOS[wizState.i];
+  const stepper = document.getElementById('wizStepper');
+  if(stepper) stepper.innerHTML = ONB_PASOS.map((_, idx) =>
+    `<span class="wiz-seg${idx < wizState.i ? ' done' : ''}${idx === wizState.i ? ' now' : ''}"></span>`).join('');
+  const lbl = document.getElementById('wizStepLabel');
+  if(lbl) lbl.textContent = paso === 'final' ? '¡Listo!' : `Paso ${wizState.i + 1} de ${ONB_PREGUNTAS}`;
+  const body = document.getElementById('wizBody');
+  if(body) body.innerHTML = wizPasoHtml(paso);
+  const back = document.getElementById('wizBack');
+  if(back) back.style.visibility = wizState.i === 0 ? 'hidden' : 'visible';
+  const next = document.getElementById('wizNext');
+  if(next){ next.textContent = paso === 'final' ? 'Entrar a Tikera' : 'Continuar'; next.disabled = !wizPuedeSeguir(); }
+  const main = document.querySelector('#onboardingOverlay .wiz-main');
+  if(main) main.scrollTop = 0;
+  if(paso === 'negocio'){ const inp = document.getElementById('wizNegocio'); if(inp) setTimeout(() => inp.focus(), 60); }
+}
+
+function wizHead(titulo, sub){
+  return `<div class="wiz-head"><h2 class="wiz-title">${titulo}</h2>${sub ? `<p class="wiz-sub">${sub}</p>` : ''}</div>`;
+}
+function wizOpcionesHtml(campo, opts, conIcono){
+  const sel = wizState[campo];
+  return `<div class="wiz-opts">${opts.map(o => `
+    <button type="button" class="wiz-opt${sel === o.v ? ' sel' : ''}" data-campo="${campo}" data-val="${o.v}">
+      ${conIcono && o.icon ? `<span class="wiz-opt-ic">${o.icon}</span>` : '<span class="wiz-radio"></span>'}
+      <span class="wiz-opt-txt"><strong>${escapeHtml(o.label)}</strong>${o.desc ? `<small>${escapeHtml(o.desc)}</small>` : ''}</span>
+    </button>`).join('')}</div>`;
+}
+function wizPasoHtml(paso){
+  const nombre = escapeHtml((wizState.negocio || '').trim());
+  if(paso === 'negocio'){
+    return wizHead('¿Cómo se llama tu negocio?', 'Así te saluda Tikera y aparece en tus tickets.')
+      + `<div class="wiz-field"><label for="wizNegocio">Nombre del negocio</label>
+         <input type="text" id="wizNegocio" class="wiz-input" maxlength="60" autocomplete="off" placeholder="Ej: Kiosco La Esquina" value="${escapeHtml(wizState.negocio || '')}"></div>`;
+  }
+  if(paso === 'rubro'){
+    return wizHead(nombre ? `${nombre}, ¿qué vendés?` : '¿Qué vendés?', 'Elegí uno o más. Tikera se adapta a tu rubro — lo cambiás cuando quieras.')
+      + `<div class="wiz-grid">${Object.keys(RUBROS).map(k => `
+          <button type="button" class="wiz-chip${wizState.rubros.has(k) ? ' sel' : ''}" data-rubro="${k}">
+            <span class="wiz-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+            <span>${escapeHtml(RUBROS[k].label)}</span>
+          </button>`).join('')}</div>`;
+  }
+  if(paso === 'modulos'){
+    const rec = modulosRecomendados([...wizState.rubros]);
+    MODULOS_OPCIONALES.forEach(k => { if(wizState.modulos[k] === undefined) wizState.modulos[k] = rec.includes(k); });
+    return wizHead('¿Qué querés que Tikera haga por vos?', 'Marcamos lo recomendado para tu rubro. Prendé o apagá lo que quieras.')
+      + `<div class="wiz-mods">${MODULOS_OPCIONALES.map(k => {
+          const on = wizState.modulos[k] === true;
+          return `<div class="wiz-mod${on ? ' on' : ''}" data-mod="${k}">
+            <span class="wiz-mod-txt"><strong>${escapeHtml(MODULOS[k].label)}</strong><small>${escapeHtml(MODULOS[k].desc)}</small></span>
+            <span class="wiz-switch"></span></div>`;
+        }).join('')}</div>`;
+  }
+  if(paso === 'antiguedad'){
+    return wizHead(nombre ? `${nombre}, ¿hace cuánto arrancaste?` : '¿Hace cuánto tenés el negocio?', 'Para darte los consejos justos para tu momento.')
+      + wizOpcionesHtml('antiguedad', ONB_ANTIGUEDAD, false);
+  }
+  if(paso === 'volumen'){
+    return wizHead('¿Cuántas ventas hacés por día?', 'Más o menos — así calculamos bien tus metas y proyecciones.')
+      + wizOpcionesHtml('volumen', ONB_VOLUMEN, true);
+  }
+  if(paso === 'cobro'){
+    return wizHead('¿Cómo cobrás casi siempre?', 'Así Tikera te deja listo el método de pago al cargar una venta.')
+      + wizOpcionesHtml('cobro', ONB_COBRO, false);
+  }
+  if(paso === 'final'){
+    return `<div class="wiz-final">
+      <span class="wiz-badge">Lo que te da Tikera</span>
+      <h2 class="wiz-title wiz-title-xl">${nombre ? `Listo, ${nombre}.` : 'Todo listo.'} Así te cambia el día.</h2>
+      <p class="wiz-sub">Menos cuentas en la cabeza. Más tiempo para vender.</p>
+      <div class="wiz-cards">
+        <div class="wiz-card">
+          <div class="wiz-card-ic">${WICO_CAJA}</div>
+          <div class="wiz-card-h">Cierre de caja</div>
+          <div class="wiz-card-k">1 min</div>
+          <p>Contás la plata y Tikera te dice al toque si cuadra o cuánto falta.</p>
+        </div>
+        <div class="wiz-card wiz-card-hi">
+          <div class="wiz-card-ic">${WICO_TIKI}</div>
+          <div class="wiz-card-h">Tu mano derecha</div>
+          <div class="wiz-card-k">Tiki</div>
+          <p>Te avisa qué reponer, cómo venís y qué conviene, en castellano claro.</p>
+        </div>
+        <div class="wiz-card">
+          <div class="wiz-card-ic">${WICO_LOCK}</div>
+          <div class="wiz-card-h">Tus datos</div>
+          <div class="wiz-card-k">Solo tuyos</div>
+          <p>Cada cuenta está aislada. Nadie más ve lo que vendés.</p>
+        </div>
+      </div>
+      <p class="wiz-foot-note">Lo configurás a tu gusto y lo cambiás cuando quieras desde Ajustes.</p>
     </div>`;
-  }).join('');
+  }
+  return '';
 }
-function onbIrAModulos(){
-  // Pre-marcar los recomendados según el/los rubro(s) elegido(s), sin pisar lo
-  // que el usuario ya haya tocado (keys ya definidas, ej. al editar).
-  const rec = modulosRecomendados([...onbState.rubros]);
-  MODULOS_OPCIONALES.forEach(k => { if(onbState.modulos[k] === undefined) onbState.modulos[k] = rec.includes(k); });
-  renderOnbModulos();
-  onbGoStep(2);
+
+function wizSiguiente(){
+  if(!wizPuedeSeguir()) return;
+  if(ONB_PASOS[wizState.i] === 'final'){ wizFinish(); return; }
+  if(wizState.i < ONB_PASOS.length - 1){ wizState.i += 1; wizRender(); }
 }
-async function guardarOnboarding(rubros, modulos){
+function wizAtras(){ if(wizState.i > 0){ wizState.i -= 1; wizRender(); } }
+function wizFinish(){
+  const modulos = {};
+  MODULOS_OPCIONALES.forEach(k => modulos[k] = wizState.modulos[k] === true);
+  const perfil = { antiguedad: wizState.antiguedad, volumen: wizState.volumen, cobro: wizState.cobro };
+  guardarOnboarding([...wizState.rubros], modulos, { negocio: (wizState.negocio || '').trim(), perfil });
+}
+// Omitir: marca el onboarding como hecho con config legacy (todo activo), sin
+// forzar nada ni sacarle funciones a nadie.
+function wizOmitir(){ guardarOnboarding([], {}, null); }
+
+async function guardarOnboarding(rubros, modulos, extras){
+  const nombre = extras && extras.negocio ? extras.negocio : null;
+  const perfil = extras && extras.perfil ? extras.perfil : null;
   const payload = { rubros, modulos, onboarding_at: new Date().toISOString() };
+  if(nombre) payload.business_name = nombre;
+  if(perfil) payload.perfil = perfil;
   comercioConfig = { rubros, modulos, onboardingAt: payload.onboarding_at };
+  if(perfil) perfilNegocio = perfil;
+  if(nombre){ const bn = document.getElementById('bizName'); if(bn) bn.value = nombre; }
   marcarOnboardingVistoEnDispositivo(); // no volver a mostrarlo en este dispositivo, aunque falle el sync
   aplicarModulosAlNav();
   closeOnboarding();
   switchView('inicio');
   try{
-    const { error } = await sb.from('profiles').update(payload).eq('id', currentUserId);
+    let { error } = await sb.from('profiles').update(payload).eq('id', currentUserId);
+    // Si falla por la columna perfil (migración 021 sin correr todavía),
+    // reintenta sin ella para no perder el resto de la config.
+    if(error && perfil && /perfil/i.test(error.message || '')){
+      const sinPerfil = Object.assign({}, payload); delete sinPerfil.perfil;
+      ({ error } = await sb.from('profiles').update(sinPerfil).eq('id', currentUserId));
+    }
     if(error){ console.error(error); showToast('Guardado acá — no se pudo sincronizar'); return; }
     showToast('¡Listo! Tikera quedó configurada');
   }catch(e){ console.error(e); showToast('Guardado acá — revisá tu conexión'); }
 }
-function finishOnboarding(){
-  const modulos = {};
-  MODULOS_OPCIONALES.forEach(k => modulos[k] = onbState.modulos[k] === true);
-  guardarOnboarding([...onbState.rubros], modulos);
-}
-// Omitir: no fuerza nada. Marca el onboarding como hecho con config legacy
-// (rubros vacío, módulos vacío = todo activo) para no volver a preguntar ni
-// sacarle funciones a nadie.
-function skipOnboarding(){ guardarOnboarding([], {}); }
 
 (function wireOnboarding(){
   const ov = document.getElementById('onboardingOverlay');
   if(!ov) return;
-  const rubrosWrap = document.getElementById('onbRubros');
-  if(rubrosWrap) rubrosWrap.addEventListener('click', (e)=>{
-    const card = e.target.closest('.onb-rubro'); if(!card) return;
-    const key = card.dataset.rubro;
-    if(onbState.rubros.has(key)) onbState.rubros.delete(key); else onbState.rubros.add(key);
-    card.classList.toggle('sel');
-    actualizarOnbNext();
-  });
-  const modsWrap = document.getElementById('onbModulos');
-  if(modsWrap) modsWrap.addEventListener('click', (e)=>{
-    const row = e.target.closest('.onb-mod'); if(!row) return;
-    const key = row.dataset.mod;
-    onbState.modulos[key] = !(onbState.modulos[key] === true);
-    row.classList.toggle('on', onbState.modulos[key]);
-  });
-  const next = document.getElementById('onbNext'); if(next) next.addEventListener('click', onbIrAModulos);
-  const back = document.getElementById('onbBack'); if(back) back.addEventListener('click', ()=> onbGoStep(1));
-  const finish = document.getElementById('onbFinish'); if(finish) finish.addEventListener('click', finishOnboarding);
-  const skip = document.getElementById('onbSkip'); if(skip) skip.addEventListener('click', skipOnboarding);
+  const body = document.getElementById('wizBody');
+  if(body){
+    body.addEventListener('click', (e) => {
+      const chip = e.target.closest('.wiz-chip');
+      if(chip){ const k = chip.dataset.rubro; if(wizState.rubros.has(k)) wizState.rubros.delete(k); else wizState.rubros.add(k); chip.classList.toggle('sel'); wizRefreshNext(); return; }
+      const mod = e.target.closest('.wiz-mod');
+      if(mod){ const k = mod.dataset.mod; wizState.modulos[k] = !(wizState.modulos[k] === true); mod.classList.toggle('on', wizState.modulos[k]); return; }
+      const opt = e.target.closest('.wiz-opt');
+      if(opt){ const campo = opt.dataset.campo; wizState[campo] = opt.dataset.val; body.querySelectorAll(`.wiz-opt[data-campo="${campo}"]`).forEach(o => o.classList.toggle('sel', o === opt)); return; }
+    });
+    body.addEventListener('input', (e) => { const inp = e.target.closest('#wizNegocio'); if(inp){ wizState.negocio = inp.value; wizRefreshNext(); } });
+    body.addEventListener('keydown', (e) => { if(e.key === 'Enter' && e.target.closest('#wizNegocio')){ e.preventDefault(); wizSiguiente(); } });
+  }
+  const back = document.getElementById('wizBack'); if(back) back.addEventListener('click', wizAtras);
+  const next = document.getElementById('wizNext'); if(next) next.addEventListener('click', wizSiguiente);
+  const skip = document.getElementById('wizSkip'); if(skip) skip.addEventListener('click', wizOmitir);
 })();
 
 // Categorias fijas de gasto -- a proposito una lista chica y cerrada (no un
@@ -1689,6 +1827,13 @@ async function loadData(){
         ? { rubros: cfg.rubros || [], modulos: cfg.modulos || {}, onboardingAt: cfg.onboarding_at || null }
         : { rubros: [], modulos: {}, onboardingAt: null };
     }catch(e){ comercioConfig = { rubros: [], modulos: {}, onboardingAt: null }; }
+
+    // Perfil del comercio (antigüedad/volumen/cobro) — se pide aparte para que,
+    // si la columna no existe (falta 021), no voltee la carga de rubros/módulos.
+    try{
+      const { data: pf, error: pfErr } = await sb.from('profiles').select('perfil').eq('id', user.id).single();
+      perfilNegocio = (!pfErr && pf && pf.perfil) ? pf.perfil : {};
+    }catch(e){ perfilNegocio = {}; }
 
     const { data: movRows, error: movErr } = await fetchAllRows(opts => sb.from('movements').select('*', opts).eq('user_id', user.id).order('created_at', {ascending:true}).order('id', {ascending:true}));
     entries = movErr ? [] : (movRows || []).map(mapRowToEntry);
